@@ -360,9 +360,11 @@ type alias EqualsOf specificExpression =
 
 type EqualsExpressionByType int equals
     = EqualsOfInt (EqualsOf int)
-    | EqualsOfEquals (EqualsOf equals)
-    | EqualsOfTupleExtendedLeft (EqualsExpressionByType (TupleOf Int int) (TupleOf EqualsExpression equals))
-    | EqualsOfTupleExtendedRight (EqualsExpressionByType (TupleOf int Int) (TupleOf equals EqualsExpression))
+    | EqualsOfEqualsExpression (EqualsOf equals)
+    | EqualsOfTupleExtendedByFirstInt (EqualsExpressionByType (TupleOf Int int) (TupleOf Int equals))
+    | EqualsOfTupleExtendedByFirstEqualsExpression (EqualsExpressionByType (TupleOf EqualsExpression int) (TupleOf EqualsExpression equals))
+    | EqualsOfTupleExtendedBySecondInt (EqualsExpressionByType (TupleOf int Int) (TupleOf equals Int))
+    | EqualsOfTupleExtendedBySecondEqualsExpression (EqualsExpressionByType (TupleOf int EqualsExpression) (TupleOf equals EqualsExpression))
 
 type EqualsExpression
     = EqualsExpression (EqualsExpressionByType Int EqualsExpression)
