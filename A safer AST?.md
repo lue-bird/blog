@@ -341,7 +341,7 @@ For past lue, tuples and especially triples shattered the hope of being able to 
 So much so in fact that lue was slowly losing interest and abandoned this project after a while.
 
 Much, much later... in fact only when writing this did I think of _two_-ish solutions that would have saved a good chunk of my sanity.
-I know you're smarter than me, so if you have free afternoon or whatever, maybe use this as a brain exercise?
+I know you're smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
 Or just look at the solutions below.
 
 First the -ish solution:
