@@ -14,6 +14,7 @@ This is "probably fine" TM but...
 - it allows users to generate incorrect expressions
   ```elm
   List [ String "My name is ", Int 5 ]
+  Equals { left = String "High" , right = Int 5 }
   ```
 - it has impossible variants you are forced to case on
 
