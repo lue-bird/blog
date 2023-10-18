@@ -5,7 +5,7 @@ So far you'll only find thoughts here that are in the process of being formalize
 Nothing is "published" anywhere so if you find this though github, enjoy what's already here
 or wait another year until there _might_ be a running website with rss and whatnot.
 
-### (very rough early stages) website
+### (rough early stages) website
 
 [website](https://lue-bird.github.io/blog/), built using [elm](https://elm-lang.org/).
 
@@ -24,5 +24,11 @@ serve
 #### TODOs
 - custom elm code formatting (determine what's a type vs a variant)
     - potentially integrate elm-interpreter
-- rss
-- links for the titled sections
+- links for the sections
+
+#### contributing
+Before building the new version, `cd build-step` and run
+```bash
+elm-cli run src/Build.elm $EPOCHSECONDS
+```
+to generate the new rss feed.
