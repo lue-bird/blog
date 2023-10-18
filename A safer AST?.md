@@ -93,7 +93,7 @@ type ListExpression string int bool
 
 type BoolKnown
   = BoolLiteral Bool
-  | Equals (EqualsExpression (EqualsExpression String Int BoolKnown))
+  | Equals (EqualsExpression String Int BoolKnown)
 ```
 
 which allows us to build lists like
