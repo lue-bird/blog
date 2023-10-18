@@ -20,7 +20,7 @@ This is "probably fine" TM but...
 
 How hard can it be to make this small language completely type-safe?
 
-Naively, we could represent each kind of list by it's own variant
+Naively, we could represent each kind of list and equals by it's own variant
 
 ```elm
 type Expression
