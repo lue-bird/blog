@@ -338,7 +338,7 @@ The pieces don't seem to fit.
 Let's start again, with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?
 
 For past lue, tuples and especially triples shattered the hope of being able to safely represent them like this in an ast.
-So much so in fact that I was slowly losing interest and abandoned this project after a while.
+So much so in fact that lue was slowly losing interest and abandoned this project after a while.
 
 Much, much later... in fact only when writing this did I think of _two_-ish solutions that would have saved a good chunk of my sanity.
 I know you're smarter than me, so if you have free afternoon or whatever, maybe use this as a brain exercise?
