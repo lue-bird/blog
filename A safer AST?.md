@@ -303,7 +303,7 @@ type Expression =
       )
   
 type alias TripleOf first second third =
-    { first = first, second : second, third : third }
+    { first : first, second : second, third : third }
 
 type ListExpression string int bool triple
   = ListExpression
