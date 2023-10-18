@@ -5,5 +5,24 @@ So far you'll only find thoughts here that are in the process of being formalize
 Nothing is "published" anywhere so if you find this though github, enjoy what's already here
 or wait another year until there _might_ be a running website with rss and whatnot.
 
-  - [A safer AST? (Almost complete)](https://github.com/lue-bird/blog/blob/main/A%20safer%20AST%3F.md)
-  - [What to do with elm-review errors? (Barely anything)](https://github.com/lue-bird/blog/blob/main/What%20to%20do%20with%20elm-review%20errors%3F.md)
+### (very rough early stages) website
+
+[website](https://lue-bird.github.io/blog/), built using [elm](https://elm-lang.org/).
+
+#### run locally
+```noformatingples
+npx elm-watch hot
+```
+  - [lydell/elm-watch website](https://lydell.github.io/elm-watch/)
+
+and open the index.html file or better
+```noformatingples
+serve
+```
+  - [vercel/serve](https://github.com/vercel/serve)
+
+#### TODOs
+- custom elm code formatting (determine what's a type vs a variant)
+    - potentially integrate elm-interpreter
+- rss
+- links for the titled sections
