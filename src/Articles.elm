@@ -1,6 +1,5 @@
 module Articles exposing (Content(..), ParagraphPart(..), all, sectionTitleToUrl, toHtmlStringifiable)
 
-import Html
 import Html.String
 import Html.String.Attributes
 import List.Extra
