@@ -305,6 +305,11 @@ expressionSyntaxKindMap =
             Elm.Syntax.Expression.IfBlock condition onTrue onFalse ->
                 [ condition, onTrue, onFalse ]
                     |> RangeDict.unionFromListMap expressionSyntaxKindMap
+                    |> RangeDict.insert
+                        { start = expressionRange.start
+                        , end = { row = expressionRange.start.row, column = expressionRange.start.column + 2 }
+                        }
+                        Keyword
 
             Elm.Syntax.Expression.PrefixOperator _ ->
                 RangeDict.singleton expressionRange Variable
@@ -369,6 +374,11 @@ expressionSyntaxKindMap =
                 RangeDict.union
                     (lambda.args |> RangeDict.unionFromListMap patternSyntaxKindMap)
                     (lambda.expression |> expressionSyntaxKindMap)
+                    |> RangeDict.insert
+                        { start = expressionRange.start
+                        , end = { row = expressionRange.start.row, column = expressionRange.start.column + 1 }
+                        }
+                        Keyword
 
             Elm.Syntax.Expression.RecordExpr fields ->
                 fields
