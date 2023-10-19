@@ -357,7 +357,7 @@ paragraphPartUi =
                 Element.WithContext.text string
                     |> Element.WithContext.el [ Element.WithContext.Font.italic ]
 
-            Articles.InlineCode raw ->
+            Articles.InlineElmCode raw ->
                 ElmCodeUi.with (ElmCodeUi.syntaxKindMap raw) raw
                     |> Element.WithContext.html
 

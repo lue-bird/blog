@@ -3,7 +3,7 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Thu, 19 Oct 2023 09:56:44 +0000</lastBuildDate>
+<lastBuildDate>Thu, 19 Oct 2023 16:08:34 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
 <title>(Almost complete) A safer AST?</title>
@@ -33,24 +33,24 @@ type EqualsExpression
   = EqualsOfString (EqualsOf String)
   | EqualsOfInt (EqualsOf Int)
   | EqualsOfBool (EqualsOf BoolExpression)
-  | EqualsOfList (EqualsOf ??)
+  | EqualsOfList (EqualsOf HEH)
 
 type ListExpression
   = ListOfString (List String)
   | ListOfInt (List Int)
   | ListOfBool (List BoolExpression)
-  | ListOfList (List ??)
+  | ListOfList (List HEH)
 
 type BoolExpression
   = BoolLiteral Bool
-  | EqualsExpression EqualsExpression&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The ?? just keep on expanding, let&apos;s say with&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
-  = ... | EqualsOfList EqualsExpressionOfList
+  | EqualsExpression EqualsExpression&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The HEH just keep on expanding, let&apos;s say with&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
+  = {- ... | -} EqualsOfList EqualsExpressionOfList
 
 type EqualsExpressionOfList
   = EqualsOfListOfString (EqualsOf (List String))
   | EqualsOfListOfInt (EqualsOf (List Int))
   | EqualsOfListOfBool (EqualsOf (List BoolExpression))
-  | EqualsOfListOfList (EqualsOf (List ??))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
+  | EqualsOfListOfList (EqualsOf (List HEH))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
   = String String
   | Int Int
   | Bool Bool
@@ -92,11 +92,11 @@ type BoolKnown
               ]
             ]
         )
-    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Somehow, this works.&lt;/p&gt;&lt;p&gt;All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;ByExpressionType : (Type -&amp;gt; Type) -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type
-ByExpressionType outer string int bool
-  = String (outer string)
-  | Int (outer int)
-  | Bool (outer bool)
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Somehow, this works.&lt;/p&gt;&lt;p&gt;All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;-- (Type -&amp;gt; Type) -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type
+type ByExpressionType outer string int bool
+  = String (Outer string)
+  | Int (Outer int)
+  | Bool (Outer bool)
   | List (ByExpressionType (List string) (List int) (List bool))
 
 type alias Expression =
@@ -104,7 +104,7 @@ type alias Expression =
 type alias ListExpression =
     ByExpressionType List String Int BoolKnown
 type alias EqualsExpression =
-    ByExpressionType EqualsOf String Int BoolKnown&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The `outer` is what makes this tricky.&lt;/p&gt;&lt;p&gt;Having an AST without it we can&apos;t for example represent &quot;list equals list&quot;, only &quot;a list of equals&quot;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool
+    ByExpressionType EqualsOf String Int BoolKnown&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;code&gt;outer&lt;/code&gt; is what makes this tricky.&lt;/p&gt;&lt;p&gt;Having an AST without it we can&apos;t for example represent &quot;list equals list&quot;, only &quot;a list of equals&quot;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool
   = String string
   | Int int
   | Bool bool
@@ -131,7 +131,7 @@ type ListExpression string int bool =
         (List bool)
         (ListExpression (List string) (List int) (List bool))
 
-type alias EqualsOf =
+type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
 type alias EqualsExpression string int bool =
@@ -222,7 +222,7 @@ type BoolKnown
   | Triple triple
   | List list
 
-type Expression =
+type Expression
   = Expression
       (ByExpressionType
           String
@@ -254,8 +254,8 @@ type EqualsExpression string int bool
           (EqualsOf string)
           (EqualsOf int)
           (EqualsOf bool)
-          (EqualsOf ??)
-          (EqualsExpression string int bool (TripleOf ??))
+          (EqualsOf HEH)
+          (EqualsExpression string int bool (TripleOf HEH))
       )
 
 type BoolKnown
@@ -314,7 +314,7 @@ type EqualsExpression
 If you&apos;re happy, slowly follow `elm-review` and compiler errors and your project&apos;s refactoring todo list items one at a time.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;listUnzipCheck =
     case lastArgument partitionCall of
         Just listArgument -&amp;gt;
-            let error = ...
+            let error = TODO
             in
             case listArgument of
                 Expression.Tuple2Literal tuple2 -&amp;gt;
@@ -325,11 +325,11 @@ If you&apos;re happy, slowly follow `elm-review` and compiler errors and your pr
                         |&amp;gt; Elm.Syntax.Expression.Extra.parseSpecificFnCall &quot;Tuple.pair&quot;
                         |&amp;gt; Maybe.map (\_ -&amp;gt; error)
         
-        Just ()
+        Just TODO -&amp;gt; TODO
 
 listPartitionCheck partitionCall =
     case fullyAppliedLastArg partitionCall.arguments of
-        TODO&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Elm.Syntax.Expression.Extra exposing (getTuple2)
+        TODO -&amp;gt; TODO&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Elm.Syntax.Expression.Extra exposing (getTuple2)
 getTuple2 = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Oh no! The editor gives me squigglies, the CI is red, what to do?&lt;/p&gt;&lt;p&gt;Most of these do not need to be fixed immediately!&lt;/p&gt;&lt;p&gt;They are like leaving `Debug.todo` or failing test somewhere.
 You know, the stuff that allows you to keep less things in your mind that &quot;you still need to do&quot;.&lt;/p&gt;&lt;p&gt;In that way, they are like an automated todo list for you and your whole team.&lt;/p&gt;&lt;p&gt;If you think there won&apos;t be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn&apos;t scary. They have your back.&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>

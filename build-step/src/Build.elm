@@ -142,7 +142,7 @@ articlesParagraphPartToStringifiable =
             Articles.Italic string ->
                 Html.String.i [] [ Html.String.text string ]
 
-            Articles.InlineCode raw ->
+            Articles.InlineElmCode raw ->
                 Html.String.code [] [ Html.String.text raw ]
 
             Articles.Link link ->
