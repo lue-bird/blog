@@ -292,19 +292,6 @@ articleContentUi =
                         [ Element.WithContext.width (Element.WithContext.px 0)
                         ]
 
-            {- case rawSourceCode |> SyntaxHighlight.elm of
-               Ok highlightable ->
-                   highlightable
-                       |> SyntaxHighlight.toBlockHtml Nothing
-                       |> Element.WithContext.html
-                       |> Element.WithContext.el
-                           [ Element.WithContext.Font.size 18
-                           , Element.WithContext.width (Element.WithContext.px 0)
-                           ]
-
-               Err _ ->
-                   Element.WithContext.text ("Couldn't parse code snippet. Here's the un-highlighted code: " ++ rawSourceCode)
-            -}
             Articles.Sequence contentList ->
                 Element.WithContext.column
                     [ Element.WithContext.spacing 22
