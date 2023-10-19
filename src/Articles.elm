@@ -1,9 +1,5 @@
-module Articles exposing (Content(..), ParagraphPart(..), all, sectionTitleToUrl, toHtmlStringifiable)
+module Articles exposing (Content(..), ParagraphPart(..), all, sectionTitleToUrl)
 
-import Html.String
-import Html.String.Attributes
-import List.Extra
-import String.Extra
 import Time
 import Url
 
@@ -524,64 +520,3 @@ sectionTitleToUrl : String -> String
 sectionTitleToUrl =
     \title ->
         title |> Url.percentEncode
-
-
-toHtmlStringifiable : Content -> Html.String.Html event_
-toHtmlStringifiable =
-    \articleContent ->
-        case articleContent of
-            Section titled ->
-                Html.String.section []
-                    [ [ Html.String.text titled.title ]
-                        |> Html.String.h3 []
-                    , titled.content |> toHtmlStringifiable
-                    ]
-
-            Paragraph parts ->
-                Html.String.p []
-                    (parts |> List.map paragraphPartToStringifiable)
-
-            ElmCode rawSourceCodeString ->
-                Html.String.pre []
-                    [ Html.String.code []
-                        [ Html.String.text
-                            (rawSourceCodeString
-                                |> String.lines
-                                |> List.Extra.dropWhile String.Extra.isBlank
-                                |> List.Extra.dropWhileRight String.Extra.isBlank
-                                |> String.join "\n"
-                            )
-                        ]
-                    ]
-
-            Sequence contentList ->
-                Html.String.div []
-                    (contentList |> List.map toHtmlStringifiable)
-
-            UnorderedList unorderedList ->
-                Html.String.ul []
-                    (unorderedList
-                        |> List.map
-                            (\item ->
-                                Html.String.li []
-                                    [ item |> toHtmlStringifiable ]
-                            )
-                    )
-
-
-paragraphPartToStringifiable : ParagraphPart -> Html.String.Html event_
-paragraphPartToStringifiable =
-    \paragraphPart ->
-        case paragraphPart of
-            Text string ->
-                Html.String.text string
-
-            Italic string ->
-                Html.String.i [] [ Html.String.text string ]
-
-            InlineCode raw ->
-                Html.String.code [] [ Html.String.text raw ]
-
-            Link link ->
-                Html.String.a [ Html.String.Attributes.href link.url ]
-                    [ Html.String.text link.description ]

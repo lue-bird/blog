@@ -12,6 +12,10 @@ import Posix.IO.File
 import Rss
 import Time
 import Html.String
+import Html.String
+import Html.String.Attributes
+import List.Extra
+import String.Extra
 
 
 program : Posix.IO.Process -> Posix.IO.IO ()
@@ -62,13 +66,13 @@ articleSectionsToRssItems =
             Articles.Section section ->
                 [ { title = section.title
                   , description = section.description
-                  , url = "https://lue-bird.github.io/blog/#" ++ section.title |> Articles.sectionTitleToUrl
+                  , url = "#" ++ section.title |> Articles.sectionTitleToUrl
                   , categories = []
                   , author = "lue"
                   , pubDate = Rss.DateTime section.publishTime
                   , content = Nothing
                   , contentEncoded =
-                        Just (articleContent |> Articles.toHtmlStringifiable |> Html.String.toString 0)
+                        Just (articleContent |> articlesContentToHtmlStringifiable |> Html.String.toString 0)
                   , enclosure = Nothing
                   }
                 ]
@@ -84,3 +88,63 @@ articleSectionsToRssItems =
 
             Articles.Sequence sequence ->
                 sequence |> List.concatMap articleSectionsToRssItems
+
+articlesContentToHtmlStringifiable : Articles.Content -> Html.String.Html event_
+articlesContentToHtmlStringifiable =
+    \articleContent ->
+        case articleContent of
+            Articles.Section section ->
+                Html.String.section []
+                    [ [ Html.String.text section.title ]
+                        |> Html.String.h3 []
+                    , section.content |> articlesContentToHtmlStringifiable
+                    ]
+
+            Articles.Paragraph parts ->
+                Html.String.p []
+                    (parts |> List.map articlesParagraphPartToStringifiable)
+
+            Articles.ElmCode rawSourceCodeString ->
+                Html.String.pre []
+                    [ Html.String.code []
+                        [ Html.String.text
+                            (rawSourceCodeString
+                                |> String.lines
+                                |> List.Extra.dropWhile String.Extra.isBlank
+                                |> List.Extra.dropWhileRight String.Extra.isBlank
+                                |> String.join "\n"
+                            )
+                        ]
+                    ]
+
+            Articles.Sequence contentList ->
+                Html.String.div []
+                    (contentList |> List.map articlesContentToHtmlStringifiable)
+
+            Articles.UnorderedList unorderedList ->
+                Html.String.ul []
+                    (unorderedList
+                        |> List.map
+                            (\item ->
+                                Html.String.li []
+                                    [ item |> articlesContentToHtmlStringifiable ]
+                            )
+                    )
+
+
+articlesParagraphPartToStringifiable : Articles.ParagraphPart -> Html.String.Html event_
+articlesParagraphPartToStringifiable =
+    \paragraphPart ->
+        case paragraphPart of
+            Articles.Text string ->
+                Html.String.text string
+
+            Articles.Italic string ->
+                Html.String.i [] [ Html.String.text string ]
+
+            Articles.InlineCode raw ->
+                Html.String.code [] [ Html.String.text raw ]
+
+            Articles.Link link ->
+                Html.String.a [ Html.String.Attributes.href link.url ]
+                    [ Html.String.text link.description ]
