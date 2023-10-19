@@ -84,10 +84,6 @@ introduction =
                 }
             , Text " to suggest improvements."
             ]
-        , elmCode """
-module TestDat exposing (dat, Dat, Dat2(..))
-import TestWat as Heh exposing (wat, Wat, Wat2(..))
-"""
         ]
 
 
