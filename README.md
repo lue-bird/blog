@@ -22,6 +22,7 @@ serve
   - [vercel/serve](https://github.com/vercel/serve)
 
 #### TODOs
+- Change Articles.Paragraph String to List (unstyled | italic | bold | inline code | link)
 - custom elm code formatting (determine what's a type vs a variant)
     - potentially integrate elm-interpreter
 
