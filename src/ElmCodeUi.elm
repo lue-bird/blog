@@ -1,7 +1,6 @@
 module ElmCodeUi exposing (SyntaxKind(..), syntaxKindMap, with)
 
 import Color exposing (Color)
-import Element.WithContext
 import Elm.Parser
 import Elm.Syntax.Declaration exposing (Declaration)
 import Elm.Syntax.Exposing
