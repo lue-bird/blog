@@ -47,12 +47,12 @@ parseArguments =
 
 
 rssGenerate : { currentTime : Time.Posix } -> String
-rssGenerate { currentTime } =
+rssGenerate buildData =
     Rss.generate
         { title = "lue blog"
         , description = "lue's thoughts"
         , url = "https://lue-bird.github.io/blog/"
-        , lastBuildTime = currentTime
+        , lastBuildTime = buildData.currentTime
         , generator = Just "dillonkearns/elm-rss"
         , items = Articles.all |> articleSectionsToRssItems
         , siteUrl = "https://lue-bird.github.io/blog/"
