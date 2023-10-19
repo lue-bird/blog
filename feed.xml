@@ -3,22 +3,22 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Wed, 18 Oct 2023 22:34:59 +0000</lastBuildDate>
+<lastBuildDate>Thu, 19 Oct 2023 09:56:44 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
 <title>(Almost complete) A safer AST?</title>
 <description>Can you represent a list expression where all elements have the same type? Yes.
 And what about operations like (==) on infinitely nested triples?</description>
-<link>https://lue-bird.github.io/blog/(Almost%20complete)%20A%20safer%20AST%3F</link>
-<guid>https://lue-bird.github.io/blog/(Almost%20complete)%20A%20safer%20AST%3F</guid>
+<link>https://lue-bird.github.io/blog/%23(Almost%20complete)%20A%20safer%20AST%3F</link>
+<guid>https://lue-bird.github.io/blog/%23(Almost%20complete)%20A%20safer%20AST%3F</guid>
 <pubDate>Sat, 21 Oct 2023 00:00:00 +0000</pubDate>
-<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;(Almost complete) A safer AST?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s consider a really simple language&lt;/p&gt;&lt;code&gt;type Expression
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;(Almost complete) A safer AST?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s consider a really simple language&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
   = String String
   | Int Int
   | Bool Bool
   | List (List Expression)
-  | Equals { left : Expression, right : Expression }&lt;/code&gt;&lt;p&gt;This is &quot;probably fine&quot; TM but...&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;it allows users to generate incorrect expressions&lt;/p&gt;&lt;code&gt;List [ String &quot;My name is &quot;, Int 5 ]
-Equals { left = String &quot;High&quot; , right = Int 5 }&lt;/code&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;it has impossible variants you are forced to case on&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;How hard can it be to make this small language completely type-safe?&lt;/p&gt;&lt;p&gt;Naively, we could represent each kind of list and equals by it&apos;s own variant&lt;/p&gt;&lt;code&gt;type Expression
+  | Equals { left : Expression, right : Expression }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is &quot;probably fine&quot; TM but...&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;it allows users to generate incorrect expressions&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List [ String &quot;My name is &quot;, Int 5 ]
+Equals { left = String &quot;High&quot; , right = Int 5 }&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;it has impossible variants you are forced to case on&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;How hard can it be to make this small language completely type-safe?&lt;/p&gt;&lt;p&gt;Naively, we could represent each kind of list and equals by it&apos;s own variant&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
   = String String
   | Int Int
   | Bool Bool
@@ -43,14 +43,14 @@ type ListExpression
 
 type BoolExpression
   = BoolLiteral Bool
-  | EqualsExpression EqualsExpression&lt;/code&gt;&lt;p&gt;The ?? just keep on expanding, let&apos;s say with&lt;/p&gt;&lt;code&gt;type EqualsExpression
+  | EqualsExpression EqualsExpression&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The ?? just keep on expanding, let&apos;s say with&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
   = ... | EqualsOfList EqualsExpressionOfList
 
 type EqualsExpressionOfList
   = EqualsOfListOfString (EqualsOf (List String))
   | EqualsOfListOfInt (EqualsOf (List Int))
   | EqualsOfListOfBool (EqualsOf (List BoolExpression))
-  | EqualsOfListOfList (EqualsOf (List ??))&lt;/code&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;code&gt;type Expression
+  | EqualsOfListOfList (EqualsOf (List ??))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
   = String String
   | Int Int
   | Bool Bool
@@ -76,7 +76,7 @@ type ListExpression string int bool
 
 type BoolKnown
   = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;p&gt;which allows us to build lists like&lt;/p&gt;&lt;code&gt;List
+  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;which allows us to build lists like&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
     (ListOfList
         (ListOfBool
             [ [ BoolLiteral True ]
@@ -92,7 +92,7 @@ type BoolKnown
               ]
             ]
         )
-    )&lt;/code&gt;&lt;p&gt;Somehow, this works.&lt;/p&gt;&lt;p&gt;All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?&lt;/p&gt;&lt;code&gt;ByExpressionType : (Type -&amp;gt; Type) -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Somehow, this works.&lt;/p&gt;&lt;p&gt;All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;ByExpressionType : (Type -&amp;gt; Type) -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type
 ByExpressionType outer string int bool
   = String (outer string)
   | Int (outer int)
@@ -104,7 +104,7 @@ type alias Expression =
 type alias ListExpression =
     ByExpressionType List String Int BoolKnown
 type alias EqualsExpression =
-    ByExpressionType EqualsOf String Int BoolKnown&lt;/code&gt;&lt;p&gt;The `outer` is what makes this tricky.&lt;/p&gt;&lt;p&gt;Having an AST without it we can&apos;t for example represent &quot;list equals list&quot;, only &quot;a list of equals&quot;:&lt;/p&gt;&lt;code&gt;type ByExpressionType string int bool
+    ByExpressionType EqualsOf String Int BoolKnown&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The `outer` is what makes this tricky.&lt;/p&gt;&lt;p&gt;Having an AST without it we can&apos;t for example represent &quot;list equals list&quot;, only &quot;a list of equals&quot;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool
   = String string
   | Int int
   | Bool bool
@@ -115,7 +115,7 @@ type alias Expression =
 type alias ListExpression =
     ByExpressionType (List String) (List Int) (List BoolKnown)
 type alias EqualsExpression =
-    ByExpressionType (EqualsOf String) (EqualsOf Int) (EqualsOf BoolKnown)&lt;/code&gt;&lt;p&gt;So this is not quite right.&lt;/p&gt;&lt;p&gt;We can at least keep the general idea so that all expression kinds are in one place:&lt;/p&gt;&lt;code&gt;type ByExpressionType string int bool list
+    ByExpressionType (EqualsOf String) (EqualsOf Int) (EqualsOf BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;So this is not quite right.&lt;/p&gt;&lt;p&gt;We can at least keep the general idea so that all expression kinds are in one place:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool list
   = String string
   | Int int
   | Bool bool
@@ -143,7 +143,7 @@ type alias EqualsExpression string int bool =
 
 type BoolKnown
   = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;p&gt;which actually looks pretty nice?&lt;/p&gt;&lt;code&gt;List
+  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;which actually looks pretty nice?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
     (List
         (Bool
             [ [ BoolLiteral True ]
@@ -159,7 +159,7 @@ type BoolKnown
               ]
             ]
         )
-    )&lt;/code&gt;&lt;p&gt;Well, it doesn&apos;t compile because &quot;recursive type aliases&quot; but the fix is as simple as wrapping each alias as a `type`&lt;/p&gt;&lt;code&gt;type ByExpressionType string int bool list
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Well, it doesn&apos;t compile because &quot;recursive type aliases&quot; but the fix is as simple as wrapping each alias as a `type`&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool list
   = String string
   | Int int
   | Bool bool
@@ -191,7 +191,7 @@ type EqualsExpression string int bool
 
 type BoolKnown
   = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;p&gt;the result looks less nice but acceptable I guess&lt;/p&gt;&lt;code&gt;List
+  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;the result looks less nice but acceptable I guess&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
     (ListExpression
         (List
             (ListExpression
@@ -215,7 +215,7 @@ type BoolKnown
                 )
             )
         )
-    )&lt;/code&gt;&lt;p&gt;Let&apos;s add triples to that language&lt;/p&gt;&lt;code&gt;type ByExpressionType string int bool triple list
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Let&apos;s add triples to that language&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool triple list
   = String string
   | Int int
   | Bool bool
@@ -260,10 +260,10 @@ type EqualsExpression string int bool
 
 type BoolKnown
   = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;p&gt;The pieces don&apos;t seem to fit.&lt;/p&gt;&lt;p&gt;Let&apos;s start again, with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?&lt;/p&gt;&lt;p&gt;For past lue, tuples and especially triples shattered the hope of being able to safely represent them like this in an ast.
-So much so in fact that lue was slowly losing interest and abandoned this project after a while.&lt;/p&gt;&lt;p&gt;Much, much later... in fact only when writing this did I think of _two_-ish solutions that would have saved a good chunk of my sanity.
+  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The pieces don&apos;t seem to fit.&lt;/p&gt;&lt;p&gt;Let&apos;s start again, with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?&lt;/p&gt;&lt;p&gt;For past lue, tuples and especially triples shattered the hope of being able to safely represent them like this in an ast.
+So much so in fact that lue was slowly losing interest and abandoned this project after a while.&lt;/p&gt;&lt;p&gt;Much, much later... in fact only when writing this did I think of &lt;i&gt;two&lt;/i&gt;-ish solutions that would have saved a good chunk of my sanity.
 I know you&apos;re smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
-Or just look at the solutions below.&lt;/p&gt;&lt;p&gt;First the -ish solution:&lt;/p&gt;&lt;code&gt;type Expression
+Or just look at the solutions below.&lt;/p&gt;&lt;p&gt;First the -ish solution:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
     = Int Int
     | Tuple (TupleOf Expression Expression)
     | Equals EqualsExpression
@@ -283,7 +283,7 @@ type EqualsExpressionByType int equals
     | EqualsOfTupleExtendedBySecondEqualsExpression (EqualsExpressionByType (TupleOf int EqualsExpression) (TupleOf equals EqualsExpression))
 
 type EqualsExpression
-    = EqualsExpression (EqualsExpressionByType Int EqualsExpression)&lt;/code&gt;&lt;p&gt;Expressions written down look passable, even if just barely. Here for `( 0, 0 == 0 ) == ( 0, 0 == 0 )`&lt;/p&gt;&lt;code&gt;Equals
+    = EqualsExpression (EqualsExpressionByType Int EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Expressions written down look passable, even if just barely. Here for &lt;code&gt;( 0, 0 == 0 ) == ( 0, 0 == 0 )&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;Equals
     (EqualsExpression
         (EqualsOfTupleExtendedByFirstInt
             (EqualsOfEqualsExpression
@@ -298,20 +298,20 @@ type EqualsExpression
                 }
             )
         )
-    )&lt;/code&gt;&lt;p&gt;The one unsatisfying parts&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;`ExtendFirstX (OfY xy)` and `ExtendedSecondY (OfX xy)` are equivalent if the `xy` isn&apos;t nested further (and so only flat tuples are compared)&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;This, I&apos;m sure can be ironed out on the type level [Citation needed]&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;I cannot, even now, think of a safe equivalent for triples&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;If it exists, it probably also grows rapidly in variant count&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;If you think you found something, even if cursed, I beg you to drop me a line @lue on slack&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Strangely, with the second solution everything becomes eerily simple:&lt;/p&gt;&lt;code&gt;type EqualsExpression
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The one unsatisfying parts&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;&lt;code&gt;ExtendFirstX (OfY xy)&lt;/code&gt; and &lt;code&gt;ExtendedSecondY (OfX xy)&lt;/code&gt; are equivalent if the &lt;code&gt;xy&lt;/code&gt; isn&apos;t nested further (and so only flat tuples are compared)&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;This, I&apos;m sure can be ironed out on the type level [Citation needed]&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;I cannot, even now, think of a safe equivalent for triples&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;If it exists, it probably also grows rapidly in variant count&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;If you think you found something, even if cursed, I beg you to drop me a line @lue on slack&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Strangely, with the second solution everything becomes eerily simple:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
   = EqualsOfInt (EqualsOf Int)
   | EqualsOfExpression (EqualsOf EqualsExpression)
   | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
-  | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }&lt;/code&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+  | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
 </item>
 <item>
 <title>(Barely anything) What to do with elm-review errors?</title>
 <description>Something to try: Not fixing all elm-review errors immediately.</description>
-<link>https://lue-bird.github.io/blog/(Barely%20anything)%20What%20to%20do%20with%20elm-review%20errors%3F</link>
-<guid>https://lue-bird.github.io/blog/(Barely%20anything)%20What%20to%20do%20with%20elm-review%20errors%3F</guid>
+<link>https://lue-bird.github.io/blog/%23(Barely%20anything)%20What%20to%20do%20with%20elm-review%20errors%3F</link>
+<guid>https://lue-bird.github.io/blog/%23(Barely%20anything)%20What%20to%20do%20with%20elm-review%20errors%3F</guid>
 <pubDate>Sun, 22 Oct 2023 00:00:00 +0000</pubDate>
 <content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;(Barely anything) What to do with elm-review errors?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Ever wanted to add helpers but introducing them at once would start a chain reaction?&lt;/p&gt;&lt;p&gt;Especially when the new helper will make existing helpers irrelevant, it seems simplest to just get the refactor done with.&lt;/p&gt;&lt;p&gt;If you feel like this (like past and sometimes current lue), here&apos;s an alternative to try:&lt;/p&gt;&lt;p&gt;Do a small, local, immediate step. Commit.
-If you&apos;re happy, slowly follow `elm-review` and compiler errors and your project&apos;s refactoring todo list items one at a time.&lt;/p&gt;&lt;code&gt;listUnzipCheck =
+If you&apos;re happy, slowly follow `elm-review` and compiler errors and your project&apos;s refactoring todo list items one at a time.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;listUnzipCheck =
     case lastArgument partitionCall of
         Just listArgument -&amp;gt;
             let error = ...
@@ -329,8 +329,8 @@ If you&apos;re happy, slowly follow `elm-review` and compiler errors and your pr
 
 listPartitionCheck partitionCall =
     case fullyAppliedLastArg partitionCall.arguments of
-        TODO&lt;/code&gt;&lt;code&gt;module Elm.Syntax.Expression.Extra exposing (getTuple2)
-getTuple2 = ...&lt;/code&gt;&lt;p&gt;Oh no! The editor gives me squigglies, the CI is red, what to do?&lt;/p&gt;&lt;p&gt;Most of these do not need to be fixed immediately!&lt;/p&gt;&lt;p&gt;They are like leaving `Debug.todo` or failing test somewhere.
+        TODO&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Elm.Syntax.Expression.Extra exposing (getTuple2)
+getTuple2 = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Oh no! The editor gives me squigglies, the CI is red, what to do?&lt;/p&gt;&lt;p&gt;Most of these do not need to be fixed immediately!&lt;/p&gt;&lt;p&gt;They are like leaving `Debug.todo` or failing test somewhere.
 You know, the stuff that allows you to keep less things in your mind that &quot;you still need to do&quot;.&lt;/p&gt;&lt;p&gt;In that way, they are like an automated todo list for you and your whole team.&lt;/p&gt;&lt;p&gt;If you think there won&apos;t be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn&apos;t scary. They have your back.&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
 </item>
