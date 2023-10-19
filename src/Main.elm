@@ -255,6 +255,7 @@ articleContentUi =
             Articles.Section section ->
                 Element.WithContext.column
                     [ Element.WithContext.spacing 25
+                    , Element.WithContext.width Element.WithContext.fill
                     , Element.WithContext.paddingEach { left = 35, top = 40, bottom = 40, right = 0 }
                     ]
                     [ linkUi
@@ -284,6 +285,7 @@ articleContentUi =
             Articles.ElmCode elmCode ->
                 Html.pre
                     [ Html.Attributes.style "overflow" "scroll"
+                    , Html.Attributes.style "overflow-y" "hidden"
                     , Html.Attributes.style "white-space" "pre-line"
                     , Html.Attributes.style "width" "fit-content"
                     , Html.Attributes.style "min-width" "100%"
@@ -311,6 +313,7 @@ articleContentUi =
                 Element.WithContext.column
                     [ Element.WithContext.spacing 20
                     , Element.WithContext.paddingEach { left = 20, top = 14, bottom = 14, right = 0 }
+                    , Element.WithContext.width Element.WithContext.fill
                     ]
                     (unorderedList
                         |> List.map
