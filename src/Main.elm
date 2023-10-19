@@ -284,13 +284,23 @@ articleContentUi =
                     (parts |> List.map paragraphPartUi)
 
             Articles.ElmCode elmCode ->
-                Html.pre []
-                    [ ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw
+                Html.pre
+                    [ Html.Attributes.style "overflow" "scroll"
+                    , Html.Attributes.style "white-space" "pre-line"
+                    , Html.Attributes.style "width" "fit-content"
+                    , Html.Attributes.style "min-width" "100%"
+                    , Html.Attributes.style "width" "0px"
+                    ]
+                    [ Html.code
+                        [ Html.Attributes.style "white-space" "pre"
+                        , Html.Attributes.style "word-spacing" "normal"
+                        , Html.Attributes.style "word-break" "normal"
+                        , Html.Attributes.style "overflow-wrap" "normal"
+                        , Html.Attributes.style "hyphens" "none"
+                        ]
+                        [ ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw ]
                     ]
                     |> Element.WithContext.html
-                    |> Element.WithContext.el
-                        [ Element.WithContext.width (Element.WithContext.px 0)
-                        ]
 
             Articles.Sequence contentList ->
                 Element.WithContext.column
