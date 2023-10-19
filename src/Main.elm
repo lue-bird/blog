@@ -14,7 +14,6 @@ import Element.WithContext.Border
 import Element.WithContext.Font
 import Html exposing (Html)
 import Html.Attributes
-import Html.String
 import Json.Decode
 import Json.Encode
 import Key
@@ -131,10 +130,6 @@ reactTo event =
 
         FrameTickPassed newSimulationTime ->
             \state ->
-                let
-                    sinceLastTick =
-                        Duration.from state.lastTick newSimulationTime
-                in
                 Reaction.to
                     { state
                         | lastTick = newSimulationTime
@@ -240,15 +235,6 @@ ui _ =
             ]
 
 
-type alias Context =
-    {}
-
-
-interactiveColor : Element.WithContext.Color
-interactiveColor =
-    Element.WithContext.rgb 1 0.5 0
-
-
 linkUi : { url : String, label : Element.WithContext.Element context msg } -> Element.WithContext.Element context msg
 linkUi config =
     Element.WithContext.link
@@ -256,6 +242,11 @@ linkUi config =
         , Element.WithContext.Border.color interactiveColor
         ]
         config
+
+
+interactiveColor : Element.WithContext.Color
+interactiveColor =
+    Element.WithContext.rgb 1 0.5 0
 
 
 articleContentUi : Articles.Content -> Element.WithContext.Element Context event_
@@ -404,6 +395,10 @@ audioWith source with =
 
         Ok loadedAudio ->
             with loadedAudio
+
+
+type alias Context =
+    {}
 
 
 type AudioKind
