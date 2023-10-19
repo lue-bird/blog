@@ -54,6 +54,10 @@ introduction =
                 }
             , Text " to suggest improvements."
             ]
+        , ElmCode """
+module Testtester exposing (dat, Dat, Dat2(..))
+import Test as Heh exposing (wat, Wat, Wat2(..))
+"""
         ]
 
 

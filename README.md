@@ -21,10 +21,6 @@ serve
 ```
   - [vercel/serve](https://github.com/vercel/serve)
 
-#### TODOs
-- custom elm code formatting (determine what's a type vs a variant)
-    - potentially integrate elm-interpreter
-
 #### contributing
 Before building the new version, `cd build-step` and run
 ```bash

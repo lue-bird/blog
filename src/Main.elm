@@ -12,6 +12,7 @@ import Element.WithContext
 import Element.WithContext.Background
 import Element.WithContext.Border
 import Element.WithContext.Font
+import ElmCodeUi
 import Html exposing (Html)
 import Html.Attributes
 import Json.Decode
@@ -292,19 +293,27 @@ articleContentUi =
                             |> List.Extra.dropWhileRight String.Extra.isBlank
                             |> String.join "\n"
                 in
-                case rawSourceCode |> SyntaxHighlight.elm of
-                    Ok highlightable ->
-                        highlightable
-                            |> SyntaxHighlight.toBlockHtml Nothing
-                            |> Element.WithContext.html
-                            |> Element.WithContext.el
-                                [ Element.WithContext.Font.size 18
-                                , Element.WithContext.width (Element.WithContext.px 0)
-                                ]
+                Html.pre []
+                    [ ElmCodeUi.with (rawSourceCode |> ElmCodeUi.syntaxKindMap) rawSourceCode
+                    ]
+                    |> Element.WithContext.html
+                    |> Element.WithContext.el
+                        [ Element.WithContext.width (Element.WithContext.px 0)
+                        ]
 
-                    Err _ ->
-                        Element.WithContext.text ("Couldn't parse code snippet. Here's the un-highlighted code: " ++ rawSourceCode)
+            {- case rawSourceCode |> SyntaxHighlight.elm of
+               Ok highlightable ->
+                   highlightable
+                       |> SyntaxHighlight.toBlockHtml Nothing
+                       |> Element.WithContext.html
+                       |> Element.WithContext.el
+                           [ Element.WithContext.Font.size 18
+                           , Element.WithContext.width (Element.WithContext.px 0)
+                           ]
 
+               Err _ ->
+                   Element.WithContext.text ("Couldn't parse code snippet. Here's the un-highlighted code: " ++ rawSourceCode)
+            -}
             Articles.Sequence contentList ->
                 Element.WithContext.column
                     [ Element.WithContext.spacing 22
@@ -349,11 +358,8 @@ paragraphPartUi =
                     |> Element.WithContext.el [ Element.WithContext.Font.italic ]
 
             Articles.InlineCode raw ->
-                Element.WithContext.text raw
-                    |> Element.WithContext.el
-                        [ Element.WithContext.Font.family
-                            [ Element.WithContext.Font.monospace ]
-                        ]
+                ElmCodeUi.with (ElmCodeUi.syntaxKindMap raw) raw
+                    |> Element.WithContext.html
 
             Articles.Link link ->
                 linkUi
