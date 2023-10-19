@@ -228,8 +228,7 @@ ui _ =
         , Element.WithContext.width (Element.WithContext.maximum 750 Element.WithContext.fill)
         , Element.WithContext.centerX
         ]
-        [ topBarUi
-        , Articles.all
+        [ Articles.all
             |> articleContentUi
         , Html.node "style" [] [ Html.text """.elmsh {color: #ffffff;background: #000000;}.elmsh-hl {background: #343434;}.elmsh-add {background: #003800;}.elmsh-del {background: #380000;}.elmsh-comm {color: #75715e;}.elmsh1 {color: #ae81ff;}.elmsh2 {color: #e6db74;}.elmsh3 {color: #f92672;}.elmsh4 {color: #66d9ef;}.elmsh5 {color: #a6e22e;}.elmsh6 {color: #ae81ff;}.elmsh7 {color: #fd971f;}.elmsh-elm-ts, .elmsh-js-dk, .elmsh-css-p {font-style: italic;color: #66d9ef;}.elmsh-js-ce {font-style: italic;color: #a6e22e;}.elmsh-css-ar-i {font-weight: bold;color: #f92672;}""" ]
             |> Element.WithContext.html
@@ -243,27 +242,6 @@ ui _ =
 
 type alias Context =
     {}
-
-
-topBarUi : Element.WithContext.Element Context event_
-topBarUi =
-    Element.WithContext.wrappedRow
-        [ Element.WithContext.spacing 16
-        ]
-        [ rssUi
-        , linkUi
-            { label = "source on github" |> Element.WithContext.text
-            , url = "https://github.com/lue-bird/blog"
-            }
-        ]
-
-
-rssUi : Element.WithContext.Element Context event_
-rssUi =
-    linkUi
-        { label = "subscribe via rss" |> Element.WithContext.text
-        , url = "https://lue-bird.github.io/blog/feed.xml"
-        }
 
 
 interactiveColor : Element.WithContext.Color
@@ -306,12 +284,12 @@ articleContentUi =
                     , section.content |> articleContentUi
                     ]
 
-            Articles.Paragraph text ->
+            Articles.Paragraph parts ->
                 Element.WithContext.paragraph
                     [ Html.Attributes.style "overflow-wrap" "break-word"
                         |> Element.WithContext.htmlAttribute
                     ]
-                    [ Element.WithContext.text text ]
+                    (parts |> List.map paragraphPartUi)
 
             Articles.ElmCode rawSourceCodeString ->
                 let
@@ -366,6 +344,31 @@ articleContentUi =
                                     ]
                             )
                     )
+
+
+paragraphPartUi : Articles.ParagraphPart -> Element.WithContext.Element Context event_
+paragraphPartUi =
+    \paragraphPart ->
+        case paragraphPart of
+            Articles.Text string ->
+                Element.WithContext.text string
+
+            Articles.Italic string ->
+                Element.WithContext.text string
+                    |> Element.WithContext.el [ Element.WithContext.Font.italic ]
+
+            Articles.InlineCode raw ->
+                Element.WithContext.text raw
+                    |> Element.WithContext.el
+                        [ Element.WithContext.Font.family
+                            [ Element.WithContext.Font.monospace ]
+                        ]
+
+            Articles.Link link ->
+                linkUi
+                    { url = link.url
+                    , label = Element.WithContext.text link.description
+                    }
 
 
 audio : AudioData -> State -> Audio.Audio

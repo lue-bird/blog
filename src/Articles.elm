@@ -1,6 +1,8 @@
-module Articles exposing (Content(..), all, sectionTitleToUrl, toHtmlStringifiable)
+module Articles exposing (Content(..), ParagraphPart(..), all, sectionTitleToUrl, toHtmlStringifiable)
 
+import Html
 import Html.String
+import Html.String.Attributes
 import List.Extra
 import String.Extra
 import Time
@@ -14,17 +16,49 @@ type Content
         , publishTime : Time.Posix
         , content : Content
         }
-    | Paragraph String
+    | Paragraph (List ParagraphPart)
     | ElmCode String
     | UnorderedList (List Content)
     | Sequence (List Content)
 
 
+type ParagraphPart
+    = Text String
+    | Italic String
+    | InlineCode String
+    | Link { description : String, url : String }
+
+
 all : Content
 all =
     Sequence
-        [ aSaferAstArticle
+        [ introduction
+        , aSaferAstArticle
         , whatToDoWithElmReviewErrorsArticle
+        ]
+
+
+textOnlyParagraph : String -> Content
+textOnlyParagraph text =
+    Paragraph [ Text text ]
+
+
+introduction : Content
+introduction =
+    Sequence
+        [ textOnlyParagraph "Yahallo! 🐦"
+        , Paragraph
+            [ Link
+                { description = "Subscribing via rss"
+                , url = "https://lue-bird.github.io/blog/feed.xml"
+                }
+            , Text " gets you the latest articles. Feel free to check the "
+            , Link
+                { description = "source on github"
+                , url = "https://github.com/lue-bird/blog"
+                }
+            , Text " to suggest improvements."
+            ]
         ]
 
 
@@ -36,10 +70,10 @@ whatToDoWithElmReviewErrorsArticle =
         , publishTime = Time.millisToPosix 1697932800000
         , content =
             Sequence
-                [ Paragraph """Ever wanted to add helpers but introducing them at once would start a chain reaction?"""
-                , Paragraph """Especially when the new helper will make existing helpers irrelevant, it seems simplest to just get the refactor done with."""
-                , Paragraph """If you feel like this (like past and sometimes current lue), here's an alternative to try:"""
-                , Paragraph """Do a small, local, immediate step. Commit.
+                [ textOnlyParagraph """Ever wanted to add helpers but introducing them at once would start a chain reaction?"""
+                , textOnlyParagraph """Especially when the new helper will make existing helpers irrelevant, it seems simplest to just get the refactor done with."""
+                , textOnlyParagraph """If you feel like this (like past and sometimes current lue), here's an alternative to try:"""
+                , textOnlyParagraph """Do a small, local, immediate step. Commit.
 If you're happy, slowly follow `elm-review` and compiler errors and your project's refactoring todo list items one at a time."""
                 , ElmCode """
 listUnzipCheck =
@@ -66,12 +100,12 @@ listPartitionCheck partitionCall =
 module Elm.Syntax.Expression.Extra exposing (getTuple2)
 getTuple2 = ...
 """
-                , Paragraph """Oh no! The editor gives me squigglies, the CI is red, what to do?"""
-                , Paragraph """Most of these do not need to be fixed immediately!"""
-                , Paragraph """They are like leaving `Debug.todo` or failing test somewhere.
+                , textOnlyParagraph """Oh no! The editor gives me squigglies, the CI is red, what to do?"""
+                , textOnlyParagraph """Most of these do not need to be fixed immediately!"""
+                , textOnlyParagraph """They are like leaving `Debug.todo` or failing test somewhere.
 You know, the stuff that allows you to keep less things in your mind that "you still need to do"."""
-                , Paragraph """In that way, they are like an automated todo list for you and your whole team."""
-                , Paragraph """If you think there won't be an automated error for something on the way, make it a new item in a todo list.
+                , textOnlyParagraph """In that way, they are like an automated todo list for you and your whole team."""
+                , textOnlyParagraph """If you think there won't be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn't scary. They have your back."""
                 ]
         }
@@ -86,7 +120,7 @@ And what about operations like (==) on infinitely nested triples?"""
         , publishTime = Time.millisToPosix 1697846400000
         , content =
             Sequence
-                [ Paragraph """Let's consider a really simple language"""
+                [ textOnlyParagraph """Let's consider a really simple language"""
                 , ElmCode """
 type Expression
   = String String
@@ -95,19 +129,19 @@ type Expression
   | List (List Expression)
   | Equals { left : Expression, right : Expression }
 """
-                , Paragraph """This is "probably fine" TM but..."""
+                , textOnlyParagraph """This is "probably fine" TM but..."""
                 , UnorderedList
                     [ Sequence
-                        [ Paragraph """it allows users to generate incorrect expressions"""
+                        [ textOnlyParagraph """it allows users to generate incorrect expressions"""
                         , ElmCode """
 List [ String "My name is ", Int 5 ]
 Equals { left = String "High" , right = Int 5 }
 """
                         ]
-                    , Paragraph """it has impossible variants you are forced to case on"""
+                    , textOnlyParagraph """it has impossible variants you are forced to case on"""
                     ]
-                , Paragraph """How hard can it be to make this small language completely type-safe?"""
-                , Paragraph """Naively, we could represent each kind of list and equals by it's own variant"""
+                , textOnlyParagraph """How hard can it be to make this small language completely type-safe?"""
+                , textOnlyParagraph """Naively, we could represent each kind of list and equals by it's own variant"""
                 , ElmCode """
 type Expression
   = String String
@@ -136,7 +170,7 @@ type BoolExpression
   = BoolLiteral Bool
   | EqualsExpression EqualsExpression
 """
-                , Paragraph """The ?? just keep on expanding, let's say with"""
+                , textOnlyParagraph """The ?? just keep on expanding, let's say with"""
                 , ElmCode """
 type EqualsExpression
   = ... | EqualsOfList EqualsExpressionOfList
@@ -147,8 +181,8 @@ type EqualsExpressionOfList
   | EqualsOfListOfBool (EqualsOf (List BoolExpression))
   | EqualsOfListOfList (EqualsOf (List ??))
 """
-                , Paragraph """We just run into the same problem recursively."""
-                , Paragraph """We can apply some smart-smart to solve this!"""
+                , textOnlyParagraph """We just run into the same problem recursively."""
+                , textOnlyParagraph """We can apply some smart-smart to solve this!"""
                 , ElmCode """
 type Expression
   = String String
@@ -178,7 +212,7 @@ type BoolKnown
   = BoolLiteral Bool
   | Equals (EqualsExpression String Int BoolKnown)
 """
-                , Paragraph """which allows us to build lists like"""
+                , textOnlyParagraph """which allows us to build lists like"""
                 , ElmCode """
 List
     (ListOfList
@@ -198,8 +232,8 @@ List
         )
     )
 """
-                , Paragraph """Somehow, this works."""
-                , Paragraph """All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?"""
+                , textOnlyParagraph """Somehow, this works."""
+                , textOnlyParagraph """All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?"""
                 , ElmCode """
 ByExpressionType : (Type -> Type) -> Type -> Type -> Type -> Type
 ByExpressionType outer string int bool
@@ -215,8 +249,8 @@ type alias ListExpression =
 type alias EqualsExpression =
     ByExpressionType EqualsOf String Int BoolKnown
 """
-                , Paragraph """The `outer` is what makes this tricky."""
-                , Paragraph """Having an AST without it we can't for example represent "list equals list", only "a list of equals":"""
+                , textOnlyParagraph """The `outer` is what makes this tricky."""
+                , textOnlyParagraph """Having an AST without it we can't for example represent "list equals list", only "a list of equals":"""
                 , ElmCode """
 type ByExpressionType string int bool
   = String string
@@ -231,8 +265,8 @@ type alias ListExpression =
 type alias EqualsExpression =
     ByExpressionType (EqualsOf String) (EqualsOf Int) (EqualsOf BoolKnown)
 """
-                , Paragraph """So this is not quite right."""
-                , Paragraph """We can at least keep the general idea so that all expression kinds are in one place:"""
+                , textOnlyParagraph """So this is not quite right."""
+                , textOnlyParagraph """We can at least keep the general idea so that all expression kinds are in one place:"""
                 , ElmCode """
 type ByExpressionType string int bool list
   = String string
@@ -264,7 +298,7 @@ type BoolKnown
   = BoolLiteral Bool
   | Equals (EqualsExpression String Int BoolKnown)
 """
-                , Paragraph """which actually looks pretty nice?"""
+                , textOnlyParagraph """which actually looks pretty nice?"""
                 , ElmCode """
 List
     (List
@@ -284,7 +318,7 @@ List
         )
     )
 """
-                , Paragraph """Well, it doesn't compile because "recursive type aliases" but the fix is as simple as wrapping each alias as a `type`"""
+                , textOnlyParagraph """Well, it doesn't compile because "recursive type aliases" but the fix is as simple as wrapping each alias as a `type`"""
                 , ElmCode """
 type ByExpressionType string int bool list
   = String string
@@ -320,7 +354,7 @@ type BoolKnown
   = BoolLiteral Bool
   | Equals (EqualsExpression String Int BoolKnown)
 """
-                , Paragraph """the result looks less nice but acceptable I guess"""
+                , textOnlyParagraph """the result looks less nice but acceptable I guess"""
                 , ElmCode """
 List
     (ListExpression
@@ -348,7 +382,7 @@ List
         )
     )
 """
-                , Paragraph """Let's add triples to that language"""
+                , textOnlyParagraph """Let's add triples to that language"""
                 , ElmCode """
 type ByExpressionType string int bool triple list
   = String string
@@ -397,14 +431,18 @@ type BoolKnown
   = BoolLiteral Bool
   | Equals (EqualsExpression String Int BoolKnown)
 """
-                , Paragraph """The pieces don't seem to fit."""
-                , Paragraph """Let's start again, with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
-                , Paragraph """For past lue, tuples and especially triples shattered the hope of being able to safely represent them like this in an ast.
+                , textOnlyParagraph """The pieces don't seem to fit."""
+                , textOnlyParagraph """Let's start again, with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
+                , textOnlyParagraph """For past lue, tuples and especially triples shattered the hope of being able to safely represent them like this in an ast.
 So much so in fact that lue was slowly losing interest and abandoned this project after a while."""
-                , Paragraph """Much, much later... in fact only when writing this did I think of _two_-ish solutions that would have saved a good chunk of my sanity.
+                , Paragraph
+                    [ Text "Much, much later... in fact only when writing this did I think of "
+                    , Italic "two"
+                    , Text """-ish solutions that would have saved a good chunk of my sanity.
 I know you're smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
 Or just look at the solutions below."""
-                , Paragraph """First the -ish solution:"""
+                    ]
+                , textOnlyParagraph """First the -ish solution:"""
                 , ElmCode """
 type Expression
     = Int Int
@@ -428,7 +466,7 @@ type EqualsExpressionByType int equals
 type EqualsExpression
     = EqualsExpression (EqualsExpressionByType Int EqualsExpression)
 """
-                , Paragraph """Expressions written down look passable, even if just barely. Here for `( 0, 0 == 0 ) == ( 0, 0 == 0 )`"""
+                , Paragraph [ Text "Expressions written down look passable, even if just barely. Here for ", InlineCode "( 0, 0 == 0 ) == ( 0, 0 == 0 )" ]
                 , ElmCode """
 Equals
     (EqualsExpression
@@ -447,23 +485,30 @@ Equals
         )
     )
 """
-                , Paragraph """The one unsatisfying parts"""
+                , textOnlyParagraph """The one unsatisfying parts"""
                 , UnorderedList
                     [ Sequence
-                        [ Paragraph """`ExtendFirstX (OfY xy)` and `ExtendedSecondY (OfX xy)` are equivalent if the `xy` isn't nested further (and so only flat tuples are compared)"""
+                        [ Paragraph
+                            [ InlineCode "ExtendFirstX (OfY xy)"
+                            , Text " and "
+                            , InlineCode "ExtendedSecondY (OfX xy)"
+                            , Text " are equivalent if the "
+                            , InlineCode "xy"
+                            , Text " isn't nested further (and so only flat tuples are compared)"
+                            ]
                         , UnorderedList
-                            [ Paragraph """This, I'm sure can be ironed out on the type level [Citation needed]"""
+                            [ textOnlyParagraph """This, I'm sure can be ironed out on the type level [Citation needed]"""
                             ]
                         ]
                     , Sequence
-                        [ Paragraph """I cannot, even now, think of a safe equivalent for triples"""
+                        [ textOnlyParagraph """I cannot, even now, think of a safe equivalent for triples"""
                         , UnorderedList
-                            [ Paragraph """If it exists, it probably also grows rapidly in variant count"""
-                            , Paragraph """If you think you found something, even if cursed, I beg you to drop me a line @lue on slack"""
+                            [ textOnlyParagraph """If it exists, it probably also grows rapidly in variant count"""
+                            , textOnlyParagraph """If you think you found something, even if cursed, I beg you to drop me a line @lue on slack"""
                             ]
                         ]
                     ]
-                , Paragraph """Strangely, with the second solution everything becomes eerily simple:"""
+                , textOnlyParagraph """Strangely, with the second solution everything becomes eerily simple:"""
                 , ElmCode """
 type EqualsExpression
   = EqualsOfInt (EqualsOf Int)
@@ -471,7 +516,7 @@ type EqualsExpression
   | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
   | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
 """
-                , Paragraph """Wtf?"""
+                , textOnlyParagraph """Wtf?"""
                 ]
         }
 
@@ -493,9 +538,9 @@ toHtmlStringifiable =
                     , titled.content |> toHtmlStringifiable
                     ]
 
-            Paragraph text ->
+            Paragraph parts ->
                 Html.String.p []
-                    [ Html.String.text text ]
+                    (parts |> List.map paragraphPartToStringifiable)
 
             ElmCode rawSourceCodeString ->
                 Html.String.code []
@@ -521,3 +566,21 @@ toHtmlStringifiable =
                                     [ item |> toHtmlStringifiable ]
                             )
                     )
+
+
+paragraphPartToStringifiable : ParagraphPart -> Html.String.Html event_
+paragraphPartToStringifiable =
+    \paragraphPart ->
+        case paragraphPart of
+            Text string ->
+                Html.String.text string
+
+            Italic string ->
+                Html.String.i [] [ Html.String.text string ]
+
+            InlineCode raw ->
+                Html.String.code [] [ Html.String.text raw ]
+
+            Link link ->
+                Html.String.a [ Html.String.Attributes.href link.url ]
+                    [ Html.String.text link.description ]
