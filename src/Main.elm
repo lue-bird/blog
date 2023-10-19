@@ -347,6 +347,10 @@ paragraphPartUi =
             Articles.InlineElmCode elmCode ->
                 ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw
                     |> Element.WithContext.html
+                    |> Element.WithContext.el
+                        [ Html.Attributes.style "font-size" "0.9em"
+                            |> Element.WithContext.htmlAttribute
+                        ]
 
             Articles.Link link ->
                 linkUi
