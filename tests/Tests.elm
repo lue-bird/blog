@@ -1,6 +1,6 @@
 module Tests exposing (tests)
 
-import Test exposing (Test, test)
+import Test exposing (Test)
 
 
 tests : Test
