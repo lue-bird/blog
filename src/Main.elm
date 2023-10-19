@@ -230,7 +230,7 @@ ui _ =
         |> Element.WithContext.layout {}
             [ Element.WithContext.Background.color (Element.WithContext.rgb 0 0 0)
             , Element.WithContext.Font.color (Element.WithContext.rgb 1 1 1)
-            , Element.WithContext.Font.size 20
+            , Element.WithContext.Font.size 19
             ]
 
 
@@ -315,7 +315,7 @@ articleContentUi =
                     (unorderedList
                         |> List.map
                             (\item ->
-                                Element.WithContext.row []
+                                Element.WithContext.row [ Element.WithContext.width Element.WithContext.fill ]
                                     [ Element.WithContext.text "-"
                                         |> Element.WithContext.el
                                             [ Element.WithContext.Font.size 30
