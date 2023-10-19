@@ -164,6 +164,9 @@ type Expression
                         [ textOnlyParagraph """it allows users to generate incorrect expressions"""
                         , elmCode """
 List [ String "My name is ", Int 5 ]
+"""
+                        , textOnlyParagraph "or"
+                        , elmCode """
 Equals { left = String "High" , right = Int 5 }
 """
                         ]
