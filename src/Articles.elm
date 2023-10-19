@@ -543,14 +543,16 @@ toHtmlStringifiable =
                     (parts |> List.map paragraphPartToStringifiable)
 
             ElmCode rawSourceCodeString ->
-                Html.String.code []
-                    [ Html.String.text
-                        (rawSourceCodeString
-                            |> String.lines
-                            |> List.Extra.dropWhile String.Extra.isBlank
-                            |> List.Extra.dropWhileRight String.Extra.isBlank
-                            |> String.join "\n"
-                        )
+                Html.String.pre []
+                    [ Html.String.code []
+                        [ Html.String.text
+                            (rawSourceCodeString
+                                |> String.lines
+                                |> List.Extra.dropWhile String.Extra.isBlank
+                                |> List.Extra.dropWhileRight String.Extra.isBlank
+                                |> String.join "\n"
+                            )
+                        ]
                     ]
 
             Sequence contentList ->
