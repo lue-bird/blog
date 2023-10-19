@@ -24,7 +24,6 @@ serve
 #### TODOs
 - custom elm code formatting (determine what's a type vs a variant)
     - potentially integrate elm-interpreter
-- links for the sections
 
 #### contributing
 Before building the new version, `cd build-step` and run
