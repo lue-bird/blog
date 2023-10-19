@@ -187,19 +187,19 @@ type EqualsExpression
   = EqualsOfString (EqualsOf String)
   | EqualsOfInt (EqualsOf Int)
   | EqualsOfBool (EqualsOf BoolExpression)
-  | EqualsOfList (EqualsOf HEH)
+  | EqualsOfList (EqualsOf {- ?? -})
 
 type ListExpression
   = ListOfString (List String)
   | ListOfInt (List Int)
   | ListOfBool (List BoolExpression)
-  | ListOfList (List HEH)
+  | ListOfList (List {- ?? -})
 
 type BoolExpression
   = BoolLiteral Bool
   | EqualsExpression EqualsExpression
 """
-                , textOnlyParagraph """The HEH just keep on expanding, let's say with"""
+                , Paragraph [ Text "The ", Italic "??", Text " just keep on expanding, let's take for example the case ", inlineElmCode "EqualsOfList" ]
                 , elmCode """
 type EqualsExpression
   = {- ... | -} EqualsOfList EqualsExpressionOfList
@@ -208,19 +208,11 @@ type EqualsExpressionOfList
   = EqualsOfListOfString (EqualsOf (List String))
   | EqualsOfListOfInt (EqualsOf (List Int))
   | EqualsOfListOfBool (EqualsOf (List BoolExpression))
-  | EqualsOfListOfList (EqualsOf (List HEH))
+  | EqualsOfListOfList (EqualsOf (List {- ?? -}))
 """
                 , textOnlyParagraph """We just run into the same problem recursively."""
                 , textOnlyParagraph """We can apply some smart-smart to solve this!"""
                 , elmCode """
-type Expression
-  = String String
-  | Int Int
-  | Bool Bool
-  | List (ListExpression String Int BoolKnown)
-  | Equals (EqualsExpression String Int BoolKnown)
-
-
 type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
@@ -239,6 +231,13 @@ type ListExpression string int bool
 
 type BoolKnown
   = BoolLiteral Bool
+  | Equals (EqualsExpression String Int BoolKnown)
+
+type Expression
+  = String String
+  | Int Int
+  | Bool Bool
+  | List (ListExpression String Int BoolKnown)
   | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """which allows us to build lists like"""
@@ -264,7 +263,7 @@ List
                 , textOnlyParagraph """Somehow, this works."""
                 , textOnlyParagraph """All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?"""
                 , elmCode """
--- (Type -> Type) -> Type -> Type -> Type -> Type
+-- with Outer being (Type -> Type)
 type ByExpressionType outer string int bool
   = String (Outer string)
   | Int (Outer int)
@@ -295,7 +294,7 @@ type alias EqualsExpression =
     ByExpressionType (EqualsOf String) (EqualsOf Int) (EqualsOf BoolKnown)
 """
                 , textOnlyParagraph """So this is not quite right."""
-                , textOnlyParagraph """We can at least keep the general idea so that all expression kinds are in one place:"""
+                , textOnlyParagraph """We can at least keep the idea to list all expression kinds are in one place:"""
                 , elmCode """
 type ByExpressionType string int bool list
   = String string
@@ -347,7 +346,7 @@ List
         )
     )
 """
-                , textOnlyParagraph """Well, it doesn't compile because "recursive type aliases" but the fix is as simple as wrapping each alias as a `type`"""
+                , Paragraph [ Text "Well, it doesn't compile because \"recursive type aliases\" but the fix is as simple as converting each alias to a ", inlineElmCode "type" ]
                 , elmCode """
 type ByExpressionType string int bool list
   = String string
@@ -452,8 +451,8 @@ type EqualsExpression string int bool
           (EqualsOf string)
           (EqualsOf int)
           (EqualsOf bool)
-          (EqualsOf HEH)
-          (EqualsExpression string int bool (TripleOf HEH))
+          (EqualsOf {- ?? -})
+          (EqualsExpression string int bool (TripleOf {- ?? -}))
       )
 
 type BoolKnown
