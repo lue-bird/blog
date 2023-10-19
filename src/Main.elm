@@ -295,7 +295,7 @@ articleContentUi =
                         , Html.Attributes.style "word-break" "normal"
                         , Html.Attributes.style "overflow-wrap" "normal"
                         , Html.Attributes.style "hyphens" "none"
-                        , Html.Attributes.style "font-size" "0.7em"
+                        , Html.Attributes.style "font-size" "0.8em"
                         ]
                         [ ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw ]
                     ]
