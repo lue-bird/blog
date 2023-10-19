@@ -237,7 +237,7 @@ ui _ =
 linkUi : { url : String, label : Element.WithContext.Element context msg } -> Element.WithContext.Element context msg
 linkUi config =
     Element.WithContext.link
-        [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 3 }
+        [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
         , Element.WithContext.Border.color interactiveColor
         ]
         config
