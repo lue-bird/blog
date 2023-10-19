@@ -1,5 +1,9 @@
 module Articles exposing (Content(..), ParagraphPart(..), all, sectionTitleToUrl)
 
+import ElmCodeUi
+import List.Extra
+import RangeDict exposing (RangeDict)
+import String.Extra
 import Time
 import Url
 
@@ -12,7 +16,7 @@ type Content
         , content : Content
         }
     | Paragraph (List ParagraphPart)
-    | ElmCode String
+    | ElmCode { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
     | UnorderedList (List Content)
     | Sequence (List Content)
 
@@ -20,7 +24,7 @@ type Content
 type ParagraphPart
     = Text String
     | Italic String
-    | InlineElmCode String
+    | InlineElmCode { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
     | Link { description : String, url : String }
 
 
@@ -36,6 +40,32 @@ all =
 textOnlyParagraph : String -> Content
 textOnlyParagraph text =
     Paragraph [ Text text ]
+
+
+inlineElmCode : String -> ParagraphPart
+inlineElmCode raw =
+    InlineElmCode (elmCodeFromRaw raw)
+
+
+elmCode : String -> Content
+elmCode raw =
+    ElmCode (elmCodeFromRaw raw)
+
+
+elmCodeFromRaw : String -> { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
+elmCodeFromRaw raw =
+    let
+        rawStrippedOfBlankStartAndEnd : String
+        rawStrippedOfBlankStartAndEnd =
+            raw
+                |> String.lines
+                |> List.Extra.dropWhile String.Extra.isBlank
+                |> List.Extra.dropWhileRight String.Extra.isBlank
+                |> String.join "\n"
+    in
+    { raw = rawStrippedOfBlankStartAndEnd
+    , syntaxKindMap = rawStrippedOfBlankStartAndEnd |> ElmCodeUi.syntaxKindMap
+    }
 
 
 introduction : Content
@@ -54,7 +84,7 @@ introduction =
                 }
             , Text " to suggest improvements."
             ]
-        , ElmCode """
+        , elmCode """
 module TestDat exposing (dat, Dat, Dat2(..))
 import TestWat as Heh exposing (wat, Wat, Wat2(..))
 """
@@ -74,7 +104,7 @@ whatToDoWithElmReviewErrorsArticle =
                 , textOnlyParagraph """If you feel like this (like past and sometimes current lue), here's an alternative to try:"""
                 , textOnlyParagraph """Do a small, local, immediate step. Commit.
 If you're happy, slowly follow `elm-review` and compiler errors and your project's refactoring todo list items one at a time."""
-                , ElmCode """
+                , elmCode """
 listUnzipCheck =
     case lastArgument partitionCall of
         Just listArgument ->
@@ -95,7 +125,7 @@ listPartitionCheck partitionCall =
     case fullyAppliedLastArg partitionCall.arguments of
         TODO -> TODO
 """
-                , ElmCode """
+                , elmCode """
 module Elm.Syntax.Expression.Extra exposing (getTuple2)
 getTuple2 = ...
 """
@@ -120,7 +150,7 @@ And what about operations like (==) on infinitely nested triples?"""
         , content =
             Sequence
                 [ textOnlyParagraph """Let's consider a really simple language"""
-                , ElmCode """
+                , elmCode """
 type Expression
   = String String
   | Int Int
@@ -132,7 +162,7 @@ type Expression
                 , UnorderedList
                     [ Sequence
                         [ textOnlyParagraph """it allows users to generate incorrect expressions"""
-                        , ElmCode """
+                        , elmCode """
 List [ String "My name is ", Int 5 ]
 Equals { left = String "High" , right = Int 5 }
 """
@@ -141,7 +171,7 @@ Equals { left = String "High" , right = Int 5 }
                     ]
                 , textOnlyParagraph """How hard can it be to make this small language completely type-safe?"""
                 , textOnlyParagraph """Naively, we could represent each kind of list and equals by it's own variant"""
-                , ElmCode """
+                , elmCode """
 type Expression
   = String String
   | Int Int
@@ -170,7 +200,7 @@ type BoolExpression
   | EqualsExpression EqualsExpression
 """
                 , textOnlyParagraph """The HEH just keep on expanding, let's say with"""
-                , ElmCode """
+                , elmCode """
 type EqualsExpression
   = {- ... | -} EqualsOfList EqualsExpressionOfList
 
@@ -182,7 +212,7 @@ type EqualsExpressionOfList
 """
                 , textOnlyParagraph """We just run into the same problem recursively."""
                 , textOnlyParagraph """We can apply some smart-smart to solve this!"""
-                , ElmCode """
+                , elmCode """
 type Expression
   = String String
   | Int Int
@@ -212,7 +242,7 @@ type BoolKnown
   | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """which allows us to build lists like"""
-                , ElmCode """
+                , elmCode """
 List
     (ListOfList
         (ListOfBool
@@ -233,7 +263,7 @@ List
 """
                 , textOnlyParagraph """Somehow, this works."""
                 , textOnlyParagraph """All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?"""
-                , ElmCode """
+                , elmCode """
 -- (Type -> Type) -> Type -> Type -> Type -> Type
 type ByExpressionType outer string int bool
   = String (Outer string)
@@ -248,9 +278,9 @@ type alias ListExpression =
 type alias EqualsExpression =
     ByExpressionType EqualsOf String Int BoolKnown
 """
-                , Paragraph [ Text "The ", InlineElmCode "outer", Text " is what makes this tricky." ]
+                , Paragraph [ Text "The ", inlineElmCode "outer", Text " is what makes this tricky." ]
                 , textOnlyParagraph """Having an AST without it we can't for example represent "list equals list", only "a list of equals":"""
-                , ElmCode """
+                , elmCode """
 type ByExpressionType string int bool
   = String string
   | Int int
@@ -266,7 +296,7 @@ type alias EqualsExpression =
 """
                 , textOnlyParagraph """So this is not quite right."""
                 , textOnlyParagraph """We can at least keep the general idea so that all expression kinds are in one place:"""
-                , ElmCode """
+                , elmCode """
 type ByExpressionType string int bool list
   = String string
   | Int int
@@ -298,7 +328,7 @@ type BoolKnown
   | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """which actually looks pretty nice?"""
-                , ElmCode """
+                , elmCode """
 List
     (List
         (Bool
@@ -318,7 +348,7 @@ List
     )
 """
                 , textOnlyParagraph """Well, it doesn't compile because "recursive type aliases" but the fix is as simple as wrapping each alias as a `type`"""
-                , ElmCode """
+                , elmCode """
 type ByExpressionType string int bool list
   = String string
   | Int int
@@ -354,7 +384,7 @@ type BoolKnown
   | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """the result looks less nice but acceptable I guess"""
-                , ElmCode """
+                , elmCode """
 List
     (ListExpression
         (List
@@ -382,7 +412,7 @@ List
     )
 """
                 , textOnlyParagraph """Let's add triples to that language"""
-                , ElmCode """
+                , elmCode """
 type ByExpressionType string int bool triple list
   = String string
   | Int int
@@ -442,7 +472,7 @@ I know you're smarter than me, so if you have a free afternoon or whatever, mayb
 Or just look at the solutions below."""
                     ]
                 , textOnlyParagraph """First the -ish solution:"""
-                , ElmCode """
+                , elmCode """
 type Expression
     = Int Int
     | Tuple (TupleOf Expression Expression)
@@ -465,8 +495,8 @@ type EqualsExpressionByType int equals
 type EqualsExpression
     = EqualsExpression (EqualsExpressionByType Int EqualsExpression)
 """
-                , Paragraph [ Text "Expressions written down look passable, even if just barely. Here for ", InlineElmCode "( 0, 0 == 0 ) == ( 0, 0 == 0 )" ]
-                , ElmCode """
+                , Paragraph [ Text "Expressions written down look passable, even if just barely. Here for ", inlineElmCode "( 0, 0 == 0 ) == ( 0, 0 == 0 )" ]
+                , elmCode """
 Equals
     (EqualsExpression
         (EqualsOfTupleExtendedByFirstInt
@@ -488,11 +518,11 @@ Equals
                 , UnorderedList
                     [ Sequence
                         [ Paragraph
-                            [ InlineElmCode "ExtendFirstX (OfY xy)"
+                            [ inlineElmCode "ExtendFirstX (OfY xy)"
                             , Text " and "
-                            , InlineElmCode "ExtendedSecondY (OfX xy)"
+                            , inlineElmCode "ExtendedSecondY (OfX xy)"
                             , Text " are equivalent if the "
-                            , InlineElmCode "xy"
+                            , inlineElmCode "xy"
                             , Text " isn't nested further (and so only flat tuples are compared)"
                             ]
                         , UnorderedList
@@ -508,7 +538,7 @@ Equals
                         ]
                     ]
                 , textOnlyParagraph """Strangely, with the second solution everything becomes eerily simple:"""
-                , ElmCode """
+                , elmCode """
 type EqualsExpression
   = EqualsOfInt (EqualsOf Int)
   | EqualsOfExpression (EqualsOf EqualsExpression)

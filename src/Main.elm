@@ -283,18 +283,9 @@ articleContentUi =
                     ]
                     (parts |> List.map paragraphPartUi)
 
-            Articles.ElmCode rawSourceCodeString ->
-                let
-                    rawSourceCode : String
-                    rawSourceCode =
-                        rawSourceCodeString
-                            |> String.lines
-                            |> List.Extra.dropWhile String.Extra.isBlank
-                            |> List.Extra.dropWhileRight String.Extra.isBlank
-                            |> String.join "\n"
-                in
+            Articles.ElmCode elmCode ->
                 Html.pre []
-                    [ ElmCodeUi.with (rawSourceCode |> ElmCodeUi.syntaxKindMap) rawSourceCode
+                    [ ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw
                     ]
                     |> Element.WithContext.html
                     |> Element.WithContext.el
@@ -357,8 +348,8 @@ paragraphPartUi =
                 Element.WithContext.text string
                     |> Element.WithContext.el [ Element.WithContext.Font.italic ]
 
-            Articles.InlineElmCode raw ->
-                ElmCodeUi.with (ElmCodeUi.syntaxKindMap raw) raw
+            Articles.InlineElmCode elmCode ->
+                ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw
                     |> Element.WithContext.html
 
             Articles.Link link ->
