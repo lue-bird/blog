@@ -62,7 +62,7 @@ articleSectionsToRssItems =
             Articles.Section section ->
                 [ { title = section.title
                   , description = section.description
-                  , url = section.title |> Articles.sectionTitleToUrl
+                  , url = "https://lue-bird.github.io/blog/#" ++ section.title |> Articles.sectionTitleToUrl
                   , categories = []
                   , author = "lue"
                   , pubDate = Rss.DateTime section.publishTime

@@ -13,6 +13,7 @@ import Element.WithContext.Background
 import Element.WithContext.Border
 import Element.WithContext.Font
 import Html exposing (Html)
+import Html.Attributes
 import Html.String
 import Json.Decode
 import Json.Encode
@@ -223,10 +224,13 @@ ui : State -> Html Event
 ui _ =
     Element.WithContext.column
         [ Element.WithContext.spacing 20
-        , Element.WithContext.paddingXY 70 40
+        , Element.WithContext.paddingXY 19 40
+        , Element.WithContext.width (Element.WithContext.maximum 750 Element.WithContext.fill)
+        , Element.WithContext.centerX
         ]
         [ topBarUi
-        , Articles.all |> articleContentUi
+        , Articles.all
+            |> articleContentUi
         , Html.node "style" [] [ Html.text """.elmsh {color: #ffffff;background: #000000;}.elmsh-hl {background: #343434;}.elmsh-add {background: #003800;}.elmsh-del {background: #380000;}.elmsh-comm {color: #75715e;}.elmsh1 {color: #ae81ff;}.elmsh2 {color: #e6db74;}.elmsh3 {color: #f92672;}.elmsh4 {color: #66d9ef;}.elmsh5 {color: #a6e22e;}.elmsh6 {color: #ae81ff;}.elmsh7 {color: #fd971f;}.elmsh-elm-ts, .elmsh-js-dk, .elmsh-css-p {font-style: italic;color: #66d9ef;}.elmsh-js-ce {font-style: italic;color: #a6e22e;}.elmsh-css-ar-i {font-weight: bold;color: #f92672;}""" ]
             |> Element.WithContext.html
         ]
@@ -244,10 +248,11 @@ type alias Context =
 topBarUi : Element.WithContext.Element Context event_
 topBarUi =
     Element.WithContext.wrappedRow
-        [ Element.WithContext.paddingXY 70 0, Element.WithContext.spacing 16 ]
+        [ Element.WithContext.spacing 16
+        ]
         [ rssUi
         , linkUi
-            { label = "source code on github" |> Element.WithContext.text
+            { label = "source on github" |> Element.WithContext.text
             , url = "https://github.com/lue-bird/blog"
             }
         ]
@@ -279,19 +284,33 @@ articleContentUi : Articles.Content -> Element.WithContext.Element Context event
 articleContentUi =
     \articleContent ->
         case articleContent of
-            Articles.Section titled ->
+            Articles.Section section ->
                 Element.WithContext.column
                     [ Element.WithContext.spacing 25
-                    , Element.WithContext.paddingXY 70 40
+                    , Element.WithContext.paddingEach { left = 35, top = 40, bottom = 40, right = 0 }
                     ]
-                    [ titled.title
-                        |> Element.WithContext.text
-                        |> Element.WithContext.el [ Element.WithContext.Font.size 35 ]
-                    , titled.content |> articleContentUi
+                    [ linkUi
+                        { label =
+                            [ section.title
+                                |> Element.WithContext.text
+                            ]
+                                |> Element.WithContext.paragraph
+                                    [ Element.WithContext.Font.size 30
+                                    , Html.Attributes.style "overflow-wrap" "break-word"
+                                        |> Element.WithContext.htmlAttribute
+                                    , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
+                                        |> Element.WithContext.htmlAttribute
+                                    ]
+                        , url = "#" ++ Articles.sectionTitleToUrl section.title
+                        }
+                    , section.content |> articleContentUi
                     ]
 
             Articles.Paragraph text ->
-                Element.WithContext.paragraph []
+                Element.WithContext.paragraph
+                    [ Html.Attributes.style "overflow-wrap" "break-word"
+                        |> Element.WithContext.htmlAttribute
+                    ]
                     [ Element.WithContext.text text ]
 
             Articles.ElmCode rawSourceCodeString ->
@@ -309,7 +328,10 @@ articleContentUi =
                         highlightable
                             |> SyntaxHighlight.toBlockHtml Nothing
                             |> Element.WithContext.html
-                            |> Element.WithContext.el [ Element.WithContext.Font.size 18 ]
+                            |> Element.WithContext.el
+                                [ Element.WithContext.Font.size 18
+                                , Element.WithContext.width (Element.WithContext.px 0)
+                                ]
 
                     Err _ ->
                         Element.WithContext.text ("Couldn't parse code snippet. Here's the un-highlighted code: " ++ rawSourceCode)
@@ -323,7 +345,7 @@ articleContentUi =
             Articles.UnorderedList unorderedList ->
                 Element.WithContext.column
                     [ Element.WithContext.spacing 20
-                    , Element.WithContext.paddingXY 20 14
+                    , Element.WithContext.paddingEach { left = 20, top = 14, bottom = 14, right = 0 }
                     ]
                     (unorderedList
                         |> List.map
@@ -333,7 +355,7 @@ articleContentUi =
                                         |> Element.WithContext.el
                                             [ Element.WithContext.Font.size 30
                                             , Element.WithContext.alignTop
-                                            , Element.WithContext.paddingXY 10 0
+                                            , Element.WithContext.paddingEach { left = 0, top = 0, bottom = 0, right = 10 }
                                             ]
                                     , item
                                         |> articleContentUi
