@@ -168,7 +168,8 @@ Equals { left = String "High" , right = Int 5 }
                         ]
                     , textOnlyParagraph """it has impossible variants you are forced to case on"""
                     ]
-                , textOnlyParagraph """How hard can it be to make this small language completely type-safe?"""
+                , textOnlyParagraph """How hard can it be to make this small language completely type-safe?
+Spoiler: It is possible."""
                 , textOnlyParagraph """Naively, we could represent each kind of list and equals by it's own variant"""
                 , elmCode """
 type Expression
