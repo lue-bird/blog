@@ -463,8 +463,8 @@ type BoolKnown
   | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """The pieces don't seem to fit."""
-                , textOnlyParagraph """Let's start again, with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
-                , textOnlyParagraph """For past lue, tuples and especially triples shattered the hope of being able to safely represent them like this in an ast.
+                , textOnlyParagraph """I guess we have to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
+                , textOnlyParagraph """Tuples and especially triples made past lue lose hope of being able to safely represent them like this in an ast.
 So much so in fact that lue was slowly losing interest and abandoned this project after a while."""
                 , Paragraph
                     [ Text "Much, much later... in fact only when writing this did I think of "
@@ -497,7 +497,7 @@ type EqualsExpressionByType int equals
 type EqualsExpression
     = EqualsExpression (EqualsExpressionByType Int EqualsExpression)
 """
-                , Paragraph [ Text "Expressions written down look passable, even if just barely. Here for ", inlineElmCode "( 0, 0 == 0 ) == ( 0, 0 == 0 )" ]
+                , Paragraph [ Text "Expressions written down look passable. Here for ", inlineElmCode "( 0, 0 == 0 ) == ( 0, 0 == 0 )" ]
                 , elmCode """
 Equals
     (EqualsExpression
