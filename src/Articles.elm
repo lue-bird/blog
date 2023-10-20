@@ -49,15 +49,15 @@ introduction =
         [ textOnlyParagraph "Yahallo! 🐦"
         , Paragraph
             [ Link
-                { description = "Subscribing via rss"
+                { description = "Subscribe via rss"
                 , url = "https://lue-bird.github.io/blog/feed.xml"
                 }
-            , Text " gets you the latest articles. Feel free to check the "
+            , Text " to get the latest articles. Suggest improvements "
             , Link
-                { description = "source on github"
+                { description = "on github"
                 , url = "https://github.com/lue-bird/blog"
                 }
-            , Text " to suggest improvements."
+            , Text "."
             ]
         ]
 
