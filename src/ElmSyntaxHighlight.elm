@@ -1,6 +1,5 @@
-module ElmCodeUi exposing (SyntaxKind(..), syntaxKindMap, with)
+module ElmSyntaxHighlight exposing (SyntaxHighlightable, SyntaxKind(..), for)
 
-import Color exposing (Color)
 import Elm.Parser
 import Elm.Syntax.Comments exposing (Comment)
 import Elm.Syntax.Declaration exposing (Declaration)
@@ -14,8 +13,6 @@ import Elm.Syntax.Pattern exposing (Pattern)
 import Elm.Syntax.Range exposing (Location, Range)
 import Elm.Syntax.Signature exposing (Signature)
 import Elm.Syntax.TypeAnnotation exposing (TypeAnnotation)
-import Html exposing (Html)
-import Html.Attributes
 import List.Extra
 import RangeDict exposing (RangeDict)
 
@@ -30,248 +27,8 @@ type SyntaxKind
     | DeclarationRelated
 
 
-{-| Assumes `elm-format`ed code
--}
-syntaxKindMap : String -> RangeDict SyntaxKind
-syntaxKindMap =
-    \rawSourceCode ->
-        List.Extra.findMap (\f -> f ())
-            [ \() ->
-                case rawSourceCode |> Elm.Parser.parseToFile of
-                    Ok file ->
-                        RangeDict.unionFromListMap identity
-                            [ file.moduleDefinition |> moduleHeaderSyntaxKindMap
-                            , file.comments |> RangeDict.unionFromListMap commentSyntaxKindMap
-                            , file.imports
-                                |> RangeDict.unionFromListMap importSyntaxKindMap
-                            , file.declarations
-                                |> RangeDict.unionFromListMap
-                                    (declarationSyntaxKindMap
-                                        { rawSourceCode = rawSourceCode |> String.lines
-                                        , commentRanges = file.comments |> List.map Elm.Syntax.Node.range
-                                        }
-                                    )
-                            ]
-                            |> Just
-
-                    Err _ ->
-                        Nothing
-            , \() ->
-                let
-                    moduleSourceCode : String
-                    moduleSourceCode =
-                        "module A exposing (..)\n" ++ rawSourceCode
-                in
-                case moduleSourceCode |> Elm.Parser.parseToFile of
-                    Ok fileWithoutHeader ->
-                        RangeDict.unionFromListMap identity
-                            [ fileWithoutHeader.imports
-                                |> RangeDict.unionFromListMap importSyntaxKindMap
-                            , fileWithoutHeader.declarations
-                                |> RangeDict.unionFromListMap
-                                    (declarationSyntaxKindMap
-                                        { rawSourceCode = moduleSourceCode |> String.lines
-                                        , commentRanges = fileWithoutHeader.comments |> List.map Elm.Syntax.Node.range
-                                        }
-                                    )
-                            , fileWithoutHeader.comments |> RangeDict.unionFromListMap commentSyntaxKindMap
-                            ]
-                            |> RangeDict.justValuesMap
-                                (\range value ->
-                                    if range.start.row <= 1 then
-                                        Nothing
-
-                                    else
-                                        Just value
-                                )
-                            |> RangeDict.toListMap (\range syntaxKind -> ( range |> rangeAddRow -1, syntaxKind ))
-                            |> RangeDict.mapFromList identity
-                            |> Just
-
-                    Err _ ->
-                        Nothing
-            , \() ->
-                let
-                    moduleSourceCode : String
-                    moduleSourceCode =
-                        "module A exposing (..)\na =\n"
-                            ++ (rawSourceCode
-                                    |> String.lines
-                                    |> List.map (\line -> "    " ++ line)
-                                    |> String.join "\n"
-                               )
-                in
-                case moduleSourceCode |> Elm.Parser.parseToFile of
-                    Ok fileWithoutHeaderAndFnDeclarationHeader ->
-                        fileWithoutHeaderAndFnDeclarationHeader.declarations
-                            |> RangeDict.unionFromListMap
-                                (declarationSyntaxKindMap
-                                    { rawSourceCode = moduleSourceCode |> String.lines
-                                    , commentRanges = fileWithoutHeaderAndFnDeclarationHeader.comments |> List.map Elm.Syntax.Node.range
-                                    }
-                                )
-                            |> RangeDict.justValuesMap
-                                (\range value ->
-                                    if range.start.row <= 2 then
-                                        Nothing
-
-                                    else
-                                        Just value
-                                )
-                            |> RangeDict.toListMap (\range syntaxKind -> ( range |> rangeAddRow -2 |> rangeAddColumn -4, syntaxKind ))
-                            |> RangeDict.mapFromList identity
-                            |> Just
-
-                    Err _ ->
-                        Nothing
-            ]
-            |> Maybe.withDefault RangeDict.empty
-
-
-exposingSyntaxKindMap : Node Elm.Syntax.Exposing.Exposing -> RangeDict SyntaxKind
-exposingSyntaxKindMap =
-    \(Node exposingRange exposing_) ->
-        let
-            exposingKeywordRange : Range
-            exposingKeywordRange =
-                { start = { column = exposingRange.start.column, row = exposingRange.start.row }
-                , end = { column = exposingRange.start.column + 8, row = exposingRange.start.row }
-                }
-        in
-        case exposing_ of
-            Elm.Syntax.Exposing.All _ ->
-                RangeDict.singleton exposingKeywordRange DeclarationRelated
-
-            Elm.Syntax.Exposing.Explicit exposedMembers ->
-                exposedMembers
-                    |> RangeDict.unionFromListMap
-                        (\(Node exposedMemberRange exposedMember) ->
-                            case exposedMember of
-                                Elm.Syntax.Exposing.InfixExpose _ ->
-                                    RangeDict.empty
-
-                                Elm.Syntax.Exposing.FunctionExpose _ ->
-                                    RangeDict.singleton exposedMemberRange Variable
-
-                                Elm.Syntax.Exposing.TypeOrAliasExpose _ ->
-                                    RangeDict.singleton exposedMemberRange Type
-
-                                Elm.Syntax.Exposing.TypeExpose exposedType ->
-                                    case exposedType.open of
-                                        Nothing ->
-                                            RangeDict.singleton exposedMemberRange Type
-
-                                        Just openRange ->
-                                            RangeDict.singleton
-                                                { start = exposedMemberRange.start, end = openRange.start }
-                                                Type
-                                                |> RangeDict.insert openRange
-                                                    Variant
-                        )
-                    |> RangeDict.insert exposingKeywordRange DeclarationRelated
-
-
-moduleHeaderSyntaxKindMap : Node Elm.Syntax.Module.Module -> RangeDict SyntaxKind
-moduleHeaderSyntaxKindMap =
-    \(Node moduleHeaderRange moduleHeader) ->
-        case moduleHeader of
-            Elm.Syntax.Module.EffectModule _ ->
-                RangeDict.empty
-
-            Elm.Syntax.Module.NormalModule normalModuleHeader ->
-                normalModuleHeader.exposingList
-                    |> exposingSyntaxKindMap
-                    |> RangeDict.insert (normalModuleHeader.moduleName |> Elm.Syntax.Node.range)
-                        ModuleNameOrAlias
-                    |> RangeDict.insert
-                        { start = moduleHeaderRange.start
-                        , end = { row = moduleHeaderRange.start.row, column = moduleHeaderRange.start.column + 6 }
-                        }
-                        DeclarationRelated
-
-            Elm.Syntax.Module.PortModule portModuleHeader ->
-                portModuleHeader.exposingList
-                    |> exposingSyntaxKindMap
-                    |> RangeDict.insert (portModuleHeader.moduleName |> Elm.Syntax.Node.range) ModuleNameOrAlias
-                    |> RangeDict.insert
-                        { start = moduleHeaderRange.start
-                        , end = { row = moduleHeaderRange.start.row, column = moduleHeaderRange.start.column + 6 }
-                        }
-                        DeclarationRelated
-
-
-commentSyntaxKindMap : Node Comment -> RangeDict SyntaxKind
-commentSyntaxKindMap =
-    \(Node commentRange comment) ->
-        if comment |> String.startsWith "--: " then
-            let
-                rawModuleSourceCode : String
-                rawModuleSourceCode =
-                    "module A exposing (..)\ntype alias A =\n    "
-                        ++ (comment |> String.dropLeft 4)
-            in
-            case rawModuleSourceCode |> Elm.Parser.parseToFile of
-                Ok fileWithoutHeaderAndFnDeclarationHeader ->
-                    fileWithoutHeaderAndFnDeclarationHeader.declarations
-                        |> RangeDict.unionFromListMap
-                            (declarationSyntaxKindMap
-                                { rawSourceCode = rawModuleSourceCode |> String.lines, commentRanges = [] }
-                            )
-                        |> RangeDict.justValuesMap
-                            (\range value ->
-                                if range.start.row <= 2 then
-                                    Nothing
-
-                                else
-                                    Just value
-                            )
-                        |> RangeDict.toListMap
-                            (\range syntaxKind ->
-                                ( { start = { row = commentRange.start.row, column = commentRange.start.column + range.start.column - 1 }
-                                  , end = { row = commentRange.start.row, column = commentRange.start.column + range.end.column - 1 }
-                                  }
-                                , syntaxKind
-                                )
-                            )
-                        |> RangeDict.mapFromList identity
-
-                Err _ ->
-                    RangeDict.empty
-
-        else
-            RangeDict.empty
-
-
-importSyntaxKindMap : Node Import -> RangeDict SyntaxKind
-importSyntaxKindMap =
-    \(Node importRange import_) ->
-        RangeDict.union
-            ((case import_.exposingList of
-                Nothing ->
-                    RangeDict.empty
-
-                Just exposingList ->
-                    exposingList |> exposingSyntaxKindMap
-             )
-                |> RangeDict.insert
-                    { start = importRange.start
-                    , end = { row = importRange.start.row, column = importRange.start.column + 6 }
-                    }
-                    DeclarationRelated
-                |> RangeDict.insert (import_.moduleName |> Elm.Syntax.Node.range) ModuleNameOrAlias
-            )
-            (case import_.moduleAlias of
-                Nothing ->
-                    RangeDict.empty
-
-                Just (Node aliasRange _) ->
-                    RangeDict.singleton aliasRange ModuleNameOrAlias
-                        |> RangeDict.insert
-                            { start = { column = aliasRange.start.column - 3, row = aliasRange.start.row }
-                            , end = { column = aliasRange.start.column - 1, row = aliasRange.start.row }
-                            }
-                            DeclarationRelated
-            )
+type alias SyntaxHighlightable =
+    List { string : String, syntaxKind : Maybe SyntaxKind }
 
 
 locationAddColumn : Int -> Location -> Location
@@ -632,6 +389,112 @@ nameIsUppercase =
                 False
 
 
+stringLinesSlice : Range -> List String -> List String
+stringLinesSlice range =
+    \lines ->
+        lines
+            |> List.indexedMap
+                (\row line ->
+                    if (row < (range.start.row - 1)) || (row > (range.end.row - 1)) then
+                        Nothing
+
+                    else
+                        Just
+                            (line
+                                |> (if row == (range.end.row - 1) then
+                                        String.left (range.end.column - 1)
+
+                                    else
+                                        identity
+                                   )
+                                |> (if row == (range.start.row - 1) then
+                                        String.dropLeft (range.start.column - 1)
+
+                                    else
+                                        identity
+                                   )
+                            )
+                )
+            |> List.filterMap identity
+
+
+tokenFindRangeIn :
+    Range
+    ->
+        { rawSourceCode : List String
+        , commentRanges : List Range
+        }
+    -> (String -> Maybe Range)
+tokenFindRangeIn searchRange context =
+    \token ->
+        let
+            searchLines : List String
+            searchLines =
+                context.rawSourceCode |> stringLinesSlice searchRange
+
+            operatorStartLocationFound : Maybe Location
+            operatorStartLocationFound =
+                searchLines
+                    |> List.indexedMap Tuple.pair
+                    |> List.Extra.findMap
+                        (\( searchLineIndex, searchLine ) ->
+                            String.indexes token searchLine
+                                |> List.Extra.findMap
+                                    (\operatorOffset ->
+                                        let
+                                            operatorStartLocation : Location
+                                            operatorStartLocation =
+                                                case searchLineIndex of
+                                                    0 ->
+                                                        { row = searchRange.start.row
+                                                        , column = searchRange.start.column + operatorOffset
+                                                        }
+
+                                                    searchLineAfterFirstIndex ->
+                                                        { row = searchRange.start.row + searchLineAfterFirstIndex
+                                                        , column = operatorOffset + 1
+                                                        }
+
+                                            isPartOfComment : Bool
+                                            isPartOfComment =
+                                                List.any
+                                                    (\commentRange ->
+                                                        rangeContainsLocation operatorStartLocation commentRange
+                                                    )
+                                                    context.commentRanges
+                                        in
+                                        if isPartOfComment then
+                                            Nothing
+
+                                        else
+                                            Just operatorStartLocation
+                                    )
+                        )
+        in
+        case operatorStartLocationFound of
+            Just operatorStartLocation ->
+                Just
+                    { start = operatorStartLocation
+                    , end =
+                        { row = operatorStartLocation.row
+                        , column = operatorStartLocation.column + String.length token
+                        }
+                    }
+
+            -- there's a bug somewhere
+            Nothing ->
+                Nothing
+
+
+rangeContainsLocation : Location -> Range -> Bool
+rangeContainsLocation location =
+    \range ->
+        not
+            ((Elm.Syntax.Range.compareLocations location range.start == LT)
+                || (Elm.Syntax.Range.compareLocations location range.end == GT)
+            )
+
+
 typeAnnotationSyntaxKindMap : Node TypeAnnotation -> RangeDict SyntaxKind
 typeAnnotationSyntaxKindMap =
     \(Node typeRange type_) ->
@@ -803,6 +666,325 @@ declarationSyntaxKindMap context =
                 RangeDict.empty
 
 
+{-| Assumes `elm-format`ed code
+-}
+for : String -> SyntaxHighlightable
+for =
+    \rawSourceCode ->
+        let
+            syntaxKindByRange : RangeDict SyntaxKind
+            syntaxKindByRange =
+                List.Extra.findMap (\f -> f ())
+                    [ \() ->
+                        case rawSourceCode |> Elm.Parser.parseToFile of
+                            Ok file ->
+                                RangeDict.unionFromListMap identity
+                                    [ file.moduleDefinition |> moduleHeaderSyntaxKindMap
+                                    , file.comments |> RangeDict.unionFromListMap commentSyntaxKindMap
+                                    , file.imports
+                                        |> RangeDict.unionFromListMap importSyntaxKindMap
+                                    , file.declarations
+                                        |> RangeDict.unionFromListMap
+                                            (declarationSyntaxKindMap
+                                                { rawSourceCode = rawSourceCode |> String.lines
+                                                , commentRanges = file.comments |> List.map Elm.Syntax.Node.range
+                                                }
+                                            )
+                                    ]
+                                    |> Just
+
+                            Err _ ->
+                                Nothing
+                    , \() ->
+                        let
+                            moduleSourceCode : String
+                            moduleSourceCode =
+                                "module A exposing (..)\n" ++ rawSourceCode
+                        in
+                        case moduleSourceCode |> Elm.Parser.parseToFile of
+                            Ok fileWithoutHeader ->
+                                RangeDict.unionFromListMap identity
+                                    [ fileWithoutHeader.imports
+                                        |> RangeDict.unionFromListMap importSyntaxKindMap
+                                    , fileWithoutHeader.declarations
+                                        |> RangeDict.unionFromListMap
+                                            (declarationSyntaxKindMap
+                                                { rawSourceCode = moduleSourceCode |> String.lines
+                                                , commentRanges = fileWithoutHeader.comments |> List.map Elm.Syntax.Node.range
+                                                }
+                                            )
+                                    , fileWithoutHeader.comments |> RangeDict.unionFromListMap commentSyntaxKindMap
+                                    ]
+                                    |> RangeDict.justValuesMap
+                                        (\range value ->
+                                            if range.start.row <= 1 then
+                                                Nothing
+
+                                            else
+                                                Just value
+                                        )
+                                    |> RangeDict.toListMap (\range syntaxKind -> ( range |> rangeAddRow -1, syntaxKind ))
+                                    |> RangeDict.mapFromList identity
+                                    |> Just
+
+                            Err _ ->
+                                Nothing
+                    , \() ->
+                        let
+                            moduleSourceCode : String
+                            moduleSourceCode =
+                                "module A exposing (..)\na =\n"
+                                    ++ (rawSourceCode
+                                            |> String.lines
+                                            |> List.map (\line -> "    " ++ line)
+                                            |> String.join "\n"
+                                       )
+                        in
+                        case moduleSourceCode |> Elm.Parser.parseToFile of
+                            Ok fileWithoutHeaderAndFnDeclarationHeader ->
+                                fileWithoutHeaderAndFnDeclarationHeader.declarations
+                                    |> RangeDict.unionFromListMap
+                                        (declarationSyntaxKindMap
+                                            { rawSourceCode = moduleSourceCode |> String.lines
+                                            , commentRanges = fileWithoutHeaderAndFnDeclarationHeader.comments |> List.map Elm.Syntax.Node.range
+                                            }
+                                        )
+                                    |> RangeDict.justValuesMap
+                                        (\range value ->
+                                            if range.start.row <= 2 then
+                                                Nothing
+
+                                            else
+                                                Just value
+                                        )
+                                    |> RangeDict.toListMap (\range syntaxKind -> ( range |> rangeAddRow -2 |> rangeAddColumn -4, syntaxKind ))
+                                    |> RangeDict.mapFromList identity
+                                    |> Just
+
+                            Err _ ->
+                                Nothing
+                    ]
+                    |> Maybe.withDefault RangeDict.empty
+
+            rawSourceCodeLines : List String
+            rawSourceCodeLines =
+                rawSourceCode |> String.lines
+
+            segmented : { location : Location, segmentsReverse : List { range : Range, syntaxKind : Maybe SyntaxKind } }
+            segmented =
+                syntaxKindByRange
+                    |> RangeDict.foldl
+                        (\range syntaxKind state ->
+                            { location = range.end
+                            , segmentsReverse =
+                                if state.location == range.start then
+                                    { range = range, syntaxKind = Just syntaxKind }
+                                        :: state.segmentsReverse
+
+                                else
+                                    { range = range, syntaxKind = Just syntaxKind }
+                                        :: { range = { start = state.location, end = range.start }, syntaxKind = Nothing }
+                                        :: state.segmentsReverse
+                            }
+                        )
+                        { location = { row = 1, column = 1 }
+                        , segmentsReverse = []
+                        }
+        in
+        segmented.segmentsReverse
+            |> (::)
+                { range =
+                    { start = segmented.location
+                    , end =
+                        { row = (rawSourceCodeLines |> List.length) + 1
+                        , column =
+                            case rawSourceCodeLines |> List.Extra.last of
+                                Just last ->
+                                    (last |> String.length) + 1
+
+                                Nothing ->
+                                    0
+                        }
+                    }
+                , syntaxKind = Nothing
+                }
+            |> List.reverse
+            |> List.map
+                (\segment ->
+                    { string = rawSourceCodeLines |> stringLinesSlice segment.range |> String.join "\n"
+                    , syntaxKind = segment.syntaxKind
+                    }
+                )
+
+
+exposingSyntaxKindMap : Node Elm.Syntax.Exposing.Exposing -> RangeDict SyntaxKind
+exposingSyntaxKindMap =
+    \(Node exposingRange exposing_) ->
+        let
+            exposingKeywordRange : Range
+            exposingKeywordRange =
+                { start = { column = exposingRange.start.column, row = exposingRange.start.row }
+                , end = { column = exposingRange.start.column + 8, row = exposingRange.start.row }
+                }
+        in
+        case exposing_ of
+            Elm.Syntax.Exposing.All _ ->
+                RangeDict.singleton exposingKeywordRange DeclarationRelated
+
+            Elm.Syntax.Exposing.Explicit exposedMembers ->
+                exposedMembers
+                    |> RangeDict.unionFromListMap
+                        (\(Node exposedMemberRange exposedMember) ->
+                            case exposedMember of
+                                Elm.Syntax.Exposing.InfixExpose _ ->
+                                    RangeDict.empty
+
+                                Elm.Syntax.Exposing.FunctionExpose _ ->
+                                    RangeDict.singleton exposedMemberRange Variable
+
+                                Elm.Syntax.Exposing.TypeOrAliasExpose _ ->
+                                    RangeDict.singleton exposedMemberRange Type
+
+                                Elm.Syntax.Exposing.TypeExpose exposedType ->
+                                    case exposedType.open of
+                                        Nothing ->
+                                            RangeDict.singleton exposedMemberRange Type
+
+                                        Just openRange ->
+                                            RangeDict.singleton
+                                                { start = exposedMemberRange.start, end = openRange.start }
+                                                Type
+                                                |> RangeDict.insert openRange
+                                                    Variant
+                        )
+                    |> RangeDict.insert exposingKeywordRange DeclarationRelated
+
+
+moduleHeaderSyntaxKindMap : Node Elm.Syntax.Module.Module -> RangeDict SyntaxKind
+moduleHeaderSyntaxKindMap =
+    \(Node moduleHeaderRange moduleHeader) ->
+        case moduleHeader of
+            Elm.Syntax.Module.EffectModule _ ->
+                RangeDict.empty
+
+            Elm.Syntax.Module.NormalModule normalModuleHeader ->
+                normalModuleHeader.exposingList
+                    |> exposingSyntaxKindMap
+                    |> RangeDict.insert (normalModuleHeader.moduleName |> Elm.Syntax.Node.range)
+                        ModuleNameOrAlias
+                    |> RangeDict.insert
+                        { start = moduleHeaderRange.start
+                        , end = { row = moduleHeaderRange.start.row, column = moduleHeaderRange.start.column + 6 }
+                        }
+                        DeclarationRelated
+
+            Elm.Syntax.Module.PortModule portModuleHeader ->
+                portModuleHeader.exposingList
+                    |> exposingSyntaxKindMap
+                    |> RangeDict.insert (portModuleHeader.moduleName |> Elm.Syntax.Node.range) ModuleNameOrAlias
+                    |> RangeDict.insert
+                        { start = moduleHeaderRange.start
+                        , end = { row = moduleHeaderRange.start.row, column = moduleHeaderRange.start.column + 6 }
+                        }
+                        DeclarationRelated
+
+
+commentSyntaxKindMap : Node Comment -> RangeDict SyntaxKind
+commentSyntaxKindMap =
+    \(Node commentRange comment) ->
+        if comment |> String.startsWith "--: " then
+            let
+                rawModuleSourceCode : String
+                rawModuleSourceCode =
+                    "module A exposing (..)\ntype alias A =\n    "
+                        ++ (comment |> String.dropLeft 4)
+            in
+            case rawModuleSourceCode |> Elm.Parser.parseToFile of
+                Ok fileWithoutHeaderAndFnDeclarationHeader ->
+                    fileWithoutHeaderAndFnDeclarationHeader.declarations
+                        |> RangeDict.unionFromListMap
+                            (declarationSyntaxKindMap
+                                { rawSourceCode = rawModuleSourceCode |> String.lines, commentRanges = [] }
+                            )
+                        |> RangeDict.justValuesMap
+                            (\range value ->
+                                if range.start.row <= 2 then
+                                    Nothing
+
+                                else
+                                    Just value
+                            )
+                        |> RangeDict.toListMap
+                            (\range syntaxKind ->
+                                ( { start = { row = commentRange.start.row, column = commentRange.start.column + range.start.column - 1 }
+                                  , end = { row = commentRange.start.row, column = commentRange.start.column + range.end.column - 1 }
+                                  }
+                                , syntaxKind
+                                )
+                            )
+                        |> RangeDict.mapFromList identity
+
+                Err _ ->
+                    RangeDict.empty
+
+        else
+            RangeDict.empty
+
+
+importSyntaxKindMap : Node Import -> RangeDict SyntaxKind
+importSyntaxKindMap =
+    \(Node importRange import_) ->
+        RangeDict.union
+            ((case import_.exposingList of
+                Nothing ->
+                    RangeDict.empty
+
+                Just exposingList ->
+                    exposingList |> exposingSyntaxKindMap
+             )
+                |> RangeDict.insert
+                    { start = importRange.start
+                    , end = { row = importRange.start.row, column = importRange.start.column + 6 }
+                    }
+                    DeclarationRelated
+                |> RangeDict.insert (import_.moduleName |> Elm.Syntax.Node.range) ModuleNameOrAlias
+            )
+            (case import_.moduleAlias of
+                Nothing ->
+                    RangeDict.empty
+
+                Just (Node aliasRange _) ->
+                    RangeDict.singleton aliasRange ModuleNameOrAlias
+                        |> RangeDict.insert
+                            { start = { column = aliasRange.start.column - 3, row = aliasRange.start.row }
+                            , end = { column = aliasRange.start.column - 1, row = aliasRange.start.row }
+                            }
+                            DeclarationRelated
+            )
+
+
+rangeAddRow : Int -> Range -> Range
+rangeAddRow rowPlus =
+    \range ->
+        { start = range.start |> locationAddRow rowPlus
+        , end = range.end |> locationAddRow rowPlus
+        }
+
+
+locationAddRow : Int -> Location -> Location
+locationAddRow rowPlus =
+    \location ->
+        { location | row = location.row + rowPlus }
+
+
+rangeAddColumn : Int -> Range -> Range
+rangeAddColumn columnPlus =
+    \range ->
+        { start = range.start |> locationAddColumn columnPlus
+        , end = range.end |> locationAddColumn columnPlus
+        }
+
+
 letDeclarationSyntaxKindMap :
     { rawSourceCode : List String, commentRanges : List Range }
     -> (Node LetDeclaration -> RangeDict SyntaxKind)
@@ -864,223 +1046,3 @@ letDeclarationSyntaxKindMap context =
                             )
                             DeclarationRelated
                     )
-
-
-tokenFindRangeIn :
-    Range
-    ->
-        { rawSourceCode : List String
-        , commentRanges : List Range
-        }
-    -> (String -> Maybe Range)
-tokenFindRangeIn searchRange context =
-    \token ->
-        let
-            searchLines : List String
-            searchLines =
-                context.rawSourceCode |> stringLinesSlice searchRange
-
-            operatorStartLocationFound : Maybe Location
-            operatorStartLocationFound =
-                searchLines
-                    |> List.indexedMap Tuple.pair
-                    |> List.Extra.findMap
-                        (\( searchLineIndex, searchLine ) ->
-                            String.indexes token searchLine
-                                |> List.Extra.findMap
-                                    (\operatorOffset ->
-                                        let
-                                            operatorStartLocation : Location
-                                            operatorStartLocation =
-                                                case searchLineIndex of
-                                                    0 ->
-                                                        { row = searchRange.start.row
-                                                        , column = searchRange.start.column + operatorOffset
-                                                        }
-
-                                                    searchLineAfterFirstIndex ->
-                                                        { row = searchRange.start.row + searchLineAfterFirstIndex
-                                                        , column = operatorOffset + 1
-                                                        }
-
-                                            isPartOfComment : Bool
-                                            isPartOfComment =
-                                                List.any
-                                                    (\commentRange ->
-                                                        rangeContainsLocation operatorStartLocation commentRange
-                                                    )
-                                                    context.commentRanges
-                                        in
-                                        if isPartOfComment then
-                                            Nothing
-
-                                        else
-                                            Just operatorStartLocation
-                                    )
-                        )
-        in
-        case operatorStartLocationFound of
-            Just operatorStartLocation ->
-                Just
-                    { start = operatorStartLocation
-                    , end =
-                        { row = operatorStartLocation.row
-                        , column = operatorStartLocation.column + String.length token
-                        }
-                    }
-
-            -- there's a bug somewhere
-            Nothing ->
-                Nothing
-
-
-rangeContainsLocation : Location -> Range -> Bool
-rangeContainsLocation location =
-    \range ->
-        not
-            ((Elm.Syntax.Range.compareLocations location range.start == LT)
-                || (Elm.Syntax.Range.compareLocations location range.end == GT)
-            )
-
-
-rangeAddRow : Int -> Range -> Range
-rangeAddRow rowPlus =
-    \range ->
-        { start = range.start |> locationAddRow rowPlus
-        , end = range.end |> locationAddRow rowPlus
-        }
-
-
-locationAddRow : Int -> Location -> Location
-locationAddRow rowPlus =
-    \location ->
-        { location | row = location.row + rowPlus }
-
-
-rangeAddColumn : Int -> Range -> Range
-rangeAddColumn columnPlus =
-    \range ->
-        { start = range.start |> locationAddColumn columnPlus
-        , end = range.end |> locationAddColumn columnPlus
-        }
-
-
-with : RangeDict SyntaxKind -> String -> Html event_
-with syntaxKindByRange rawSourceCode =
-    let
-        rawSourceCodeLines : List String
-        rawSourceCodeLines =
-            rawSourceCode |> String.lines
-
-        segmented : { location : Location, segmentsReverse : List { range : Range, syntaxKind : Maybe SyntaxKind } }
-        segmented =
-            syntaxKindByRange
-                |> RangeDict.foldl
-                    (\range syntaxKind state ->
-                        { location = range.end
-                        , segmentsReverse =
-                            if state.location == range.start then
-                                { range = range, syntaxKind = Just syntaxKind }
-                                    :: state.segmentsReverse
-
-                            else
-                                { range = range, syntaxKind = Just syntaxKind }
-                                    :: { range = { start = state.location, end = range.start }, syntaxKind = Nothing }
-                                    :: state.segmentsReverse
-                        }
-                    )
-                    { location = { row = 1, column = 1 }
-                    , segmentsReverse = []
-                    }
-    in
-    Html.code []
-        (segmented.segmentsReverse
-            |> (::)
-                { range =
-                    { start = segmented.location
-                    , end =
-                        { row = (rawSourceCodeLines |> List.length) + 1
-                        , column =
-                            case rawSourceCodeLines |> List.Extra.last of
-                                Just last ->
-                                    (last |> String.length) + 1
-
-                                Nothing ->
-                                    0
-                        }
-                    }
-                , syntaxKind = Nothing
-                }
-            |> List.reverse
-            |> List.map
-                (\segment ->
-                    Html.code
-                        (case segment.syntaxKind of
-                            Nothing ->
-                                []
-
-                            Just syntaxKind ->
-                                [ Html.Attributes.style "color"
-                                    (syntaxKind |> syntaxKindToColor |> Color.toCssString)
-                                ]
-                        )
-                        [ Html.text (rawSourceCodeLines |> stringLinesSlice segment.range |> String.join "\n")
-                        ]
-                )
-        )
-
-
-stringLinesSlice : Range -> List String -> List String
-stringLinesSlice range =
-    \lines ->
-        lines
-            |> List.indexedMap
-                (\row line ->
-                    if (row < (range.start.row - 1)) || (row > (range.end.row - 1)) then
-                        Nothing
-
-                    else
-                        Just
-                            (line
-                                |> (if row == (range.end.row - 1) then
-                                        String.left (range.end.column - 1)
-
-                                    else
-                                        identity
-                                   )
-                                |> (if row == (range.start.row - 1) then
-                                        String.dropLeft (range.start.column - 1)
-
-                                    else
-                                        identity
-                                   )
-                            )
-                )
-            |> List.filterMap identity
-
-
-syntaxKindToColor : SyntaxKind -> Color
-syntaxKindToColor =
-    -- light purple Color.rgb 0.97 0.42 1
-    \syntaxKind ->
-        case syntaxKind of
-            Type ->
-                Color.rgb 0.9 0.55 1
-
-            Variant ->
-                Color.rgb 0.24 0.75 0.62
-
-            Field ->
-                Color.rgb 0.4 0.9 0
-
-            ModuleNameOrAlias ->
-                Color.rgb 0.45 0.5 0.98
-
-            Variable ->
-                Color.rgb 0.85 0.8 0.1
-
-            Flow ->
-                Color.rgb 1 0.45 0.35
-
-            DeclarationRelated ->
-                Color.rgb 0.55 0.75 1

@@ -1,6 +1,6 @@
 module Articles exposing (Content(..), ParagraphPart(..), all, sectionTitleToUrl)
 
-import ElmCodeUi
+import ElmSyntaxHighlight
 import List.Extra
 import RangeDict exposing (RangeDict)
 import String.Extra
@@ -16,7 +16,7 @@ type Content
         , content : Content
         }
     | Paragraph (List ParagraphPart)
-    | ElmCode { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
+    | ElmCode ElmSyntaxHighlight.SyntaxHighlightable
     | UnorderedList (List Content)
     | Sequence (List Content)
 
@@ -24,7 +24,7 @@ type Content
 type ParagraphPart
     = Text String
     | Italic String
-    | InlineElmCode { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
+    | InlineElmCode ElmSyntaxHighlight.SyntaxHighlightable
     | Link { description : String, url : String }
 
 
@@ -62,7 +62,7 @@ introduction =
         ]
 
 
-elmCodeFromRaw : String -> { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
+elmCodeFromRaw : String -> ElmSyntaxHighlight.SyntaxHighlightable
 elmCodeFromRaw raw =
     let
         rawStrippedOfBlankStartAndEnd : String
@@ -73,9 +73,7 @@ elmCodeFromRaw raw =
                 |> List.Extra.dropWhileRight String.Extra.isBlank
                 |> String.join "\n"
     in
-    { raw = rawStrippedOfBlankStartAndEnd
-    , syntaxKindMap = rawStrippedOfBlankStartAndEnd |> ElmCodeUi.syntaxKindMap
-    }
+    rawStrippedOfBlankStartAndEnd |> ElmSyntaxHighlight.for
 
 
 inlineElmCode : String -> ParagraphPart

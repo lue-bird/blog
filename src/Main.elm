@@ -7,13 +7,13 @@ import Audio exposing (AudioData)
 import Browser
 import Browser.Dom
 import Browser.Events
-import Color
+import Color exposing (Color)
 import Duration
 import Element.WithContext
 import Element.WithContext.Background
 import Element.WithContext.Border
 import Element.WithContext.Font
-import ElmCodeUi
+import ElmSyntaxHighlight
 import Html exposing (Html)
 import Html.Attributes
 import Json.Decode
@@ -225,8 +225,7 @@ ui _ =
         , Element.WithContext.width (Element.WithContext.maximum 750 Element.WithContext.fill)
         , Element.WithContext.centerX
         ]
-        [ Articles.all
-            |> articleContentUi
+        [ Articles.all |> articleContentUi
         ]
         |> Element.WithContext.layout {}
             [ Element.WithContext.Background.color (Element.WithContext.rgb 0 0 0)
@@ -302,7 +301,7 @@ articleContentUi =
                         , Html.Attributes.style "hyphens" "none"
                         , Html.Attributes.style "font-size" "0.8em"
                         ]
-                        [ ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw ]
+                        [ elmCodeUi elmCode ]
                     ]
                     |> Element.WithContext.html
 
@@ -351,7 +350,7 @@ paragraphPartUi =
                     |> Element.WithContext.el [ Element.WithContext.Font.italic ]
 
             Articles.InlineElmCode elmCode ->
-                ElmCodeUi.with elmCode.syntaxKindMap elmCode.raw
+                elmCodeUi elmCode
                     |> Element.WithContext.html
                     |> Element.WithContext.el
                         [ Html.Attributes.style "font-size" "0.9em"
@@ -363,6 +362,56 @@ paragraphPartUi =
                     { url = link.url
                     , label = Element.WithContext.text link.description
                     }
+
+
+elmCodeUi : ElmSyntaxHighlight.SyntaxHighlightable -> Html event_
+elmCodeUi =
+    \syntaxHighlightable ->
+        Html.code []
+            (syntaxHighlightable
+                |> List.map
+                    (\segment ->
+                        Html.code
+                            (case segment.syntaxKind of
+                                Nothing ->
+                                    []
+
+                                Just syntaxKind ->
+                                    [ Html.Attributes.style "color"
+                                        (syntaxKind |> syntaxKindToColor |> Color.toCssString)
+                                    ]
+                            )
+                            [ Html.text segment.string
+                            ]
+                    )
+            )
+
+
+syntaxKindToColor : ElmSyntaxHighlight.SyntaxKind -> Color
+syntaxKindToColor =
+    -- light purple Color.rgb 0.97 0.42 1
+    \syntaxKind ->
+        case syntaxKind of
+            ElmSyntaxHighlight.Type ->
+                Color.rgb 0.9 0.55 1
+
+            ElmSyntaxHighlight.Variant ->
+                Color.rgb 0.24 0.75 0.62
+
+            ElmSyntaxHighlight.Field ->
+                Color.rgb 0.4 0.9 0
+
+            ElmSyntaxHighlight.ModuleNameOrAlias ->
+                Color.rgb 0.45 0.5 0.98
+
+            ElmSyntaxHighlight.Variable ->
+                Color.rgb 0.85 0.8 0.1
+
+            ElmSyntaxHighlight.Flow ->
+                Color.rgb 1 0.45 0.35
+
+            ElmSyntaxHighlight.DeclarationRelated ->
+                Color.rgb 0.55 0.75 1
 
 
 audio : AudioData -> State -> Audio.Audio
