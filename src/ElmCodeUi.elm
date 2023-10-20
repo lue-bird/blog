@@ -576,11 +576,31 @@ declarationSyntaxKindMap =
                         implementation : Elm.Syntax.Expression.FunctionImplementation
                         implementation =
                             fnDeclaration.declaration |> Elm.Syntax.Node.value
+
+                        implementationNameRange : Range
+                        implementationNameRange =
+                            implementation.name |> Elm.Syntax.Node.range
                      in
                      RangeDict.union
                         (implementation.expression |> expressionSyntaxKindMap)
                         (implementation.arguments |> RangeDict.unionFromListMap patternSyntaxKindMap)
-                        |> RangeDict.insert (implementation.name |> Elm.Syntax.Node.range) Variable
+                        |> RangeDict.insert implementationNameRange Variable
+                        |> RangeDict.insert
+                            (let
+                                tokenBeforeEqualsEnd : Location
+                                tokenBeforeEqualsEnd =
+                                    case implementation.arguments |> List.Extra.last of
+                                        Just (Node lastPatternRange _) ->
+                                            lastPatternRange.end
+
+                                        Nothing ->
+                                            implementationNameRange.end
+                             in
+                             { start = { column = tokenBeforeEqualsEnd.column + 1, row = tokenBeforeEqualsEnd.row }
+                             , end = { column = tokenBeforeEqualsEnd.column + 2, row = tokenBeforeEqualsEnd.row }
+                             }
+                            )
+                            DeclarationRelated
                     )
 
             Elm.Syntax.Declaration.AliasDeclaration aliasTypeDeclaration ->
@@ -597,15 +617,41 @@ declarationSyntaxKindMap =
                         , end = { row = declarationRange.start.row, column = declarationRange.start.column + 10 }
                         }
                         DeclarationRelated
+                    |> RangeDict.insert
+                        (let
+                            tokenBeforeEqualsEnd : Location
+                            tokenBeforeEqualsEnd =
+                                case aliasTypeDeclaration.generics |> List.Extra.last of
+                                    Just (Node lastPatternRange _) ->
+                                        lastPatternRange.end
+
+                                    Nothing ->
+                                        aliasTypeDeclaration.name |> Elm.Syntax.Node.range |> .end
+                         in
+                         { start = { column = tokenBeforeEqualsEnd.column + 1, row = tokenBeforeEqualsEnd.row }
+                         , end = { column = tokenBeforeEqualsEnd.column + 2, row = tokenBeforeEqualsEnd.row }
+                         }
+                        )
+                        DeclarationRelated
 
             Elm.Syntax.Declaration.CustomTypeDeclaration choiceTypeDeclaration ->
                 RangeDict.union
                     (choiceTypeDeclaration.constructors
                         |> RangeDict.unionFromListMap
                             (\(Node _ variant) ->
+                                let
+                                    variantNameRange : Range
+                                    variantNameRange =
+                                        variant.name |> Elm.Syntax.Node.range
+                                in
                                 variant.arguments
                                     |> RangeDict.unionFromListMap typeAnnotationSyntaxKindMap
-                                    |> RangeDict.insert (variant.name |> Elm.Syntax.Node.range) Variant
+                                    |> RangeDict.insert variantNameRange Variant
+                                    |> RangeDict.insert
+                                        { start = { column = variantNameRange.start.column - 2, row = variantNameRange.start.row }
+                                        , end = { column = variantNameRange.start.column - 1, row = variantNameRange.start.row }
+                                        }
+                                        DeclarationRelated
                             )
                     )
                     (choiceTypeDeclaration.generics
@@ -666,6 +712,17 @@ letDeclarationSyntaxKindMap =
                 RangeDict.union
                     (pattern |> patternSyntaxKindMap)
                     (destructuredExpression |> expressionSyntaxKindMap)
+                    |> RangeDict.insert
+                        (let
+                            tokenBeforeEqualsEnd : Location
+                            tokenBeforeEqualsEnd =
+                                pattern |> Elm.Syntax.Node.range |> .end
+                         in
+                         { start = { column = tokenBeforeEqualsEnd.column + 1, row = tokenBeforeEqualsEnd.row }
+                         , end = { column = tokenBeforeEqualsEnd.column + 2, row = tokenBeforeEqualsEnd.row }
+                         }
+                        )
+                        DeclarationRelated
 
             Elm.Syntax.Expression.LetFunction fnDeclaration ->
                 RangeDict.union
@@ -680,11 +737,31 @@ letDeclarationSyntaxKindMap =
                         implementation : Elm.Syntax.Expression.FunctionImplementation
                         implementation =
                             fnDeclaration.declaration |> Elm.Syntax.Node.value
+
+                        implementationNameRange : Range
+                        implementationNameRange =
+                            implementation.name |> Elm.Syntax.Node.range
                      in
                      RangeDict.union
                         (implementation.expression |> expressionSyntaxKindMap)
                         (implementation.arguments |> RangeDict.unionFromListMap patternSyntaxKindMap)
-                        |> RangeDict.insert (implementation.name |> Elm.Syntax.Node.range) Variable
+                        |> RangeDict.insert implementationNameRange Variable
+                        |> RangeDict.insert
+                            (let
+                                tokenBeforeEqualsEnd : Location
+                                tokenBeforeEqualsEnd =
+                                    case implementation.arguments |> List.Extra.last of
+                                        Just (Node lastPatternRange _) ->
+                                            lastPatternRange.end
+
+                                        Nothing ->
+                                            implementationNameRange.end
+                             in
+                             { start = { column = tokenBeforeEqualsEnd.column + 1, row = tokenBeforeEqualsEnd.row }
+                             , end = { column = tokenBeforeEqualsEnd.column + 2, row = tokenBeforeEqualsEnd.row }
+                             }
+                            )
+                            DeclarationRelated
                     )
 
 
