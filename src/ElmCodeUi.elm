@@ -26,7 +26,8 @@ type SyntaxKind
     | Field
     | ModuleNameOrAlias
     | Variable
-    | Keyword
+    | Flow
+    | DeclarationRelated
 
 
 syntaxKindMap : String -> RangeDict SyntaxKind
@@ -104,7 +105,7 @@ exposingSyntaxKindMap =
         in
         case exposing_ of
             Elm.Syntax.Exposing.All _ ->
-                RangeDict.singleton exposingKeywordRange Keyword
+                RangeDict.singleton exposingKeywordRange DeclarationRelated
 
             Elm.Syntax.Exposing.Explicit exposedMembers ->
                 exposedMembers
@@ -132,7 +133,7 @@ exposingSyntaxKindMap =
                                                 |> RangeDict.insert openRange
                                                     Variant
                         )
-                    |> RangeDict.insert exposingKeywordRange Keyword
+                    |> RangeDict.insert exposingKeywordRange DeclarationRelated
 
 
 moduleHeaderSyntaxKindMap : Node Elm.Syntax.Module.Module -> RangeDict SyntaxKind
@@ -151,7 +152,7 @@ moduleHeaderSyntaxKindMap =
                         { start = moduleHeaderRange.start
                         , end = { row = moduleHeaderRange.start.row, column = moduleHeaderRange.start.column + 6 }
                         }
-                        Keyword
+                        DeclarationRelated
 
             Elm.Syntax.Module.PortModule portModuleHeader ->
                 portModuleHeader.exposingList
@@ -161,7 +162,7 @@ moduleHeaderSyntaxKindMap =
                         { start = moduleHeaderRange.start
                         , end = { row = moduleHeaderRange.start.row, column = moduleHeaderRange.start.column + 6 }
                         }
-                        Keyword
+                        DeclarationRelated
 
 
 commentSyntaxKindMap : Node Comment -> RangeDict SyntaxKind
@@ -216,7 +217,7 @@ importSyntaxKindMap =
                     { start = importRange.start
                     , end = { row = importRange.start.row, column = importRange.start.column + 6 }
                     }
-                    Keyword
+                    DeclarationRelated
                 |> RangeDict.insert (import_.moduleName |> Elm.Syntax.Node.range) ModuleNameOrAlias
             )
             (case import_.moduleAlias of
@@ -229,7 +230,7 @@ importSyntaxKindMap =
                             { start = { column = aliasRange.start.column - 3, row = aliasRange.start.row }
                             , end = { column = aliasRange.start.column - 1, row = aliasRange.start.row }
                             }
-                            Keyword
+                            DeclarationRelated
             )
 
 
@@ -376,7 +377,7 @@ expressionSyntaxKindMap =
                         { start = expressionRange.start
                         , end = { row = expressionRange.start.row, column = expressionRange.start.column + 2 }
                         }
-                        Keyword
+                        Flow
 
             Elm.Syntax.Expression.PrefixOperator _ ->
                 RangeDict.singleton expressionRange Variable
@@ -418,7 +419,7 @@ expressionSyntaxKindMap =
                         { start = expressionRange.start
                         , end = { row = expressionRange.start.row, column = expressionRange.start.column + 3 }
                         }
-                        Keyword
+                        DeclarationRelated
 
             Elm.Syntax.Expression.CaseExpression caseOf ->
                 RangeDict.union
@@ -437,14 +438,14 @@ expressionSyntaxKindMap =
                                         { start = { column = lastPatternRange.end.column + 1, row = lastPatternRange.end.row }
                                         , end = { column = lastPatternRange.end.column + 3, row = lastPatternRange.end.row }
                                         }
-                                        Keyword
+                                        Flow
                             )
                     )
                     |> RangeDict.insert
                         { start = expressionRange.start
                         , end = { row = expressionRange.start.row, column = expressionRange.start.column + 4 }
                         }
-                        Keyword
+                        Flow
 
             Elm.Syntax.Expression.LambdaExpression lambda ->
                 RangeDict.union
@@ -454,14 +455,14 @@ expressionSyntaxKindMap =
                         { start = expressionRange.start
                         , end = { row = expressionRange.start.row, column = expressionRange.start.column + 1 }
                         }
-                        Keyword
+                        Flow
                     |> (case lambda.args |> List.Extra.last of
                             Just (Node lastPatternRange _) ->
                                 RangeDict.insert
                                     { start = { column = lastPatternRange.end.column + 1, row = lastPatternRange.end.row }
                                     , end = { column = lastPatternRange.end.column + 3, row = lastPatternRange.end.row }
                                     }
-                                    Keyword
+                                    Flow
 
                             Nothing ->
                                 identity
@@ -595,7 +596,7 @@ declarationSyntaxKindMap =
                         { start = declarationRange.start
                         , end = { row = declarationRange.start.row, column = declarationRange.start.column + 10 }
                         }
-                        Keyword
+                        DeclarationRelated
 
             Elm.Syntax.Declaration.CustomTypeDeclaration choiceTypeDeclaration ->
                 RangeDict.union
@@ -617,7 +618,7 @@ declarationSyntaxKindMap =
                         { start = declarationRange.start
                         , end = { row = declarationRange.start.row, column = declarationRange.start.column + 4 }
                         }
-                        Keyword
+                        DeclarationRelated
 
             Elm.Syntax.Declaration.PortDeclaration signature ->
                 signature
@@ -626,7 +627,7 @@ declarationSyntaxKindMap =
                         { start = declarationRange.start
                         , end = { row = declarationRange.start.row, column = declarationRange.start.column + 4 }
                         }
-                        Keyword
+                        DeclarationRelated
 
             Elm.Syntax.Declaration.InfixDeclaration _ ->
                 RangeDict.empty
@@ -784,6 +785,7 @@ stringLinesSlice range =
 
 syntaxKindToColor : SyntaxKind -> Color
 syntaxKindToColor =
+    -- light purple Color.rgb 0.97 0.42 1
     \syntaxKind ->
         case syntaxKind of
             Type ->
@@ -801,5 +803,8 @@ syntaxKindToColor =
             Variable ->
                 Color.rgb 0.85 0.8 0.1
 
-            Keyword ->
-                Color.rgb 0.98 0.4 0.4
+            Flow ->
+                Color.rgb 1 0.45 0.35
+
+            DeclarationRelated ->
+                Color.rgb 0.55 0.75 1
