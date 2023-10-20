@@ -565,7 +565,7 @@ typed-value 8.0.0 makes this safe."""
             Sequence
                 [ Paragraph
                     [ Text "Let's build a generic set type with a custom, user-provided order function similar to "
-                    , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keyset/latest/KeysSet" }
+                    , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
                     , Text " to show the power of being able to wrap a generic typed, enabled by "
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
                     , Text " 8"
@@ -673,9 +673,12 @@ reverse =
     Typed.mapToWrap Reverse (\\order -> \\( a, b ) -> order ( b, a ))
 """
                 , textOnlyParagraph """Notice how we don't have access to the tag of the argument
-but can still safely show it in the signature.
-
-How did we do this prior to version 8? Unsafe phantom types 🤮:"""
+but can still safely show it in the signature."""
+                , Paragraph
+                    [ Text "How did "
+                    , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
+                    , Text " do this prior to version 8? Unsafe phantom types 🤮:"
+                    ]
                 , elmCode """
 type Reverse tag
     = Reverse
@@ -701,7 +704,7 @@ reverse : Ordering subject tag -> Ordering subject (Reverse tag)
 reverse =
     Typed.mapToWrap Reverse (\\order -> \\a b -> order b a)
 """
-                , textOnlyParagraph """Still as safe and reading brains are happy, too!"""
+                , textOnlyParagraph """Still as safe and readers will be happy, too!"""
                 , Paragraph
                     [ Text "I'll leave you with one last example, showing how "
                     , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
