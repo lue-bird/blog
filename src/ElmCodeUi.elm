@@ -94,10 +94,17 @@ syntaxKindMap =
 
 exposingSyntaxKindMap : Node Elm.Syntax.Exposing.Exposing -> RangeDict SyntaxKind
 exposingSyntaxKindMap =
-    \(Node _ exposing_) ->
+    \(Node exposingRange exposing_) ->
+        let
+            exposingKeywordRange : Range
+            exposingKeywordRange =
+                { start = { column = exposingRange.start.column, row = exposingRange.start.row }
+                , end = { column = exposingRange.start.column + 8, row = exposingRange.start.row }
+                }
+        in
         case exposing_ of
             Elm.Syntax.Exposing.All _ ->
-                RangeDict.empty
+                RangeDict.singleton exposingKeywordRange Keyword
 
             Elm.Syntax.Exposing.Explicit exposedMembers ->
                 exposedMembers
@@ -125,6 +132,7 @@ exposingSyntaxKindMap =
                                                 |> RangeDict.insert openRange
                                                     Variant
                         )
+                    |> RangeDict.insert exposingKeywordRange Keyword
 
 
 moduleHeaderSyntaxKindMap : Node Elm.Syntax.Module.Module -> RangeDict SyntaxKind
