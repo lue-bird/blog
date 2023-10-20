@@ -21,6 +21,12 @@ serve
 ```
   - [vercel/serve](https://github.com/vercel/serve)
 
+### planned
+
+  - "elm-typesafe-radio" series
+      - phantom types
+      - opaque types
+
 #### contributing
 Before building the new version, `cd build-step` and run
 ```bash
