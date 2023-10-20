@@ -7,6 +7,7 @@ import Audio exposing (AudioData)
 import Browser
 import Browser.Dom
 import Browser.Events
+import Color
 import Duration
 import Element.WithContext
 import Element.WithContext.Background
@@ -239,13 +240,15 @@ linkUi config =
     Element.WithContext.link
         [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
         , Element.WithContext.Border.color interactiveColor
+        , Element.WithContext.Font.color interactiveColor
         ]
         config
 
 
 interactiveColor : Element.WithContext.Color
 interactiveColor =
-    Element.WithContext.rgb 1 0.5 0
+    -- Element.WithContext.rgb 1 0.5 0
+    Element.WithContext.rgb 0.49 0.83 1
 
 
 articleContentUi : Articles.Content -> Element.WithContext.Element Context event_
