@@ -466,7 +466,9 @@ typeAnnotationSyntaxKindMap =
 signatureSyntaxKindMap : Signature -> RangeDict SyntaxKind
 signatureSyntaxKindMap =
     \signature ->
-        signature.typeAnnotation |> typeAnnotationSyntaxKindMap
+        signature.typeAnnotation
+            |> typeAnnotationSyntaxKindMap
+            |> RangeDict.insert (signature.name |> Elm.Syntax.Node.range) Variable
 
 
 declarationSyntaxKindMap : Node Declaration -> RangeDict SyntaxKind
