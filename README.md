@@ -26,6 +26,7 @@ serve
   - "elm-typesafe-radio" series
       - phantom types
       - opaque types
+  - syntax highlight for signature-only function declarations
 
 #### contributing
 Before building the new version, `cd build-step` and run
