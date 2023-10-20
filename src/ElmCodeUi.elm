@@ -204,26 +204,33 @@ commentSyntaxKindMap =
 importSyntaxKindMap : Node Import -> RangeDict SyntaxKind
 importSyntaxKindMap =
     \(Node importRange import_) ->
-        (case import_.exposingList of
-            Nothing ->
-                RangeDict.empty
+        RangeDict.union
+            ((case import_.exposingList of
+                Nothing ->
+                    RangeDict.empty
 
-            Just exposingList ->
-                exposingList |> exposingSyntaxKindMap
-        )
-            |> RangeDict.insert (import_.moduleName |> Elm.Syntax.Node.range) ModuleNameOrAlias
-            |> (case import_.moduleAlias of
-                    Nothing ->
-                        identity
+                Just exposingList ->
+                    exposingList |> exposingSyntaxKindMap
+             )
+                |> RangeDict.insert
+                    { start = importRange.start
+                    , end = { row = importRange.start.row, column = importRange.start.column + 6 }
+                    }
+                    Keyword
+                |> RangeDict.insert (import_.moduleName |> Elm.Syntax.Node.range) ModuleNameOrAlias
+            )
+            (case import_.moduleAlias of
+                Nothing ->
+                    RangeDict.empty
 
-                    Just alias ->
-                        RangeDict.insert (alias |> Elm.Syntax.Node.range) ModuleNameOrAlias
-               )
-            |> RangeDict.insert
-                { start = importRange.start
-                , end = { row = importRange.start.row, column = importRange.start.column + 6 }
-                }
-                Keyword
+                Just (Node aliasRange _) ->
+                    RangeDict.singleton aliasRange ModuleNameOrAlias
+                        |> RangeDict.insert
+                            { start = { column = aliasRange.start.column - 3, row = aliasRange.start.row }
+                            , end = { column = aliasRange.start.column - 1, row = aliasRange.start.row }
+                            }
+                            Keyword
+            )
 
 
 locationAddColumn : Int -> Location -> Location
@@ -419,9 +426,18 @@ expressionSyntaxKindMap =
                     (caseOf.cases
                         |> RangeDict.unionFromListMap
                             (\( casePattern, caseExpression ) ->
+                                let
+                                    (Node lastPatternRange _) =
+                                        casePattern
+                                in
                                 RangeDict.union
                                     (casePattern |> patternSyntaxKindMap)
                                     (caseExpression |> expressionSyntaxKindMap)
+                                    |> RangeDict.insert
+                                        { start = { column = lastPatternRange.end.column + 1, row = lastPatternRange.end.row }
+                                        , end = { column = lastPatternRange.end.column + 3, row = lastPatternRange.end.row }
+                                        }
+                                        Keyword
                             )
                     )
                     |> RangeDict.insert
@@ -439,6 +455,17 @@ expressionSyntaxKindMap =
                         , end = { row = expressionRange.start.row, column = expressionRange.start.column + 1 }
                         }
                         Keyword
+                    |> (case lambda.args |> List.Extra.last of
+                            Just (Node lastPatternRange _) ->
+                                RangeDict.insert
+                                    { start = { column = lastPatternRange.end.column + 1, row = lastPatternRange.end.row }
+                                    , end = { column = lastPatternRange.end.column + 3, row = lastPatternRange.end.row }
+                                    }
+                                    Keyword
+
+                            Nothing ->
+                                identity
+                       )
 
             Elm.Syntax.Expression.RecordExpr fields ->
                 fields
