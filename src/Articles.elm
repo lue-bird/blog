@@ -34,38 +34,13 @@ all =
         [ introduction
         , aSaferAstArticle
         , whatToDoWithElmReviewErrorsArticle
+        , typedValue8Article
         ]
 
 
 textOnlyParagraph : String -> Content
 textOnlyParagraph text =
     Paragraph [ Text text ]
-
-
-inlineElmCode : String -> ParagraphPart
-inlineElmCode raw =
-    InlineElmCode (elmCodeFromRaw raw)
-
-
-elmCode : String -> Content
-elmCode raw =
-    ElmCode (elmCodeFromRaw raw)
-
-
-elmCodeFromRaw : String -> { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
-elmCodeFromRaw raw =
-    let
-        rawStrippedOfBlankStartAndEnd : String
-        rawStrippedOfBlankStartAndEnd =
-            raw
-                |> String.lines
-                |> List.Extra.dropWhile String.Extra.isBlank
-                |> List.Extra.dropWhileRight String.Extra.isBlank
-                |> String.join "\n"
-    in
-    { raw = rawStrippedOfBlankStartAndEnd
-    , syntaxKindMap = rawStrippedOfBlankStartAndEnd |> ElmCodeUi.syntaxKindMap
-    }
 
 
 introduction : Content
@@ -85,6 +60,32 @@ introduction =
             , Text " to suggest improvements."
             ]
         ]
+
+
+elmCodeFromRaw : String -> { raw : String, syntaxKindMap : RangeDict ElmCodeUi.SyntaxKind }
+elmCodeFromRaw raw =
+    let
+        rawStrippedOfBlankStartAndEnd : String
+        rawStrippedOfBlankStartAndEnd =
+            raw
+                |> String.lines
+                |> List.Extra.dropWhile String.Extra.isBlank
+                |> List.Extra.dropWhileRight String.Extra.isBlank
+                |> String.join "\n"
+    in
+    { raw = rawStrippedOfBlankStartAndEnd
+    , syntaxKindMap = rawStrippedOfBlankStartAndEnd |> ElmCodeUi.syntaxKindMap
+    }
+
+
+inlineElmCode : String -> ParagraphPart
+inlineElmCode raw =
+    InlineElmCode (elmCodeFromRaw raw)
+
+
+elmCode : String -> Content
+elmCode raw =
+    ElmCode (elmCodeFromRaw raw)
 
 
 whatToDoWithElmReviewErrorsArticle : Content
@@ -127,8 +128,12 @@ getTuple2 = ...
 """
                 , textOnlyParagraph """Oh no! The editor gives me squigglies, the CI is red, what to do?"""
                 , textOnlyParagraph """Most of these do not need to be fixed immediately!"""
-                , textOnlyParagraph """They are like leaving `Debug.todo` or failing test somewhere.
+                , Paragraph
+                    [ Text "They are like leaving "
+                    , inlineElmCode "Debug.todo"
+                    , Text """ or failing test somewhere.
 You know, the stuff that allows you to keep less things in your mind that "you still need to do"."""
+                    ]
                 , textOnlyParagraph """In that way, they are like an automated todo list for you and your whole team."""
                 , textOnlyParagraph """If you think there won't be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn't scary. They have your back."""
@@ -545,6 +550,167 @@ type EqualsExpression
   | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
 """
                 , textOnlyParagraph """Wtf?"""
+                ]
+        }
+
+
+typedValue8Article : Content
+typedValue8Article =
+    Section
+        { title = "(Almost complete) typed-value 8.0.0"
+        , description = "TODO"
+        , publishTime = Time.millisToPosix 1698451200000
+        , content =
+            Sequence
+                [ Paragraph
+                    [ Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
+                    , Text """ 8's power:
+wrapping a generic typed.
+
+As an example how """
+                    , Link { description = "KeySet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keyset/latest/KeySet" }
+                    , Text " uses "
+                    , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
+                    ]
+                , elmCode """
+type alias Ordering a tag =
+    Typed Checked tag Public (a -> a -> Order)
+
+reverse : Ordering subject tag -> Ordering subject ( Reverse, tag )
+reverse = x {- ... -}
+"""
+                , Paragraph
+                    [ inlineElmCode "Ordering"
+                    , Text """ operations couldn't be represented using normal opaque types
+because you can't generically look inside."""
+                    ]
+                , Paragraph
+                    [ Text """You'd need to store a tag, but having access to the tag ruins the promise
+that only the module with the tag can create """
+                    , inlineElmCode "Ordering"
+                    , Text "s with that tag."
+                    ]
+                , elmCode """
+module Int.Order exposing (increasing, Increasing)
+
+increasing : Ordering Int Increasing
+increasing = Typed.tag Increasing compare
+type Increasing = Increasing
+"""
+                , elmCode """
+module Float.Order exposing (increasing, Increasing)
+
+increasing : Ordering Float Increasing
+increasing = Typed.tag Increasing compare
+type Increasing = Increasing
+"""
+                , elmCode """
+module KeySet exposing (KeySet, insert, remove)
+
+type alias Sorting element tag key =
+    Typed
+        Checked
+        ( SortingTag, tag )
+        Public
+        { toKey : element -> key
+        , keyOrder : element -> element -> Order
+        }
+
+type SortingTag
+    = Sorting
+
+sortingKey :
+    Typed Checked keyTag Public (element -> key)
+    -> Ordering key keyOrderTag
+    -> Sorting element ( keyTag, keyOrderTag ) key
+sortingKey = x {- ... -}
+
+type alias KeySet element tag =
+    Typed Checked tag Internal {- internals -}
+
+insert :
+    Sorting element tag key_
+    -> element
+    -> KeySet element tag
+    -> KeySet element tag
+insert = x {- ... -}
+
+remove :
+    Sorting element tag key
+    -> key
+    -> KeySet element tag
+    -> KeySet element tag
+remove = x {- ... -}
+"""
+                , elmCode """
+KeySet.empty
+    |> KeySet.insert Float.Order.increasing 3
+    |> KeySet.remove Int.Order.increasing 4.0 -- compile-time error
+"""
+                , UnorderedList
+                    [ Paragraph [ Text "Each unique ", inlineElmCode "Sorting", Text " has a unique ", inlineElmCode "tag", Text " combination ", inlineElmCode "( toKeyTag, keyOrderTag )" ]
+                    , Paragraph [ inlineElmCode "KeySet", Text " enforces that all operations need a ", inlineElmCode "Sorting", Text " with the same ", inlineElmCode "tag" ]
+                    ]
+                , Paragraph [ Text "Therefore, the supplied ", inlineElmCode "toKey", Text " and ", inlineElmCode "keyOrdering", Text " functions are enforced to be the same across every operation." ]
+                , Paragraph [ Text "What's new in version 8 is how we can preserve tags through wrapping them" ]
+                , elmCode """
+type SortingTag
+    = Sorting
+
+sortingKey :
+    Typed Checked keyTag Public (element -> key)
+    -> Ordering key keyOrderTag
+    -> Sorting element ( keyTag, keyOrderTag ) key
+sortingKey toKeyTyped keyOrdering =
+    toKeyTyped
+        |> Typed.wrapAnd keyOrdering
+        --: Typed ( keyTag, keyOrderTag ) Tagged Public {- ... -}
+        |> Typed.mapToWrap Sorting
+            (\\( toKey, keyOrder ) ->
+                { toKey = toKey
+                , keyOrder = keyOrder
+                }
+            )
+"""
+                , Paragraph [ Text "in a simpler example: implementing ", inlineElmCode "Order.reverse" ]
+                , elmCode """
+type Reverse
+    = Reverse
+
+reverse : Ordering subject tag -> Ordering subject ( Reverse, tag )
+reverse =
+    Typed.mapToWrap Reverse (\\order -> \\a b -> order b a)
+"""
+                , textOnlyParagraph """Notice how we don't have access to the tag of the argument
+but can still safely show it in the signature.
+
+How did we do this in version 7? Unsafe phantom types 🤮:"""
+                , elmCode """
+type Reverse tag
+    = Reverse
+
+reverse : Ordering subject tag -> Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo Reverse (\\order -> \\a b -> order b a)
+
+reverseOops : Ordering subject orderTag -> Ordering subject (Reverse tag)
+reverseOops = x {- ... -}
+"""
+                , textOnlyParagraph """The reversed tag can accidentally be anything. It's a free variable :(
+
+Sadly that's sometimes more readable for multiple tag arguments. A quick solution:"""
+                , elmCode """
+type alias Reverse orderTag =
+    ( ReverseTag, orderTag )
+
+type ReverseTag
+    = Reverse
+
+reverse : Ordering subject tag -> Ordering subject (Reverse tag)
+reverse =
+    Typed.mapToWrap Reverse (\\order -> \\a b -> order b a)
+"""
+                , textOnlyParagraph """Makes it safe, makes brain happy!"""
                 ]
         }
 
