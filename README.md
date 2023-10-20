@@ -28,7 +28,7 @@ serve
       - opaque types
   - syntax highlight for signature-only function declarations
 
-#### contributing
+### contributing
 Before building the new version, `cd build-step` and run
 ```bash
 elm-cli run src/Build.elm $EPOCHSECONDS
