@@ -752,19 +752,19 @@ syntaxKindToColor =
     \syntaxKind ->
         case syntaxKind of
             Type ->
-                Color.rgb 0.7 0.5 1
+                Color.rgb 0.9 0.55 1
 
             Variant ->
-                Color.rgb 0.2 0.65 0.54
+                Color.rgb 0.24 0.75 0.62
 
             Field ->
-                Color.rgb 0.35 0.81 0
+                Color.rgb 0.4 0.9 0
 
             ModuleNameOrAlias ->
-                Color.rgb 0.4 0.46 0.88
+                Color.rgb 0.45 0.5 0.98
 
             Variable ->
-                Color.rgb 0.55 0.5 0
+                Color.rgb 0.85 0.8 0.1
 
             Keyword ->
-                Color.rgb 0.88 0.25 0.25
+                Color.rgb 0.98 0.4 0.4
