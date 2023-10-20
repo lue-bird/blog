@@ -30,6 +30,8 @@ type SyntaxKind
     | DeclarationRelated
 
 
+{-| Assumes `elm-format`ed code
+-}
 syntaxKindMap : String -> RangeDict SyntaxKind
 syntaxKindMap =
     \rawSourceCode ->
@@ -348,7 +350,7 @@ patternSyntaxKindMap =
                 RangeDict.union
                     (Node
                         { start = patternRange.start
-                        , end = patternRange.start |> locationAddColumn (qualified |> qualifiedToString |> String.length)
+                        , end = patternRange.start |> locationAddColumn (qualified |> qualifiedRangeLength)
                         }
                         qualified
                         |> qualifiedSyntaxKindMap Variant
@@ -366,21 +368,17 @@ patternSyntaxKindMap =
                 inner |> patternSyntaxKindMap
 
 
-qualifiedToString : ( Elm.Syntax.ModuleName.ModuleName, String ) -> String
-qualifiedToString =
+qualifiedRangeLength : ( Elm.Syntax.ModuleName.ModuleName, String ) -> Int
+qualifiedRangeLength =
     \( moduleName, name ) ->
         case moduleName of
             [] ->
-                name
+                name |> String.length
 
-            _ :: _ ->
-                moduleNameToString moduleName ++ "." ++ name
-
-
-moduleNameToString : Elm.Syntax.ModuleName.ModuleName -> String
-moduleNameToString =
-    \moduleName ->
-        String.join "." moduleName
+            moduleNamePart0 :: moduleNamePart1Up ->
+                List.foldl (\part soFar -> soFar + (part |> String.length))
+                    ((moduleNamePart0 |> String.length) + 1 + (name |> String.length))
+                    moduleNamePart1Up
 
 
 expressionSyntaxKindMap :
@@ -411,6 +409,8 @@ expressionSyntaxKindMap context =
                                         , end = right |> Elm.Syntax.Node.range |> .start
                                         }
                                         context
+                                    -- if there is a bug
+                                    |> Maybe.withDefault Elm.Syntax.Range.emptyRange
                         in
                         case operatorSymbol of
                             "|>" ->
@@ -448,6 +448,8 @@ expressionSyntaxKindMap context =
                                 , end = onTrue |> Elm.Syntax.Node.range |> .start
                                 }
                                 context
+                            -- if there is a bug
+                            |> Maybe.withDefault Elm.Syntax.Range.emptyRange
                         )
                         Flow
                     |> RangeDict.insert
@@ -457,6 +459,8 @@ expressionSyntaxKindMap context =
                                 , end = onFalse |> Elm.Syntax.Node.range |> .start
                                 }
                                 context
+                            -- if there is a bug
+                            |> Maybe.withDefault Elm.Syntax.Range.emptyRange
                         )
                         Flow
 
@@ -513,6 +517,8 @@ expressionSyntaxKindMap context =
                                             , end = letIn.expression |> Elm.Syntax.Node.range |> .start
                                             }
                                             context
+                                        -- if there is a bug
+                                        |> Maybe.withDefault Elm.Syntax.Range.emptyRange
                                     )
                                     DeclarationRelated
                        )
@@ -554,6 +560,8 @@ expressionSyntaxKindMap context =
                                             , end = firstCasePatternRange.start
                                             }
                                             context
+                                        -- if there is a bug
+                                        |> Maybe.withDefault Elm.Syntax.Range.emptyRange
                                     )
                                     Flow
                        )
@@ -864,73 +872,66 @@ tokenFindRangeIn :
         { rawSourceCode : List String
         , commentRanges : List Range
         }
-    -> (String -> Range)
+    -> (String -> Maybe Range)
 tokenFindRangeIn searchRange context =
     \token ->
         let
-            betweenOperands : String
-            betweenOperands =
-                context.rawSourceCode
-                    |> stringLinesSlice searchRange
+            searchLines : List String
+            searchLines =
+                context.rawSourceCode |> stringLinesSlice searchRange
 
             operatorStartLocationFound : Maybe Location
             operatorStartLocationFound =
-                String.indexes token betweenOperands
+                searchLines
+                    |> List.indexedMap Tuple.pair
                     |> List.Extra.findMap
-                        (\operatorOffset ->
-                            let
-                                operatorStartLocation : Location
-                                operatorStartLocation =
-                                    offsetInStringToLocation
-                                        { offset = operatorOffset
-                                        , startLocation = searchRange.start
-                                        , source = betweenOperands
-                                        }
+                        (\( searchLineIndex, searchLine ) ->
+                            String.indexes token searchLine
+                                |> List.Extra.findMap
+                                    (\operatorOffset ->
+                                        let
+                                            operatorStartLocation : Location
+                                            operatorStartLocation =
+                                                case searchLineIndex of
+                                                    0 ->
+                                                        { row = searchRange.start.row
+                                                        , column = searchRange.start.column + operatorOffset
+                                                        }
 
-                                isPartOfComment : Bool
-                                isPartOfComment =
-                                    List.any
-                                        (\commentRange ->
-                                            rangeContainsLocation operatorStartLocation commentRange
-                                        )
-                                        context.commentRanges
-                            in
-                            if isPartOfComment then
-                                Nothing
+                                                    searchLineAfterFirstIndex ->
+                                                        { row = searchRange.start.row + searchLineAfterFirstIndex
+                                                        , column = operatorOffset + 1
+                                                        }
 
-                            else
-                                Just operatorStartLocation
+                                            isPartOfComment : Bool
+                                            isPartOfComment =
+                                                List.any
+                                                    (\commentRange ->
+                                                        rangeContainsLocation operatorStartLocation commentRange
+                                                    )
+                                                    context.commentRanges
+                                        in
+                                        if isPartOfComment then
+                                            Nothing
+
+                                        else
+                                            Just operatorStartLocation
+                                    )
                         )
         in
         case operatorStartLocationFound of
             Just operatorStartLocation ->
-                { start = operatorStartLocation
-                , end =
-                    { row = operatorStartLocation.row
-                    , column = operatorStartLocation.column + String.length token
+                Just
+                    { start = operatorStartLocation
+                    , end =
+                        { row = operatorStartLocation.row
+                        , column = operatorStartLocation.column + String.length token
+                        }
                     }
-                }
 
             -- there's a bug somewhere
             Nothing ->
-                Elm.Syntax.Range.emptyRange
-
-
-offsetInStringToLocation : { offset : Int, source : String, startLocation : Location } -> Location
-offsetInStringToLocation config =
-    case config.source |> String.left config.offset |> String.lines |> List.reverse of
-        [] ->
-            config.startLocation
-
-        onlyLine :: [] ->
-            { row = config.startLocation.row
-            , column = config.startLocation.column + String.length onlyLine
-            }
-
-        lineWithOffsetLocation :: _ :: linesBeforeBeforeWithOffsetLocation ->
-            { row = config.startLocation.row + 1 + List.length linesBeforeBeforeWithOffsetLocation
-            , column = 1 + String.length lineWithOffsetLocation
-            }
+                Nothing
 
 
 rangeContainsLocation : Location -> Range -> Bool
@@ -1023,13 +1024,13 @@ with syntaxKindByRange rawSourceCode =
                                     (syntaxKind |> syntaxKindToColor |> Color.toCssString)
                                 ]
                         )
-                        [ Html.text (rawSourceCodeLines |> stringLinesSlice segment.range)
+                        [ Html.text (rawSourceCodeLines |> stringLinesSlice segment.range |> String.join "\n")
                         ]
                 )
         )
 
 
-stringLinesSlice : Range -> List String -> String
+stringLinesSlice : Range -> List String -> List String
 stringLinesSlice range =
     \lines ->
         lines
@@ -1056,7 +1057,6 @@ stringLinesSlice range =
                             )
                 )
             |> List.filterMap identity
-            |> String.join "\n"
 
 
 syntaxKindToColor : SyntaxKind -> Color
