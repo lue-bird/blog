@@ -2,6 +2,7 @@ module ElmCodeUi exposing (SyntaxKind(..), syntaxKindMap, with)
 
 import Color exposing (Color)
 import Elm.Parser
+import Elm.Syntax.Comments exposing (Comment)
 import Elm.Syntax.Declaration exposing (Declaration)
 import Elm.Syntax.Exposing
 import Elm.Syntax.Expression exposing (Expression, LetDeclaration)
@@ -33,27 +34,33 @@ syntaxKindMap =
     \rawSourceCode ->
         case rawSourceCode |> Elm.Parser.parseToFile of
             Ok file ->
-                RangeDict.union
-                    (file.moduleDefinition |> moduleHeaderSyntaxKindMap)
-                    (RangeDict.union
-                        (file.imports
-                            |> RangeDict.unionFromListMap importSyntaxKindMap
-                        )
-                        (file.declarations
-                            |> RangeDict.unionFromListMap declarationSyntaxKindMap
-                        )
-                    )
+                RangeDict.unionFromListMap identity
+                    [ file.moduleDefinition |> moduleHeaderSyntaxKindMap
+                    , file.comments |> RangeDict.unionFromListMap commentSyntaxKindMap
+                    , file.imports
+                        |> RangeDict.unionFromListMap importSyntaxKindMap
+                    , file.declarations
+                        |> RangeDict.unionFromListMap declarationSyntaxKindMap
+                    ]
 
             Err _ ->
                 case "module A exposing (..)\n" ++ rawSourceCode |> Elm.Parser.parseToFile of
                     Ok fileWithoutHeader ->
-                        RangeDict.union
-                            (fileWithoutHeader.imports
+                        RangeDict.unionFromListMap identity
+                            [ fileWithoutHeader.imports
                                 |> RangeDict.unionFromListMap importSyntaxKindMap
-                            )
-                            (fileWithoutHeader.declarations
+                            , fileWithoutHeader.declarations
                                 |> RangeDict.unionFromListMap declarationSyntaxKindMap
-                            )
+                            , fileWithoutHeader.comments |> RangeDict.unionFromListMap commentSyntaxKindMap
+                            ]
+                            |> RangeDict.justValuesMap
+                                (\range value ->
+                                    if range.start.row <= 1 then
+                                        Nothing
+
+                                    else
+                                        Just value
+                                )
                             |> RangeDict.toListMap (\range syntaxKind -> ( range |> rangeAddRow -1, syntaxKind ))
                             |> RangeDict.mapFromList identity
 
@@ -70,6 +77,14 @@ syntaxKindMap =
                             Ok fileWithoutHeaderAndFnDeclarationHeader ->
                                 fileWithoutHeaderAndFnDeclarationHeader.declarations
                                     |> RangeDict.unionFromListMap declarationSyntaxKindMap
+                                    |> RangeDict.justValuesMap
+                                        (\range value ->
+                                            if range.start.row <= 2 then
+                                                Nothing
+
+                                            else
+                                                Just value
+                                        )
                                     |> RangeDict.toListMap (\range syntaxKind -> ( range |> rangeAddRow -2 |> rangeAddColumn -4, syntaxKind ))
                                     |> RangeDict.mapFromList identity
 
@@ -139,6 +154,43 @@ moduleHeaderSyntaxKindMap =
                         , end = { row = moduleHeaderRange.start.row, column = moduleHeaderRange.start.column + 6 }
                         }
                         Keyword
+
+
+commentSyntaxKindMap : Node Comment -> RangeDict SyntaxKind
+commentSyntaxKindMap =
+    \(Node commentRange comment) ->
+        if comment |> String.startsWith "--: " then
+            case
+                "module A exposing (..)\ntype alias A =\n    "
+                    ++ (comment |> String.dropLeft 4)
+                    |> Elm.Parser.parseToFile
+            of
+                Ok fileWithoutHeaderAndFnDeclarationHeader ->
+                    fileWithoutHeaderAndFnDeclarationHeader.declarations
+                        |> RangeDict.unionFromListMap declarationSyntaxKindMap
+                        |> RangeDict.justValuesMap
+                            (\range value ->
+                                if range.start.row <= 2 then
+                                    Nothing
+
+                                else
+                                    Just value
+                            )
+                        |> RangeDict.toListMap
+                            (\range syntaxKind ->
+                                ( { start = { row = commentRange.start.row, column = commentRange.start.column + range.start.column - 1 }
+                                  , end = { row = commentRange.start.row, column = commentRange.start.column + range.end.column - 1 }
+                                  }
+                                , syntaxKind
+                                )
+                            )
+                        |> RangeDict.mapFromList identity
+
+                Err _ ->
+                    RangeDict.empty
+
+        else
+            RangeDict.empty
 
 
 importSyntaxKindMap : Node Import -> RangeDict SyntaxKind

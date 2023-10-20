@@ -1,4 +1,4 @@
-module RangeDict exposing (RangeDict, any, empty, foldl, get, insert, mapFromList, member, remove, singleton, toListMap, union, unionFromListMap)
+module RangeDict exposing (RangeDict, any, empty, foldl, get, insert, justValuesMap, mapFromList, member, remove, singleton, toListMap, union, unionFromListMap)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Range exposing (Location, Range)
@@ -62,6 +62,22 @@ get range (RangeDict rangeDict) =
 member : Range -> RangeDict v -> Bool
 member range (RangeDict rangeDict) =
     Dict.member (rangeAsString range) rangeDict
+
+
+justValuesMap : (Range -> value -> Maybe valueMapped) -> RangeDict value -> RangeDict valueMapped
+justValuesMap rangeAndValueMap =
+    \rangeDict ->
+        rangeDict
+            |> foldl
+                (\range value soFar ->
+                    case rangeAndValueMap range value of
+                        Nothing ->
+                            soFar
+
+                        Just valueMapped ->
+                            soFar |> insert range valueMapped
+                )
+                empty
 
 
 toListMap : (Range -> value -> element) -> RangeDict value -> List element
