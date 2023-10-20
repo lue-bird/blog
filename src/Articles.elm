@@ -564,7 +564,7 @@ typed-value 8.0.0 makes this safe."""
         , content =
             Sequence
                 [ Paragraph
-                    [ Text "Let's build a generic set type with a custom order function similar to "
+                    [ Text "Let's build a generic set type with a custom, user-provided order function similar to "
                     , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keyset/latest/KeysSet" }
                     , Text " to show the power of being able to wrap a generic typed, enabled by "
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
@@ -608,7 +608,7 @@ fakeOrdering =
                 , Paragraph
                     [ Text "Unlike opaque types, "
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
-                    , Text " gives you fine-grained control over who can access the inner order function:"
+                    , Text " gives you control over who can access the inner order function:"
                     ]
                 , elmCode """
 type alias Ordering subject tag =
@@ -675,7 +675,7 @@ reverse =
                 , textOnlyParagraph """Notice how we don't have access to the tag of the argument
 but can still safely show it in the signature.
 
-How did we do this in version 7? Unsafe phantom types 🤮:"""
+How did we do this prior to version 8? Unsafe phantom types 🤮:"""
                 , elmCode """
 type Reverse tag
     = Reverse
@@ -685,10 +685,11 @@ reverse =
     Typed.mapTo Reverse (\\order -> \\a b -> order b a)
 
 reverseOops : Ordering subject orderTag -> Ordering subject (Reverse tag)
-reverseOops = x {- ... -}
+reverseOops =
+    Typed.mapTo Reverse (\\order -> \\a b -> order b a)
 """
                 , textOnlyParagraph """The reversed tag can accidentally be anything. It's a free variable :("""
-                , textOnlyParagraph """Sadly that's sometimes more readable for multiple tag arguments. A quick solution:"""
+                , textOnlyParagraph """Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:"""
                 , elmCode """
 type alias Reverse orderTag =
     ( ReverseTag, orderTag )
@@ -700,7 +701,7 @@ reverse : Ordering subject tag -> Ordering subject (Reverse tag)
 reverse =
     Typed.mapToWrap Reverse (\\order -> \\a b -> order b a)
 """
-                , textOnlyParagraph """Makes it safe, makes brain happy!"""
+                , textOnlyParagraph """Still as safe and reading brains are happy, too!"""
                 , Paragraph
                     [ Text "I'll leave you with one last example, showing how "
                     , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
@@ -709,6 +710,15 @@ reverse =
                 , elmCode """
 type SortingTag
     = Sorting
+
+type alias Sorting element tag key =
+    Typed
+        Checked
+        ( SortingTag, tag )
+        Public
+        { toKey : element -> key
+        , keyOrder : element -> element -> Order
+        }
 
 sortingKey :
     Typed Checked keyTag Public (element -> key)
