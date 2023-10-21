@@ -402,7 +402,7 @@ syntaxKindToColor =
                 Color.rgb 0.4 0.9 0
 
             ElmSyntaxHighlight.ModuleNameOrAlias ->
-                Color.rgb 0.45 0.5 0.98
+                Color.rgb 0.45 0.5 1
 
             ElmSyntaxHighlight.Variable ->
                 Color.rgb 0.85 0.8 0.1
