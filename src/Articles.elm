@@ -587,13 +587,24 @@ remove :
 remove = x {- ... -}
 """
                 , UnorderedList
-                    [ Paragraph [ Text "Each unique ", inlineElmCode "Ordering", Text " has a unique last type argument." ]
-                    , Paragraph [ inlineElmCode "GenericSet", Text " enforces that all operations need an ", inlineElmCode "Ordering", Text " with the same ", inlineElmCode "unique", Text " type argument." ]
+                    [ Paragraph
+                        [ Text "Each unique "
+                        , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                        , Text " has a unique last type argument."
+                        ]
+                    , Paragraph
+                        [ InlineElmCode [ { string = "GenericSet", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                        , Text " enforces that all operations need an "
+                        , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                        , Text " with the same "
+                        , inlineElmCode "unique"
+                        , Text " type argument."
+                        ]
                     ]
                 , Paragraph [ Text "Therefore, the inner order function is enforced to be the same across every operation." ]
                 , Paragraph
                     [ Text "If we would represent an "
-                    , inlineElmCode "Ordering"
+                    , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
                     , Text """ as a normal opaque type, getting the actual function to order the elements would be unsafe"""
                     ]
                 , elmCode """
