@@ -32,9 +32,10 @@ all : Content
 all =
     Sequence
         [ introduction
-        , aSaferAstArticle
+        , yourAstAllowsListsWithDifferentElementTypesWhyArticle
         , whatToDoWithElmReviewErrorsArticle
         , typedValue8Article
+        , textOnlyParagraph """⸜(｡˃ ᵕ ˂ )⸝♡"""
         ]
 
 
@@ -139,16 +140,39 @@ Aggregating errors isn't scary. They have your back."""
         }
 
 
-aSaferAstArticle : Content
-aSaferAstArticle =
+yourAstAllowsListsWithDifferentElementTypesWhyArticle : Content
+yourAstAllowsListsWithDifferentElementTypesWhyArticle =
     Section
-        { title = "(Almost complete) A safer AST?"
+        { title = "Your AST allows lists with different element types. Why?"
         , description = """Can you represent a list expression where all elements have the same type? Yes.
 And what about operations like (==) on infinitely nested triples?"""
         , publishTime = Time.millisToPosix 1697846400000
         , content =
             Sequence
-                [ textOnlyParagraph """Let's consider a really simple language"""
+                [ Paragraph
+                    [ Text "There was a time when "
+                    , Link { description = "elm-codegen", url = "https://github.com/mdgriffith/elm-codegen" }
+                    , Text " and friends like "
+                    , Link { description = "review-todo-it-for-me", url = "https://github.com/MartinSStewart/elm-review-todo-it-for-me" }
+                    , Text " were not around. Code generation felt under-explored and in need of a framework to generate helpers like record update functions, codecs, html from strings and whatever based on existing elm code."
+                    ]
+                , Paragraph
+                    [ Text "Well, a good chunk of work later there were significant parts in place of an ambitious "
+                    , Link { description = "lue-bird/generate-elm", url = "https://github.com/lue-bird/generate-elm" }
+                    , Text "."
+                    ]
+                , Paragraph
+                    [ Text "To generate elm code, the decision was made to not directly use "
+                    , Link { description = "elm-syntax", url = "https://dark.elm.dmy.fr/packages/stil4m/elm-syntax/latest/" }
+                    , Text " for "
+                    , Italic "countless"
+                    , Text " reasons like not allowing users to generate "
+                    , inlineElmCode "3.2 // 'a'"
+                    , Text " or avoiding empty nodes."
+                    ]
+                , textOnlyParagraph "Creating a perfectly type-safe AST + builder was actually working out surprisingly well and was both challenging and fun... until problems like the one in this article's title came up."
+                , textOnlyParagraph """And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
+Starting with a classic but unsafe AST:"""
                 , elmCode """
 type Expression
   = String String
@@ -157,7 +181,7 @@ type Expression
   | List (List Expression)
   | Equals { left : Expression, right : Expression }
 """
-                , textOnlyParagraph """This is "probably fine" ™ but..."""
+                , textOnlyParagraph """↑ This is "probably fine" ™ practically but..."""
                 , UnorderedList
                     [ Sequence
                         [ textOnlyParagraph """it allows users to generate incorrect expressions"""
@@ -171,8 +195,7 @@ Equals { left = String "High", right = Int 5 }
                         ]
                     , textOnlyParagraph """it has impossible variants you are forced to case on"""
                     ]
-                , textOnlyParagraph """How hard can it be to make this small language completely type-safe?
-Spoiler: It is possible."""
+                , textOnlyParagraph "How hard can it be to make this small language completely type-safe?"
                 , textOnlyParagraph """Naively, we could represent each kind of list and equals by it's own variant"""
                 , elmCode """
 type Expression
@@ -243,7 +266,13 @@ type Expression
   | List (ListExpression String Int BoolKnown)
   | Equals (EqualsExpression String Int BoolKnown)
 """
-                , textOnlyParagraph """which allows us to build lists like"""
+                , Paragraph
+                    [ Text "Quite cool how this works. For example, to represent a list of strings, we go down "
+                    , inlineElmCode "ListOfString String"
+                    , Text " with the String type directly passed from above. And if the string list is the element type of another list, we go through "
+                    , inlineElmCode "ListOfList (ListOfString (List String))"
+                    , Text " where the \"wrapping into a list type\" is passed down recursively."
+                    ]
                 , elmCode """
 List
     (ListOfList
@@ -263,41 +292,35 @@ List
         )
     )
 """
-                , textOnlyParagraph """Somehow, this works."""
                 , textOnlyParagraph """All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?"""
                 , elmCode """
 -- with Outer being (Type -> Type)
-type ByExpressionType outer string int bool
+type ByExpressionType string int bool
   = String (Outer string)
   | Int (Outer int)
   | Bool (Outer bool)
   | List (ByExpressionType (List string) (List int) (List bool))
 
 type alias Expression =
-    ByExpressionType Identity String Int BoolKnown
-type alias ListExpression =
-    ByExpressionType List String Int BoolKnown
-type alias EqualsExpression =
-    ByExpressionType EqualsOf String Int BoolKnown
-"""
-                , Paragraph [ Text "The ", inlineElmCode "outer", Text " is what makes this tricky." ]
-                , textOnlyParagraph """Having an AST without it we can't for example represent "list equals list", only "a list of equals":"""
-                , elmCode """
-type ByExpressionType string int bool
-  = String string
-  | Int int
-  | Bool bool
-  | List (ByExpressionType (List string) (List int) (List bool))
-
-type alias Expression =
+    -- with Outer a = a
     ByExpressionType String Int BoolKnown
+
 type alias ListExpression =
-    ByExpressionType (List String) (List Int) (List BoolKnown)
+    -- with Outer a = List a
+    ByExpressionType String Int BoolKnown
+
 type alias EqualsExpression =
-    ByExpressionType (EqualsOf String) (EqualsOf Int) (EqualsOf BoolKnown)
+    -- with Outer a = EqualsOf a
+    ByExpressionType String Int BoolKnown
 """
-                , textOnlyParagraph """So this is not quite right."""
-                , textOnlyParagraph """We can at least keep the idea to list all expression kinds are in one place:"""
+                , Paragraph
+                    [ Text "The "
+                    , InlineElmCode [ { string = "Outer", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                    , Text " is what makes this tricky since "
+                    , InlineElmCode [ { string = "Outer", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                    , Text " can only be at that level: We want to represent \"list of a == list of a\", not \"list of (a == a)\"."
+                    ]
+                , textOnlyParagraph """Having one type for all expression kinds are in one place is still a nice idea, tho:"""
                 , elmCode """
 type ByExpressionType string int bool list
   = String string
@@ -351,15 +374,6 @@ List
 """
                 , Paragraph [ Text "Well, it doesn't compile because \"recursive type aliases\" but the fix is as simple as converting each alias to a ", inlineElmCode "type" ]
                 , elmCode """
-type ByExpressionType string int bool list
-  = String string
-  | Int int
-  | Bool bool
-  | List list
-
-type alias Expression =
-    ByExpressionType String Int BoolKnown (ListExpression String Int BoolKnown)
-
 type ListExpression string int bool
   = ListExpression
       (ByExpressionType
@@ -369,9 +383,6 @@ type ListExpression string int bool
           (ListExpression (List string) (List int) (List bool))
       )
 
-type alias EqualsOf specificExpression =
-    { left : specificExpression, right : specificExpression }
-
 type EqualsExpression string int bool
   = EqualsExpression
       (ByExpressionType
@@ -380,10 +391,6 @@ type EqualsExpression string int bool
           (EqualsOf bool)
           (EqualsExpression (List string) (List int) (List bool))
       )
-
-type BoolKnown
-  = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """the result looks less nice but acceptable I guess"""
                 , elmCode """
@@ -429,20 +436,20 @@ type Expression
           Int
           BoolKnown
           (TripleOf Expression Expression Expression)
-          (ListExpression String Int BoolKnown (TripleOf Expression Expression Expression))
+          (ListExpression String Int BoolKnown)
       )
   
 type alias TripleOf first second third =
     { first : first, second : second, third : third }
 
-type ListExpression string int bool triple
+type ListExpression string int bool
   = ListExpression
       (ByExpressionType
           (List string)
           (List int)
           (List bool)
-          (List triple)
-          (ListExpression (List string) (List int) (List bool) (List triple))
+          (List {- ?? -})
+          (ListExpression (List string) (List int) (List bool))
       )
 
 type alias EqualsOf specificExpression =
@@ -455,7 +462,7 @@ type EqualsExpression string int bool
           (EqualsOf int)
           (EqualsOf bool)
           (EqualsOf {- ?? -})
-          (EqualsExpression string int bool (TripleOf {- ?? -}))
+          (EqualsExpression string int bool)
       )
 
 type BoolKnown
@@ -463,13 +470,13 @@ type BoolKnown
   | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """The pieces don't seem to fit."""
-                , textOnlyParagraph """I guess we have to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
+                , textOnlyParagraph """Do we need to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
                 , textOnlyParagraph """Tuples and especially triples made past lue lose hope of being able to safely represent them like this in an ast.
-So much so in fact that lue was slowly losing interest and abandoned this project after a while."""
+So much so in fact that past lue was slowly losing interest and abandoned this project after a while. (╥﹏╥)"""
                 , Paragraph
-                    [ Text "Much, much later... in fact only when writing this did I think of "
+                    [ Text "Much, much later... in fact only when writing this did "
                     , Italic "two"
-                    , Text """-ish solutions that would have saved a good chunk of my sanity.
+                    , Text """-ish solutions reveal themselves that would have saved a good chunk of past lue's sanity.
 I know you're smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
 Or just look at the solutions below."""
                     ]
