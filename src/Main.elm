@@ -13,18 +13,16 @@ import Element.WithContext
 import Element.WithContext.Background
 import Element.WithContext.Border
 import Element.WithContext.Font
+import Element.WithContext.Input
 import ElmSyntaxHighlight
 import Html exposing (Html)
 import Html.Attributes
 import Json.Decode
 import Json.Encode
 import Key
-import List.Extra
 import Random
 import Reaction exposing (Reaction)
 import RecordWithoutConstructorFunction exposing (RecordWithoutConstructorFunction)
-import String.Extra
-import SyntaxHighlight
 import Task
 import Time
 
@@ -36,11 +34,13 @@ type Event
     | FrameTickPassed Time.Posix
     | KeyPressed Key.Key
     | KeyReleased Key.Key
+    | ThemeSelected Theme
 
 
 type alias State =
     RecordWithoutConstructorFunction
         { audio : EachAudio (Result Audio.LoadError Audio.Source)
+        , theme : Theme
         , windowSize : { width : Float, height : Float }
         , audioTimes : EachAudio (List Time.Posix)
         , keysPressed : List Key.Key
@@ -84,6 +84,7 @@ init : () -> Reaction State Effect
 init () =
     Reaction.to
         { audio = eachAudio (Err Audio.UnknownError)
+        , theme = BlackTheme
         , windowSize =
             -- dummy
             { width = 0, height = 0 }
@@ -121,6 +122,11 @@ reactTo event =
                             state.audio
                                 |> alterAudioOfKind audioLoaded.piece (\_ -> audioLoaded.result)
                     }
+
+        ThemeSelected newTheme ->
+            \state ->
+                Reaction.to
+                    { state | theme = newTheme }
 
         GameWindowSized size ->
             \state -> Reaction.to { state | windowSize = size }
@@ -218,36 +224,137 @@ uiDocument =
 
 
 ui : State -> Html Event
-ui _ =
+ui state =
     Element.WithContext.column
-        [ Element.WithContext.spacing 20
-        , Element.WithContext.paddingXY 19 40
-        , Element.WithContext.width (Element.WithContext.maximum 750 Element.WithContext.fill)
-        , Element.WithContext.centerX
+        [ Element.WithContext.centerX
         ]
-        [ Articles.all |> articleContentUi
+        [ Element.WithContext.withContext
+            (\context ->
+                Element.WithContext.Input.button
+                    [ Element.WithContext.Background.color (foregroundColor context.theme)
+                    , Element.WithContext.Font.color (backgroundColor context.theme)
+                    , Element.WithContext.Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 1000, bottomRight = 1000 }
+                    , Element.WithContext.paddingEach { left = 30, right = 30, bottom = 10, top = 10 }
+                    , Element.WithContext.alignLeft
+                    ]
+                    (case context.theme of
+                        WhiteTheme ->
+                            { label = "ᝰ" |> Element.WithContext.text -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
+                            , onPress = ThemeSelected BlackTheme |> Just
+                            }
+
+                        BlackTheme ->
+                            { label = "ᝰ" |> Element.WithContext.text -- ☀︎ ☀️ 💡
+                            , onPress = ThemeSelected WhiteTheme |> Just
+                            }
+                    )
+            )
+        , Element.WithContext.column
+            [ Element.WithContext.spacing 20
+            , Element.WithContext.paddingXY 19 40
+            , Element.WithContext.width (Element.WithContext.maximum 750 Element.WithContext.fill)
+            , Element.WithContext.centerX
+            ]
+            [ Articles.all |> articleContentUi
+            ]
         ]
-        |> Element.WithContext.layout {}
-            [ Element.WithContext.Background.color (Element.WithContext.rgb 0 0 0)
-            , Element.WithContext.Font.color (Element.WithContext.rgb 1 1 1)
+        |> Element.WithContext.layoutWith { theme = state.theme }
+            { options =
+                [ Element.WithContext.focusStyle
+                    { shadow = Nothing
+                    , borderColor = Nothing
+                    , backgroundColor = Nothing
+                    }
+                ]
+            }
+            [ Element.WithContext.withContextAttribute
+                (\context -> Element.WithContext.Background.color (backgroundColor context.theme))
+            , Element.WithContext.withContextAttribute
+                (\context -> Element.WithContext.Font.color (foregroundColor context.theme))
             , Element.WithContext.Font.size 19
             ]
 
 
-linkUi : { url : String, label : Element.WithContext.Element context msg } -> Element.WithContext.Element context msg
+backgroundColor : Theme -> Element.WithContext.Color
+backgroundColor theme =
+    case theme of
+        BlackTheme ->
+            Element.WithContext.rgb 0 0 0
+
+        WhiteTheme ->
+            Element.WithContext.rgb 1 1 1
+
+
+foregroundColor : Theme -> Element.WithContext.Color
+foregroundColor theme =
+    case theme of
+        BlackTheme ->
+            Element.WithContext.rgb 1 1 1
+
+        WhiteTheme ->
+            Element.WithContext.rgb 0 0 0
+
+
+linkUi : { url : String, label : Element.WithContext.Element Context event } -> Element.WithContext.Element Context event
 linkUi config =
     Element.WithContext.link
         [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
-        , Element.WithContext.Border.color interactiveColor
-        , Element.WithContext.Font.color interactiveColor
+        , Element.WithContext.withContextAttribute
+            (\context -> Element.WithContext.Border.color (interactiveColor context.theme))
+        , Element.WithContext.withContextAttribute
+            (\context -> Element.WithContext.Font.color (interactiveColor context.theme))
         ]
         config
 
 
-interactiveColor : Element.WithContext.Color
-interactiveColor =
+interactiveColor : Theme -> Element.WithContext.Color
+interactiveColor theme =
     -- Element.WithContext.rgb 1 0.5 0
-    Element.WithContext.rgb 0.49 0.83 1
+    (case theme of
+        BlackTheme ->
+            interactiveColorForBlackTheme
+
+        WhiteTheme ->
+            interactiveColorForBlackTheme |> blackThemeColorToWhiteTheme
+    )
+        |> Color.toRgba
+        |> Element.WithContext.fromRgb
+
+
+blackThemeColorToWhiteTheme : Color -> Color
+blackThemeColorToWhiteTheme =
+    \color ->
+        color
+            -- hsl lightness does not match perceived lightness so this is an approximation at best
+            -- I'd love to find a package with LHC or something similar
+            |> Color.toHsla
+            |> (\hsla ->
+                    { hsla | lightness = 0.18, saturation = 1 }
+               )
+            |> Color.fromHsla
+
+
+
+{- |> Color.toRgba
+   |> (\rgba ->
+           { red = 1 - rgba.red
+           , green = 1 - rgba.green
+           , blue = 1 - rgba.blue
+           , alpha = rgba.alpha
+           }
+      )
+   |> Color.fromRgba
+   |> Color.toHsla
+   |> (\hsla ->
+           { hsla | hue = ((((hsla.hue * 255) |> round) + 128) |> remainderBy 255 |> Basics.toFloat) / 255 }
+      )
+   |> Color.fromHsla
+-}
+
+
+interactiveColorForBlackTheme : Color
+interactiveColorForBlackTheme =
+    Color.rgb 0.49 0.83 1
 
 
 articleContentUi : Articles.Content -> Element.WithContext.Element Context event_
@@ -285,25 +392,28 @@ articleContentUi =
                     (parts |> List.map paragraphPartUi)
 
             Articles.ElmCode elmCode ->
-                Html.pre
-                    [ Html.Attributes.style "overflow" "scroll"
-                    , Html.Attributes.style "overflow-y" "hidden"
-                    , Html.Attributes.style "white-space" "pre-line"
-                    , Html.Attributes.style "width" "fit-content"
-                    , Html.Attributes.style "min-width" "100%"
-                    , Html.Attributes.style "width" "0px"
-                    ]
-                    [ Html.code
-                        [ Html.Attributes.style "white-space" "pre"
-                        , Html.Attributes.style "word-spacing" "normal"
-                        , Html.Attributes.style "word-break" "normal"
-                        , Html.Attributes.style "overflow-wrap" "normal"
-                        , Html.Attributes.style "hyphens" "none"
-                        , Html.Attributes.style "font-size" "0.8em"
-                        ]
-                        [ elmCodeUi elmCode ]
-                    ]
-                    |> Element.WithContext.html
+                Element.WithContext.withContext
+                    (\context ->
+                        Html.pre
+                            [ Html.Attributes.style "overflow" "scroll"
+                            , Html.Attributes.style "overflow-y" "hidden"
+                            , Html.Attributes.style "white-space" "pre-line"
+                            , Html.Attributes.style "width" "fit-content"
+                            , Html.Attributes.style "min-width" "100%"
+                            , Html.Attributes.style "width" "0px"
+                            ]
+                            [ Html.code
+                                [ Html.Attributes.style "white-space" "pre"
+                                , Html.Attributes.style "word-spacing" "normal"
+                                , Html.Attributes.style "word-break" "normal"
+                                , Html.Attributes.style "overflow-wrap" "normal"
+                                , Html.Attributes.style "hyphens" "none"
+                                , Html.Attributes.style "font-size" "0.8em"
+                                ]
+                                [ elmCode |> elmCodeUi context.theme ]
+                            ]
+                            |> Element.WithContext.html
+                    )
 
             Articles.Sequence contentList ->
                 Element.WithContext.column
@@ -350,12 +460,16 @@ paragraphPartUi =
                     |> Element.WithContext.el [ Element.WithContext.Font.italic ]
 
             Articles.InlineElmCode elmCode ->
-                elmCodeUi elmCode
-                    |> Element.WithContext.html
-                    |> Element.WithContext.el
-                        [ Html.Attributes.style "font-size" "0.9em"
-                            |> Element.WithContext.htmlAttribute
-                        ]
+                Element.WithContext.withContext
+                    (\context ->
+                        elmCode
+                            |> elmCodeUi context.theme
+                            |> Element.WithContext.html
+                            |> Element.WithContext.el
+                                [ Html.Attributes.style "font-size" "0.9em"
+                                    |> Element.WithContext.htmlAttribute
+                                ]
+                    )
 
             Articles.Link link ->
                 linkUi
@@ -364,8 +478,8 @@ paragraphPartUi =
                     }
 
 
-elmCodeUi : ElmSyntaxHighlight.SyntaxHighlightable -> Html event_
-elmCodeUi =
+elmCodeUi : Theme -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event_)
+elmCodeUi theme =
     \syntaxHighlightable ->
         Html.code []
             (syntaxHighlightable
@@ -378,7 +492,7 @@ elmCodeUi =
 
                                 Just syntaxKind ->
                                     [ Html.Attributes.style "color"
-                                        (syntaxKind |> syntaxKindToColor |> Color.toCssString)
+                                        (syntaxKind |> syntaxKindToColor theme |> Color.toCssString)
                                     ]
                             )
                             [ Html.text segment.string
@@ -387,8 +501,19 @@ elmCodeUi =
             )
 
 
-syntaxKindToColor : ElmSyntaxHighlight.SyntaxKind -> Color
-syntaxKindToColor =
+syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
+syntaxKindToColor theme =
+    case theme of
+        BlackTheme ->
+            syntaxKindToColorForBlackTheme
+
+        WhiteTheme ->
+            \syntaxKind ->
+                syntaxKindToColorForBlackTheme syntaxKind |> blackThemeColorToWhiteTheme
+
+
+syntaxKindToColorForBlackTheme : ElmSyntaxHighlight.SyntaxKind -> Color
+syntaxKindToColorForBlackTheme =
     -- light purple Color.rgb 0.97 0.42 1
     \syntaxKind ->
         case syntaxKind of
@@ -450,7 +575,12 @@ audioWith source with =
 
 
 type alias Context =
-    {}
+    { theme : Theme }
+
+
+type Theme
+    = WhiteTheme
+    | BlackTheme
 
 
 type AudioKind
