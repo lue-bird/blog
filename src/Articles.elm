@@ -157,7 +157,7 @@ type Expression
   | List (List Expression)
   | Equals { left : Expression, right : Expression }
 """
-                , textOnlyParagraph """This is "probably fine" TM but..."""
+                , textOnlyParagraph """This is "probably fine" ™ but..."""
                 , UnorderedList
                     [ Sequence
                         [ textOnlyParagraph """it allows users to generate incorrect expressions"""
