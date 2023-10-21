@@ -7,35 +7,40 @@ using the wonderful <https://dark.elm.dmy.fr/packages/albertdahlin/elm-posix/lat
 -}
 
 import Articles
-import Posix.IO
-import Posix.IO.File
-import Rss
-import Time
-import Html.String
+import Dict exposing (Dict)
 import Html.String
 import Html.String.Attributes
 import List.Extra
+import Posix.IO
+import Posix.IO.File
+import Posix.IO.Process
+import Rss
 import String.Extra
+import Time
 
 
 program : Posix.IO.Process -> Posix.IO.IO ()
 program process =
-    case parseArguments process.argv of
+    case process.argv |> parseArguments of
         Just arguments ->
             Posix.IO.File.writeContentsTo "../feed.xml"
                 (rssGenerate { currentTime = arguments.currentTime })
 
         Nothing ->
             Posix.IO.File.write Posix.IO.File.stdErr
-                ("invalid arguments: " ++ String.join " " process.argv)
+                ("invalid arguments: " ++ (process.argv |> String.join " ") ++ "\n")
+                |> Posix.IO.andThen
+                    (\() ->
+                        Posix.IO.Process.exit -1
+                    )
 
 
 parseArguments : List String -> Maybe { currentTime : Time.Posix }
 parseArguments =
-    \argumentStrings ->
-        case argumentStrings of
+    \arguments ->
+        case arguments of
             _ :: buildTimeString :: [] ->
-                case String.toInt buildTimeString of
+                case buildTimeString |> String.toInt of
                     Just buildTimeInSeconds ->
                         Just { currentTime = buildTimeInSeconds * 1000 |> Time.millisToPosix }
 
@@ -89,6 +94,7 @@ articleSectionsToRssItems =
             Articles.Sequence sequence ->
                 sequence |> List.concatMap articleSectionsToRssItems
 
+
 articlesContentToHtmlStringifiable : Articles.Content -> Html.String.Html event_
 articlesContentToHtmlStringifiable =
     \articleContent ->
@@ -104,16 +110,11 @@ articlesContentToHtmlStringifiable =
                 Html.String.p []
                     (parts |> List.map articlesParagraphPartToStringifiable)
 
-            Articles.ElmCode rawSourceCodeString ->
+            Articles.ElmCode syntaxHighlightable ->
                 Html.String.pre []
                     [ Html.String.code []
                         [ Html.String.text
-                            (rawSourceCodeString
-                                |> String.lines
-                                |> List.Extra.dropWhile String.Extra.isBlank
-                                |> List.Extra.dropWhileRight String.Extra.isBlank
-                                |> String.join "\n"
-                            )
+                            (syntaxHighlightable |> List.map .string |> String.concat)
                         ]
                     ]
 
@@ -142,8 +143,9 @@ articlesParagraphPartToStringifiable =
             Articles.Italic string ->
                 Html.String.i [] [ Html.String.text string ]
 
-            Articles.InlineElmCode raw ->
-                Html.String.code [] [ Html.String.text raw ]
+            Articles.InlineElmCode syntaxHighlightable ->
+                Html.String.code []
+                    [ Html.String.text (syntaxHighlightable |> List.map .string |> String.concat) ]
 
             Articles.Link link ->
                 Html.String.a [ Html.String.Attributes.href link.url ]
