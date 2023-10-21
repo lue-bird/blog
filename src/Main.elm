@@ -370,6 +370,7 @@ articleContentUi =
                 Element.WithContext.paragraph
                     [ Html.Attributes.style "overflow-wrap" "break-word"
                         |> Element.WithContext.htmlAttribute
+                    , Element.WithContext.width Element.WithContext.fill
                     ]
                     (parts |> List.map paragraphPartUi)
 
@@ -400,6 +401,7 @@ articleContentUi =
             Articles.Sequence contentList ->
                 Element.WithContext.column
                     [ Element.WithContext.spacing 22
+                    , Element.WithContext.width Element.WithContext.fill
                     ]
                     (contentList |> List.map articleContentUi)
 
