@@ -227,6 +227,7 @@ ui : State -> Html Event
 ui state =
     Element.WithContext.column
         [ Element.WithContext.centerX
+        , Element.WithContext.paddingXY 19 0
         ]
         [ Element.WithContext.withContext
             (\context ->
@@ -250,8 +251,7 @@ ui state =
                     )
             )
         , Element.WithContext.column
-            [ Element.WithContext.spacing 20
-            , Element.WithContext.paddingXY 19 40
+            [ Element.WithContext.paddingXY 0 40
             , Element.WithContext.width (Element.WithContext.maximum 750 Element.WithContext.fill)
             , Element.WithContext.centerX
             ]
@@ -334,24 +334,6 @@ blackThemeColorToWhiteTheme =
             |> Color.fromHsla
 
 
-
-{- |> Color.toRgba
-   |> (\rgba ->
-           { red = 1 - rgba.red
-           , green = 1 - rgba.green
-           , blue = 1 - rgba.blue
-           , alpha = rgba.alpha
-           }
-      )
-   |> Color.fromRgba
-   |> Color.toHsla
-   |> (\hsla ->
-           { hsla | hue = ((((hsla.hue * 255) |> round) + 128) |> remainderBy 255 |> Basics.toFloat) / 255 }
-      )
-   |> Color.fromHsla
--}
-
-
 interactiveColorForBlackTheme : Color
 interactiveColorForBlackTheme =
     Color.rgb 0.49 0.83 1
@@ -431,9 +413,9 @@ articleContentUi =
                         |> List.map
                             (\item ->
                                 Element.WithContext.row [ Element.WithContext.width Element.WithContext.fill ]
-                                    [ Element.WithContext.text "-"
+                                    [ Element.WithContext.text "•"
                                         |> Element.WithContext.el
-                                            [ Element.WithContext.Font.size 30
+                                            [ Element.WithContext.Font.size 22
                                             , Element.WithContext.alignTop
                                             , Element.WithContext.paddingEach { left = 0, top = 0, bottom = 0, right = 10 }
                                             ]
