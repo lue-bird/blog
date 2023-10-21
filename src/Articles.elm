@@ -166,7 +166,7 @@ List [ String "My name is ", Int 5 ]
 """
                         , textOnlyParagraph "or"
                         , elmCode """
-Equals { left = String "High" , right = Int 5 }
+Equals { left = String "High", right = Int 5 }
 """
                         ]
                     , textOnlyParagraph """it has impossible variants you are forced to case on"""
