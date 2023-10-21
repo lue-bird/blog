@@ -3,22 +3,22 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Thu, 19 Oct 2023 16:08:34 +0000</lastBuildDate>
+<lastBuildDate>Sat, 21 Oct 2023 21:56:56 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
-<title>(Almost complete) A safer AST?</title>
+<title>Your AST allows lists with different element types. Why?</title>
 <description>Can you represent a list expression where all elements have the same type? Yes.
 And what about operations like (==) on infinitely nested triples?</description>
-<link>https://lue-bird.github.io/blog/%23(Almost%20complete)%20A%20safer%20AST%3F</link>
-<guid>https://lue-bird.github.io/blog/%23(Almost%20complete)%20A%20safer%20AST%3F</guid>
+<link>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</link>
+<guid>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</guid>
 <pubDate>Sat, 21 Oct 2023 00:00:00 +0000</pubDate>
-<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;(Almost complete) A safer AST?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s consider a really simple language&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;Your AST allows lists with different element types. Why?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;There was a time when &lt;a href=&quot;https://github.com/mdgriffith/elm-codegen&quot;&gt;elm-codegen&lt;/a&gt; and friends like &lt;a href=&quot;https://github.com/MartinSStewart/elm-review-todo-it-for-me&quot;&gt;review-todo-it-for-me&lt;/a&gt; were not around. Code generation felt under-explored and in need of a framework to generate helpers like record update functions, codecs, html from strings and whatever based on existing elm code.&lt;/p&gt;&lt;p&gt;Well, a good chunk of work later there were significant parts in place of an ambitious &lt;a href=&quot;https://github.com/lue-bird/generate-elm&quot;&gt;lue-bird/generate-elm&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;To generate elm code, the decision was made to not directly use &lt;a href=&quot;https://dark.elm.dmy.fr/packages/stil4m/elm-syntax/latest/&quot;&gt;elm-syntax&lt;/a&gt; for &lt;i&gt;countless&lt;/i&gt; reasons like not allowing users to generate &lt;code&gt;3.2 // &apos;a&apos;&lt;/code&gt; or avoiding empty nodes.&lt;/p&gt;&lt;p&gt;Creating a perfectly type-safe AST + builder was actually working out surprisingly well and was both challenging and fun... until problems like the one in this article&apos;s title came up.&lt;/p&gt;&lt;p&gt;And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
+Starting with a classic but unsafe AST:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
   = String String
   | Int Int
   | Bool Bool
   | List (List Expression)
-  | Equals { left : Expression, right : Expression }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This is &quot;probably fine&quot; TM but...&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;it allows users to generate incorrect expressions&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List [ String &quot;My name is &quot;, Int 5 ]
-Equals { left = String &quot;High&quot; , right = Int 5 }&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;it has impossible variants you are forced to case on&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;How hard can it be to make this small language completely type-safe?&lt;/p&gt;&lt;p&gt;Naively, we could represent each kind of list and equals by it&apos;s own variant&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
+  | Equals { left : Expression, right : Expression }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;↑ This is &quot;probably fine&quot; ™ practically but...&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;it allows users to generate incorrect expressions&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List [ String &quot;My name is &quot;, Int 5 ]&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;or&lt;/p&gt;&lt;pre&gt;&lt;code&gt;Equals { left = String &quot;High&quot;, right = Int 5 }&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;it has impossible variants you are forced to case on&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;How hard can it be to make this small language completely type-safe?&lt;/p&gt;&lt;p&gt;Naively, we could represent each kind of list and equals by it&apos;s own variant&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
   = String String
   | Int Int
   | Bool Bool
@@ -33,32 +33,24 @@ type EqualsExpression
   = EqualsOfString (EqualsOf String)
   | EqualsOfInt (EqualsOf Int)
   | EqualsOfBool (EqualsOf BoolExpression)
-  | EqualsOfList (EqualsOf HEH)
+  | EqualsOfList (EqualsOf {- ?? -})
 
 type ListExpression
   = ListOfString (List String)
   | ListOfInt (List Int)
   | ListOfBool (List BoolExpression)
-  | ListOfList (List HEH)
+  | ListOfList (List {- ?? -})
 
 type BoolExpression
   = BoolLiteral Bool
-  | EqualsExpression EqualsExpression&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The HEH just keep on expanding, let&apos;s say with&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
+  | EqualsExpression EqualsExpression&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;i&gt;??&lt;/i&gt; just keep on expanding, let&apos;s take for example the case &lt;code&gt;EqualsOfList&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
   = {- ... | -} EqualsOfList EqualsExpressionOfList
 
 type EqualsExpressionOfList
   = EqualsOfListOfString (EqualsOf (List String))
   | EqualsOfListOfInt (EqualsOf (List Int))
   | EqualsOfListOfBool (EqualsOf (List BoolExpression))
-  | EqualsOfListOfList (EqualsOf (List HEH))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
-  = String String
-  | Int Int
-  | Bool Bool
-  | List (ListExpression String Int BoolKnown)
-  | Equals (EqualsExpression String Int BoolKnown)
-
-
-type alias EqualsOf specificExpression =
+  | EqualsOfListOfList (EqualsOf (List {- ?? -}))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
 type EqualsExpression string int bool
@@ -76,7 +68,14 @@ type ListExpression string int bool
 
 type BoolKnown
   = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;which allows us to build lists like&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
+  | Equals (EqualsExpression String Int BoolKnown)
+
+type Expression
+  = String String
+  | Int Int
+  | Bool Bool
+  | List (ListExpression String Int BoolKnown)
+  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Quite cool how this works. For example, to represent a list of strings, we go down &lt;code&gt;ListOfString String&lt;/code&gt; with the String type directly passed from above. And if the string list is the element type of another list, we go through &lt;code&gt;ListOfList (ListOfString (List String))&lt;/code&gt; where the &quot;wrapping into a list type&quot; is passed down recursively.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
     (ListOfList
         (ListOfBool
             [ [ BoolLiteral True ]
@@ -92,30 +91,24 @@ type BoolKnown
               ]
             ]
         )
-    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Somehow, this works.&lt;/p&gt;&lt;p&gt;All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;-- (Type -&amp;gt; Type) -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type -&amp;gt; Type
-type ByExpressionType outer string int bool
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;-- with Outer being (Type -&amp;gt; Type)
+type ByExpressionType string int bool
   = String (Outer string)
   | Int (Outer int)
   | Bool (Outer bool)
   | List (ByExpressionType (List string) (List int) (List bool))
 
 type alias Expression =
-    ByExpressionType Identity String Int BoolKnown
-type alias ListExpression =
-    ByExpressionType List String Int BoolKnown
-type alias EqualsExpression =
-    ByExpressionType EqualsOf String Int BoolKnown&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;code&gt;outer&lt;/code&gt; is what makes this tricky.&lt;/p&gt;&lt;p&gt;Having an AST without it we can&apos;t for example represent &quot;list equals list&quot;, only &quot;a list of equals&quot;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool
-  = String string
-  | Int int
-  | Bool bool
-  | List (ByExpressionType (List string) (List int) (List bool))
-
-type alias Expression =
+    -- with Outer a = a
     ByExpressionType String Int BoolKnown
+
 type alias ListExpression =
-    ByExpressionType (List String) (List Int) (List BoolKnown)
+    -- with Outer a = List a
+    ByExpressionType String Int BoolKnown
+
 type alias EqualsExpression =
-    ByExpressionType (EqualsOf String) (EqualsOf Int) (EqualsOf BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;So this is not quite right.&lt;/p&gt;&lt;p&gt;We can at least keep the general idea so that all expression kinds are in one place:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool list
+    -- with Outer a = EqualsOf a
+    ByExpressionType String Int BoolKnown&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;code&gt;Outer&lt;/code&gt; is what makes this tricky since &lt;code&gt;Outer&lt;/code&gt; can only be at that level: We want to represent &quot;list of a == list of a&quot;, not &quot;list of (a == a)&quot;.&lt;/p&gt;&lt;p&gt;Having one type for all expression kinds are in one place is still a nice idea, tho:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool list
   = String string
   | Int int
   | Bool bool
@@ -159,16 +152,7 @@ type BoolKnown
               ]
             ]
         )
-    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Well, it doesn&apos;t compile because &quot;recursive type aliases&quot; but the fix is as simple as wrapping each alias as a `type`&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool list
-  = String string
-  | Int int
-  | Bool bool
-  | List list
-
-type alias Expression =
-    ByExpressionType String Int BoolKnown (ListExpression String Int BoolKnown)
-
-type ListExpression string int bool
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Well, it doesn&apos;t compile because &quot;recursive type aliases&quot; but the fix is as simple as converting each alias to a &lt;code&gt;type&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ListExpression string int bool
   = ListExpression
       (ByExpressionType
           (List string)
@@ -177,9 +161,6 @@ type ListExpression string int bool
           (ListExpression (List string) (List int) (List bool))
       )
 
-type alias EqualsOf specificExpression =
-    { left : specificExpression, right : specificExpression }
-
 type EqualsExpression string int bool
   = EqualsExpression
       (ByExpressionType
@@ -187,11 +168,7 @@ type EqualsExpression string int bool
           (EqualsOf int)
           (EqualsOf bool)
           (EqualsExpression (List string) (List int) (List bool))
-      )
-
-type BoolKnown
-  = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;the result looks less nice but acceptable I guess&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
+      )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;the result looks less nice but acceptable I guess&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
     (ListExpression
         (List
             (ListExpression
@@ -229,20 +206,20 @@ type Expression
           Int
           BoolKnown
           (TripleOf Expression Expression Expression)
-          (ListExpression String Int BoolKnown (TripleOf Expression Expression Expression))
+          (ListExpression String Int BoolKnown)
       )
   
 type alias TripleOf first second third =
     { first : first, second : second, third : third }
 
-type ListExpression string int bool triple
+type ListExpression string int bool
   = ListExpression
       (ByExpressionType
           (List string)
           (List int)
           (List bool)
-          (List triple)
-          (ListExpression (List string) (List int) (List bool) (List triple))
+          (List {- ?? -})
+          (ListExpression (List string) (List int) (List bool))
       )
 
 type alias EqualsOf specificExpression =
@@ -254,14 +231,14 @@ type EqualsExpression string int bool
           (EqualsOf string)
           (EqualsOf int)
           (EqualsOf bool)
-          (EqualsOf HEH)
-          (EqualsExpression string int bool (TripleOf HEH))
+          (EqualsOf {- ?? -})
+          (EqualsExpression string int bool)
       )
 
 type BoolKnown
   = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The pieces don&apos;t seem to fit.&lt;/p&gt;&lt;p&gt;Let&apos;s start again, with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?&lt;/p&gt;&lt;p&gt;For past lue, tuples and especially triples shattered the hope of being able to safely represent them like this in an ast.
-So much so in fact that lue was slowly losing interest and abandoned this project after a while.&lt;/p&gt;&lt;p&gt;Much, much later... in fact only when writing this did I think of &lt;i&gt;two&lt;/i&gt;-ish solutions that would have saved a good chunk of my sanity.
+  | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The pieces don&apos;t seem to fit.&lt;/p&gt;&lt;p&gt;Do we need to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?&lt;/p&gt;&lt;p&gt;Tuples and especially triples made past lue lose hope of being able to safely represent them like this in an ast.
+So much so in fact that past lue was slowly losing interest and abandoned this project after a while. (╥﹏╥)&lt;/p&gt;&lt;p&gt;Much, much later... in fact only when writing this did &lt;i&gt;two&lt;/i&gt;-ish solutions reveal themselves that would have saved a good chunk of past lue&apos;s sanity.
 I know you&apos;re smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
 Or just look at the solutions below.&lt;/p&gt;&lt;p&gt;First the -ish solution:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
     = Int Int
@@ -283,7 +260,7 @@ type EqualsExpressionByType int equals
     | EqualsOfTupleExtendedBySecondEqualsExpression (EqualsExpressionByType (TupleOf int EqualsExpression) (TupleOf equals EqualsExpression))
 
 type EqualsExpression
-    = EqualsExpression (EqualsExpressionByType Int EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Expressions written down look passable, even if just barely. Here for &lt;code&gt;( 0, 0 == 0 ) == ( 0, 0 == 0 )&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;Equals
+    = EqualsExpression (EqualsExpressionByType Int EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Expressions written down look passable. Here for &lt;code&gt;( 0, 0 == 0 ) == ( 0, 0 == 0 )&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;Equals
     (EqualsExpression
         (EqualsOfTupleExtendedByFirstInt
             (EqualsOfEqualsExpression
@@ -330,9 +307,112 @@ If you&apos;re happy, slowly follow `elm-review` and compiler errors and your pr
 listPartitionCheck partitionCall =
     case fullyAppliedLastArg partitionCall.arguments of
         TODO -&amp;gt; TODO&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Elm.Syntax.Expression.Extra exposing (getTuple2)
-getTuple2 = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Oh no! The editor gives me squigglies, the CI is red, what to do?&lt;/p&gt;&lt;p&gt;Most of these do not need to be fixed immediately!&lt;/p&gt;&lt;p&gt;They are like leaving `Debug.todo` or failing test somewhere.
+getTuple2 = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Oh no! The editor gives me squigglies, the CI is red, what to do?&lt;/p&gt;&lt;p&gt;Most of these do not need to be fixed immediately!&lt;/p&gt;&lt;p&gt;They are like leaving &lt;code&gt;Debug.todo&lt;/code&gt; or failing test somewhere.
 You know, the stuff that allows you to keep less things in your mind that &quot;you still need to do&quot;.&lt;/p&gt;&lt;p&gt;In that way, they are like an automated todo list for you and your whole team.&lt;/p&gt;&lt;p&gt;If you think there won&apos;t be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn&apos;t scary. They have your back.&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+</item>
+<item>
+<title>(Almost complete) Wrapping wrappers safely: typed-value 8.0.0</title>
+<description>Preserving the knowledge of what was wrapped when wrapping again.
+typed-value 8.0.0 makes this safe.</description>
+<link>https://lue-bird.github.io/blog/%23(Almost%20complete)%20Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</link>
+<guid>https://lue-bird.github.io/blog/%23(Almost%20complete)%20Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</guid>
+<pubDate>Sat, 28 Oct 2023 00:00:00 +0000</pubDate>
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;(Almost complete) Wrapping wrappers safely: typed-value 8.0.0&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s build a generic set type with a custom, user-provided order function similar to &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt; to show the power of being able to wrap a generic typed, enabled by &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; 8&lt;/p&gt;&lt;pre&gt;&lt;code&gt;module GenericSet exposing (GenericSet, insert, remove)
+
+type alias GenericSet element uniqueOrder =
+    Typed Checked uniqueOrder Internal {- internals -}
+
+insert :
+    Ordering element unique
+    -&amp;gt; element
+    -&amp;gt; (GenericSet element unique -&amp;gt; GenericSet element unique)
+insert = x {- ... -}
+
+remove :
+    Ordering element unique
+    -&amp;gt; element
+    -&amp;gt; (GenericSet element unique -&amp;gt; GenericSet element unique)
+remove = x {- ... -}&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Each unique &lt;code&gt;Ordering&lt;/code&gt; has a unique last type argument.&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;&lt;code&gt;GenericSet&lt;/code&gt; enforces that all operations need an &lt;code&gt;Ordering&lt;/code&gt; with the same &lt;code&gt;unique&lt;/code&gt; type argument.&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Therefore, the inner order function is enforced to be the same across every operation.&lt;/p&gt;&lt;p&gt;If we would represent an &lt;code&gt;Ordering&lt;/code&gt; as a normal opaque type, getting the actual function to order the elements would be unsafe&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Ordering subject opaque =
+    { opaque : opaque, toFunction : opaque -&amp;gt; ( subject, subject ) -&amp;gt; Order }
+
+fakeOrdering =
+    { opaque = realOrdering.opaque, toFunction = \_ -&amp;gt; fakeFunction }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Unlike opaque types, &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; gives you control over who can access the inner order function:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Ordering subject tag =
+    Typed
+        Checked -- only constructible using tag
+        tag
+        Public -- everyone can access
+        (( subject, subject ) -&amp;gt; Order)&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Int.Order exposing (increasing, Increasing)
+
+increasing : Ordering Int Increasing
+increasing =
+    Typed.tag Increasing compare
+
+type Increasing
+  = Increasing&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Int.FakeOrder exposing (increasing, Increasing)
+
+increasing : Ordering Int Increasing
+increasing =
+    Typed.tag Increasing (\_ -&amp;gt; EQ)
+
+type Increasing
+  = Increasing&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;GenericSet.empty
+    |&amp;gt; GenericSet.insert Int.Order.increasing 3
+    |&amp;gt; GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;All that was already possible before 8.0.0. What&apos;s new is how we can preserve tags while wrapping a &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;A simple example: implementing &lt;code&gt;Order.reverse&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo (Reverse {- ?? -}) (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))
+
+type Reverse tag
+    = Reverse tag&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You&apos;d need to store a tag in the inner value, which breaks the promise
+that only the module with the tag can create &lt;code&gt;Ordering&lt;/code&gt;s with that tag. Now with 8.0.0:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse
+    = Reverse
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject ( Reverse, tag )
+reverse =
+    Typed.mapToWrap Reverse (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Notice how we don&apos;t have access to the tag of the argument
+but can still safely show it in the signature.&lt;/p&gt;&lt;p&gt;How did &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt; do this prior to version 8? Unsafe phantom types 🤮:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse tag
+    = Reverse
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)
+
+reverseOops : Ordering subject orderTag -&amp;gt; Ordering subject (Reverse tag)
+reverseOops =
+    Typed.mapTo Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The reversed tag can accidentally be anything. It&apos;s a free variable :(&lt;/p&gt;&lt;p&gt;Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Reverse orderTag =
+    ( ReverseTag, orderTag )
+
+type ReverseTag
+    = Reverse
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapToWrap Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Still as safe and readers will be happy, too!&lt;/p&gt;&lt;p&gt;I&apos;ll leave you with one last example, showing how &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt;, which is more like a dict than a set, safely stores its sorting:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type SortingTag
+    = Sorting
+
+type alias Sorting element tag key =
+    Typed
+        Checked
+        ( SortingTag, tag )
+        Public
+        { toKey : element -&amp;gt; key
+        , keyOrder : element -&amp;gt; element -&amp;gt; Order
+        }
+
+sortingKey :
+    Typed Checked keyTag Public (element -&amp;gt; key)
+    -&amp;gt; Ordering key keyOrderTag
+    -&amp;gt; Sorting element ( keyTag, keyOrderTag ) key
+sortingKey toKeyTyped keyOrdering =
+    toKeyTyped
+        |&amp;gt; Typed.wrapAnd keyOrdering
+        --: Typed ( keyTag, keyOrderTag ) Tagged Public {- ... -}
+        |&amp;gt; Typed.mapToWrap Sorting
+            (\( toKey, keyOrder ) -&amp;gt;
+                { toKey = toKey
+                , keyOrder = keyOrder
+                }
+            )&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
 </item>
 </channel>
 </rss>
