@@ -44,6 +44,20 @@ all =
         , yourAstAllowsListsWithDifferentElementTypesWhyArticle
         , typedValue8Article
         , whatToDoWithElmReviewErrorsArticle
+        , Sequence
+            [ Paragraph [ Text "Oki, that's it for the articles. Planned:" ]
+            , UnorderedList
+                [ Sequence
+                    [ Paragraph
+                        [ Text "\"elm-typesafe-radio\" series"
+                        ]
+                    , UnorderedList
+                        [ Paragraph [ Text "phantom types" ]
+                        , Paragraph [ Text "opaque types" ]
+                        ]
+                    ]
+                ]
+            ]
         , textOnlyParagraph """⸜(｡˃ ᵕ ˂ )⸝♡"""
         ]
 
