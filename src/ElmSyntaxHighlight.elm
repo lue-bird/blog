@@ -670,8 +670,16 @@ declarationSyntaxKindMap context =
 -}
 for : String -> SyntaxHighlightable
 for =
-    \rawSourceCode ->
+    \rawSourceCodeWithDotDotAndQuestionMarkQuestionMarks ->
         let
+            rawSourceCode : String
+            rawSourceCode =
+                rawSourceCodeWithDotDotAndQuestionMarkQuestionMarks
+                    |> String.replace "..expression.." "expressionD___"
+                    |> String.replace "??expression??" "expressionQ___"
+                    |> String.replace "..Type.." "TypeD___"
+                    |> String.replace "??Type??" "TypeQ___"
+
             syntaxKindByRange : RangeDict SyntaxKind
             syntaxKindByRange =
                 List.Extra.findMap (\f -> f ())
@@ -811,9 +819,21 @@ for =
             |> List.reverse
             |> List.map
                 (\segment ->
-                    { string = rawSourceCodeLines |> stringLinesSlice segment.range |> String.join "\n"
-                    , syntaxKind = segment.syntaxKind
-                    }
+                    case ( rawSourceCodeLines |> stringLinesSlice segment.range |> String.join "\n", segment.syntaxKind ) of
+                        ( "expressionD___", Just Variable ) ->
+                            { string = "...", syntaxKind = Nothing }
+
+                        ( "expressionQ___", Just Variable ) ->
+                            { string = "??", syntaxKind = Nothing }
+
+                        ( "TypeD___", Just Type ) ->
+                            { string = "...", syntaxKind = Nothing }
+
+                        ( "TypeQ___", Just Type ) ->
+                            { string = "??", syntaxKind = Nothing }
+
+                        ( nonSpecialCaseString, syntaxKind ) ->
+                            { string = nonSpecialCaseString, syntaxKind = syntaxKind }
                 )
 
 

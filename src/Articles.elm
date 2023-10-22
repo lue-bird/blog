@@ -213,13 +213,13 @@ type EqualsExpression
   = EqualsOfString (EqualsOf String)
   | EqualsOfInt (EqualsOf Int)
   | EqualsOfBool (EqualsOf BoolExpression)
-  | EqualsOfList (EqualsOf {- ?? -})
+  | EqualsOfList (EqualsOf ??Type??)
 
 type ListExpression
   = ListOfString (List String)
   | ListOfInt (List Int)
   | ListOfBool (List BoolExpression)
-  | ListOfList (List {- ?? -})
+  | ListOfList (List ??Type??)
 
 type BoolExpression
   = BoolLiteral Bool
@@ -234,7 +234,7 @@ type EqualsExpressionOfList
   = EqualsOfListOfString (EqualsOf (List String))
   | EqualsOfListOfInt (EqualsOf (List Int))
   | EqualsOfListOfBool (EqualsOf (List BoolExpression))
-  | EqualsOfListOfList (EqualsOf (List {- ?? -}))
+  | EqualsOfListOfList (EqualsOf (List ??Type??))
 """
                 , textOnlyParagraph """We just run into the same problem recursively."""
                 , textOnlyParagraph """We can apply some smart-smart to solve this!"""
@@ -448,7 +448,7 @@ type ListExpression string int bool
           (List string)
           (List int)
           (List bool)
-          (List {- ?? -})
+          (List ??Type??)
           (ListExpression (List string) (List int) (List bool))
       )
 
@@ -461,7 +461,7 @@ type EqualsExpression string int bool
           (EqualsOf string)
           (EqualsOf int)
           (EqualsOf bool)
-          (EqualsOf {- ?? -})
+          (EqualsOf ??Type??)
           (EqualsExpression string int bool)
       )
 
@@ -573,25 +573,25 @@ typed-value 8.0.0 makes this safe."""
                     , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
                     , Text " to show the power of being able to wrap a generic typed, enabled by "
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
-                    , Text " 8"
+                    , Text " 8 (we'll get to what this means exactly, don't worry)"
                     ]
                 , elmCode """
 module GenericSet exposing (GenericSet, insert, remove)
 
 type alias GenericSet element uniqueOrder =
-    Typed Checked uniqueOrder Internal {- internals -}
+    Typed Checked uniqueOrder Internal ..Type..
 
 insert :
     Ordering element unique
     -> element
     -> (GenericSet element unique -> GenericSet element unique)
-insert = x {- ... -}
+insert elementOrdering elementToInsert = ..expression..
 
 remove :
     Ordering element unique
     -> element
     -> (GenericSet element unique -> GenericSet element unique)
-remove = x {- ... -}
+remove elementOrdering elementToRemove = ..expression..
 """
                 , UnorderedList
                     [ Paragraph
