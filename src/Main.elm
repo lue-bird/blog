@@ -252,7 +252,7 @@ ui state =
             )
         , Element.WithContext.column
             [ Element.WithContext.paddingXY 0 40
-            , Element.WithContext.width (Element.WithContext.maximum 750 Element.WithContext.fill)
+            , Element.WithContext.width (Element.WithContext.maximum 700 Element.WithContext.fill)
             , Element.WithContext.centerX
             ]
             [ Articles.all |> articleContentUi
@@ -420,7 +420,7 @@ articleContentUi =
                 Element.WithContext.column
                     [ Element.WithContext.spacing 39
                     , Element.WithContext.width Element.WithContext.fill
-                    , Element.WithContext.paddingEach { left = 35, top = 40, bottom = 40, right = 0 }
+                    , Element.WithContext.paddingEach { left = 0, top = 40, bottom = 55, right = 0 }
                     ]
                     [ Element.WithContext.column [ Element.WithContext.spacing 7 ]
                         [ linkUi
@@ -448,7 +448,8 @@ articleContentUi =
                                 "! 🛠️ in progress: " ++ progress
                           )
                             |> Element.WithContext.text
-                            |> Element.WithContext.el
+                            |> List.singleton
+                            |> Element.WithContext.paragraph
                                 [ Element.WithContext.Font.size 14
                                 , Element.WithContext.Font.family [ Element.WithContext.Font.monospace ]
                                 ]
