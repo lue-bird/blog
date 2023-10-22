@@ -608,16 +608,21 @@ remove elementOrdering elementToRemove = ..expression..
                         , Text " type argument."
                         ]
                     ]
-                , Paragraph [ Text "Therefore, the inner order function is enforced to be the same across every operation." ]
                 , Paragraph
-                    [ Text "If we would represent an "
+                    [ Text "This guarantees that the order function inside a given "
                     , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
-                    , Text """ as a normal opaque type, getting the actual function to order the elements would be unsafe"""
+                    , Text " is the same across every operation."
+                    ]
+                , Paragraph
+                    [ Text "Why not just use a normal opaque type which wraps the order function to order the elements instead of this "
+                    , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                    , Text """ type? Not a bad idea! But try to get the actual order function out of any opaque type... Any attempts to create a public accessor don't quite work either, for example"""
                     ]
                 , elmCode """
 type alias Ordering subject opaque =
-    { opaque : opaque, toFunction : opaque -> ( subject, subject ) -> Order }
+    { opaque : opaque, toFunction : opaque -> (( subject, subject ) -> Order) }
 
+fakeOrdering : Ordering ..Type.. RealOpaque
 fakeOrdering =
     { opaque = realOrdering.opaque, toFunction = \\_ -> fakeFunction }
 """
@@ -629,7 +634,7 @@ fakeOrdering =
                 , elmCode """
 type alias Ordering subject tag =
     Typed
-        Checked -- only constructible using tag
+        Checked -- only constructible using a tag
         tag
         Public -- everyone can access
         (( subject, subject ) -> Order)
@@ -644,6 +649,14 @@ increasing =
 type Increasing
   = Increasing
 """
+                , Paragraph [ Text "First attempt to fake it:" ]
+                , elmCode """
+fakeIntOrder : Ordering Int Int.Order.Increasing
+fakeIntOrder =
+    -- type error: is Tagged but should be CHecked
+    Int.Order.increasing |> Typed.map (\\_ -> \\_ -> EQ)
+"""
+                , Paragraph [ Text "Second attempt to fake it:" ]
                 , elmCode """
 module Int.FakeOrder exposing (increasing, Increasing)
 
@@ -660,7 +673,7 @@ GenericSet.empty
     |> GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error
 """
                 , Paragraph
-                    [ Text "All that was already possible before 8.0.0."
+                    [ Text "All that was already possible way before 8.0.0."
                     , Text " What's new is how we can preserve tags while wrapping a "
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
                     , Text "."
@@ -669,7 +682,7 @@ GenericSet.empty
                 , elmCode """
 reverse : Ordering subject tag -> Ordering subject (Reverse tag)
 reverse =
-    Typed.mapTo (Reverse {- ?? -}) (\\order -> \\( a, b ) -> order ( b, a ))
+    Typed.mapTo (Reverse ??expression??) (\\order -> \\( a, b ) -> order ( b, a ))
 
 type Reverse tag
     = Reverse tag
@@ -691,9 +704,9 @@ reverse =
                 , textOnlyParagraph """Notice how we don't have access to the tag of the argument
 but can still safely show it in the signature."""
                 , Paragraph
-                    [ Text "How did "
+                    [ Text "How did the order API for "
                     , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
-                    , Text " do this prior to version 8? Unsafe phantom types 🤮:"
+                    , Text " do this prior to version 8? Unsafe phantom types 🤮"
                     ]
                 , elmCode """
 type Reverse tag
@@ -710,8 +723,8 @@ reverseOops =
                 , textOnlyParagraph """The reversed tag can accidentally be anything. It's a free variable :("""
                 , textOnlyParagraph """Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:"""
                 , elmCode """
-type alias Reverse orderTag =
-    ( ReverseTag, orderTag )
+type alias Reverse reverseOrderTag =
+    ( ReverseTag, reverseOrderTag )
 
 type ReverseTag
     = Reverse
