@@ -392,6 +392,12 @@ articleContentUi =
                         Html.pre
                             [ Html.Attributes.style "overflow" "scroll"
                             , Html.Attributes.style "overflow-y" "hidden"
+                            , Html.Attributes.style "scrollbar-color"
+                                ((interactiveColor context.theme |> Element.WithContext.toRgb |> Color.fromRgba |> Color.toCssString)
+                                    ++ " "
+                                    ++ (Color.rgba 0 0 0 0 |> Color.toCssString)
+                                )
+                            , Html.Attributes.style "scrollbar-width" "thin"
                             , Html.Attributes.style "white-space" "pre-line"
                             , Html.Attributes.style "width" "fit-content"
                             , Html.Attributes.style "min-width" "100%"
