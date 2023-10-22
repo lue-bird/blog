@@ -307,16 +307,17 @@ foregroundColor theme =
             Element.WithContext.rgb 0 0 0
 
 
-linkUi : { url : String, label : Element.WithContext.Element Context event } -> Element.WithContext.Element Context event
-linkUi config =
-    Element.WithContext.link
-        [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
-        , Element.WithContext.withContextAttribute
-            (\context -> Element.WithContext.Border.color (interactiveColor context.theme))
-        , Element.WithContext.withContextAttribute
-            (\context -> Element.WithContext.Font.color (interactiveColor context.theme))
-        ]
-        config
+blackThemeColorToWhiteTheme : Color -> Color
+blackThemeColorToWhiteTheme =
+    \color ->
+        color
+            -- hsl lightness does not match perceived lightness so this is an approximation at best
+            -- I'd love to find a package with LHC or something similar
+            |> Color.toHsla
+            |> (\hsla ->
+                    { hsla | lightness = 0.18, saturation = 1 }
+               )
+            |> Color.fromHsla
 
 
 interactiveColor : Theme -> Element.WithContext.Color
@@ -333,22 +334,82 @@ interactiveColor theme =
         |> Element.WithContext.fromRgb
 
 
-blackThemeColorToWhiteTheme : Color -> Color
-blackThemeColorToWhiteTheme =
-    \color ->
-        color
-            -- hsl lightness does not match perceived lightness so this is an approximation at best
-            -- I'd love to find a package with LHC or something similar
-            |> Color.toHsla
-            |> (\hsla ->
-                    { hsla | lightness = 0.18, saturation = 1 }
-               )
-            |> Color.fromHsla
-
-
 interactiveColorForBlackTheme : Color
 interactiveColorForBlackTheme =
     Color.rgb 0.49 0.83 1
+
+
+linkUi : { url : String, label : Element.WithContext.Element Context event } -> Element.WithContext.Element Context event
+linkUi config =
+    Element.WithContext.link
+        [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
+        , Element.WithContext.withContextAttribute
+            (\context -> Element.WithContext.Border.color (interactiveColor context.theme))
+        , Element.WithContext.withContextAttribute
+            (\context -> Element.WithContext.Font.color (interactiveColor context.theme))
+        ]
+        config
+
+
+elmCodeUi : Theme -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event_)
+elmCodeUi theme =
+    \syntaxHighlightable ->
+        Html.code []
+            (syntaxHighlightable
+                |> List.map
+                    (\segment ->
+                        Html.code
+                            (case segment.syntaxKind of
+                                Nothing ->
+                                    []
+
+                                Just syntaxKind ->
+                                    [ Html.Attributes.style "color"
+                                        (syntaxKind |> syntaxKindToColor theme |> Color.toCssString)
+                                    ]
+                            )
+                            [ Html.text segment.string
+                            ]
+                    )
+            )
+
+
+syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
+syntaxKindToColor theme =
+    case theme of
+        BlackTheme ->
+            syntaxKindToColorForBlackTheme
+
+        WhiteTheme ->
+            \syntaxKind ->
+                syntaxKindToColorForBlackTheme syntaxKind |> blackThemeColorToWhiteTheme
+
+
+syntaxKindToColorForBlackTheme : ElmSyntaxHighlight.SyntaxKind -> Color
+syntaxKindToColorForBlackTheme =
+    -- light purple Color.rgb 0.97 0.42 1
+    \syntaxKind ->
+        case syntaxKind of
+            ElmSyntaxHighlight.Type ->
+                Color.rgb 0.9 0.55 1
+
+            ElmSyntaxHighlight.Variant ->
+                Color.rgb 0.24 0.75 0.62
+
+            ElmSyntaxHighlight.Field ->
+                Color.rgb 0.4 0.9 0
+
+            ElmSyntaxHighlight.ModuleNameOrAlias ->
+                Color.rgb 0.45 0.5 1
+
+            ElmSyntaxHighlight.Variable ->
+                Color.rgb 0.85 0.8 0.1
+
+            ElmSyntaxHighlight.Flow ->
+                Color.rgb 1 0.45 0.35
+
+            ElmSyntaxHighlight.DeclarationRelated ->
+                Color.rgb 0.55 0.75 1
 
 
 articleContentUi : Articles.Content -> Element.WithContext.Element Context event_
@@ -357,24 +418,41 @@ articleContentUi =
         case articleContent of
             Articles.Section section ->
                 Element.WithContext.column
-                    [ Element.WithContext.spacing 25
+                    [ Element.WithContext.spacing 39
                     , Element.WithContext.width Element.WithContext.fill
                     , Element.WithContext.paddingEach { left = 35, top = 40, bottom = 40, right = 0 }
                     ]
-                    [ linkUi
-                        { label =
-                            [ section.title
-                                |> Element.WithContext.text
-                            ]
-                                |> Element.WithContext.paragraph
-                                    [ Element.WithContext.Font.size 30
-                                    , Html.Attributes.style "overflow-wrap" "break-word"
-                                        |> Element.WithContext.htmlAttribute
-                                    , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
-                                        |> Element.WithContext.htmlAttribute
-                                    ]
-                        , url = "#" ++ Articles.sectionTitleToUrl section.title
-                        }
+                    [ Element.WithContext.column [ Element.WithContext.spacing 7 ]
+                        [ linkUi
+                            { label =
+                                [ section.title |> Element.WithContext.text |> Element.WithContext.el [] ]
+                                    |> Element.WithContext.paragraph
+                                        [ Element.WithContext.Font.size 30
+                                        , Html.Attributes.style "overflow-wrap" "break-word"
+                                            |> Element.WithContext.htmlAttribute
+                                        , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
+                                            |> Element.WithContext.htmlAttribute
+                                        ]
+                            , url = "#" ++ Articles.sectionTitleToUrl section.title
+                            }
+                        , (case section.completion of
+                            Articles.Published publishTime ->
+                                "🌐 published y"
+                                    ++ (publishTime |> Time.toYear Time.utc |> String.fromInt)
+                                    ++ " m"
+                                    ++ (publishTime |> Time.toMonth Time.utc |> monthToInt |> String.fromInt)
+                                    ++ " d"
+                                    ++ (publishTime |> Time.toDay Time.utc |> String.fromInt)
+
+                            Articles.InProgress progress ->
+                                "! 🛠️ in progress: " ++ progress
+                          )
+                            |> Element.WithContext.text
+                            |> Element.WithContext.el
+                                [ Element.WithContext.Font.size 14
+                                , Element.WithContext.Font.family [ Element.WithContext.Font.monospace ]
+                                ]
+                        ]
                     , section.content |> articleContentUi
                     ]
 
@@ -450,6 +528,47 @@ articleContentUi =
                     )
 
 
+monthToInt : Time.Month -> Int
+monthToInt =
+    \month ->
+        case month of
+            Time.Jan ->
+                1
+
+            Time.Feb ->
+                2
+
+            Time.Mar ->
+                3
+
+            Time.Apr ->
+                4
+
+            Time.May ->
+                5
+
+            Time.Jun ->
+                6
+
+            Time.Jul ->
+                7
+
+            Time.Aug ->
+                8
+
+            Time.Sep ->
+                9
+
+            Time.Oct ->
+                10
+
+            Time.Nov ->
+                11
+
+            Time.Dec ->
+                12
+
+
 paragraphPartUi : Articles.ParagraphPart -> Element.WithContext.Element Context event_
 paragraphPartUi =
     \paragraphPart ->
@@ -478,67 +597,6 @@ paragraphPartUi =
                     { url = link.url
                     , label = Element.WithContext.text link.description
                     }
-
-
-elmCodeUi : Theme -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event_)
-elmCodeUi theme =
-    \syntaxHighlightable ->
-        Html.code []
-            (syntaxHighlightable
-                |> List.map
-                    (\segment ->
-                        Html.code
-                            (case segment.syntaxKind of
-                                Nothing ->
-                                    []
-
-                                Just syntaxKind ->
-                                    [ Html.Attributes.style "color"
-                                        (syntaxKind |> syntaxKindToColor theme |> Color.toCssString)
-                                    ]
-                            )
-                            [ Html.text segment.string
-                            ]
-                    )
-            )
-
-
-syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
-syntaxKindToColor theme =
-    case theme of
-        BlackTheme ->
-            syntaxKindToColorForBlackTheme
-
-        WhiteTheme ->
-            \syntaxKind ->
-                syntaxKindToColorForBlackTheme syntaxKind |> blackThemeColorToWhiteTheme
-
-
-syntaxKindToColorForBlackTheme : ElmSyntaxHighlight.SyntaxKind -> Color
-syntaxKindToColorForBlackTheme =
-    -- light purple Color.rgb 0.97 0.42 1
-    \syntaxKind ->
-        case syntaxKind of
-            ElmSyntaxHighlight.Type ->
-                Color.rgb 0.9 0.55 1
-
-            ElmSyntaxHighlight.Variant ->
-                Color.rgb 0.24 0.75 0.62
-
-            ElmSyntaxHighlight.Field ->
-                Color.rgb 0.4 0.9 0
-
-            ElmSyntaxHighlight.ModuleNameOrAlias ->
-                Color.rgb 0.45 0.5 1
-
-            ElmSyntaxHighlight.Variable ->
-                Color.rgb 0.85 0.8 0.1
-
-            ElmSyntaxHighlight.Flow ->
-                Color.rgb 1 0.45 0.35
-
-            ElmSyntaxHighlight.DeclarationRelated ->
-                Color.rgb 0.55 0.75 1
 
 
 audio : AudioData -> State -> Audio.Audio

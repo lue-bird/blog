@@ -1,8 +1,7 @@
-module Articles exposing (Content(..), ParagraphPart(..), all, sectionTitleToUrl)
+module Articles exposing (Content(..), ParagraphPart(..), SectionCompletion(..), all, sectionTitleToUrl)
 
 import ElmSyntaxHighlight
 import List.Extra
-import RangeDict exposing (RangeDict)
 import String.Extra
 import Time
 import Url
@@ -12,7 +11,7 @@ type Content
     = Section
         { title : String
         , description : String
-        , publishTime : Time.Posix
+        , completion : SectionCompletion
         , content : Content
         }
     | Paragraph (List ParagraphPart)
@@ -21,11 +20,21 @@ type Content
     | Sequence (List Content)
 
 
+type SectionCompletion
+    = InProgress String
+    | Published Time.Posix
+
+
 type ParagraphPart
     = Text String
     | Italic String
     | InlineElmCode ElmSyntaxHighlight.SyntaxHighlightable
     | Link { description : String, url : String }
+
+
+textOnlyParagraph : String -> Content
+textOnlyParagraph text =
+    Paragraph [ Text text ]
 
 
 all : Content
@@ -37,11 +46,6 @@ all =
         , whatToDoWithElmReviewErrorsArticle
         , textOnlyParagraph """⸜(｡˃ ᵕ ˂ )⸝♡"""
         ]
-
-
-textOnlyParagraph : String -> Content
-textOnlyParagraph text =
-    Paragraph [ Text text ]
 
 
 introduction : Content
@@ -90,16 +94,22 @@ elmCode raw =
 whatToDoWithElmReviewErrorsArticle : Content
 whatToDoWithElmReviewErrorsArticle =
     Section
-        { title = "(Barely anything) What to do with elm-review errors?"
+        { title = "What to do with elm-review errors?"
         , description = """Something to try: Not fixing all elm-review errors immediately."""
-        , publishTime = Time.millisToPosix 1697932800000
+        , completion = InProgress "Barely anything here yet. Come back in a month!"
         , content =
             Sequence
-                [ textOnlyParagraph """Ever wanted to add helpers but introducing them at once would start a chain reaction?"""
-                , textOnlyParagraph """Especially when the new helper will make existing helpers irrelevant, it seems simplest to just get the refactor done with."""
-                , textOnlyParagraph """If you feel like this (like past and sometimes current lue), here's an alternative to try:"""
-                , textOnlyParagraph """Do a small, local, immediate step. Commit.
-If you're happy, slowly follow `elm-review` and compiler errors and your project's refactoring todo list items one at a time."""
+                [ textOnlyParagraph """Ever wanted to add helpers but introducing them at once would start a chain reaction of refactors?
+Especially when the new helper will make existing helpers irrelevant, it can feel simplest to just get the big refactor done with."""
+                , textOnlyParagraph """If you feel like this (just like past and sometimes current lue), here's an alternative to try:"""
+                , Paragraph
+                    [ Text "Do a small, local, immediate step. "
+                    , Italic "Commit"
+                    , Text ". If you're happy, slowly follow "
+                    , Link { description = "elm-review", url = "https://dark.elm.dmy.fr/packages/jfmengels/elm-review/latest/" }
+                    , Text " and compiler errors and your project's refactoring todo list items one at a time."
+                    ]
+                , Paragraph [ Text "Or just leave them for some time in the future." ]
                 , elmCode """
 listUnzipCheck =
     case lastArgument partitionCall of
@@ -146,7 +156,7 @@ yourAstAllowsListsWithDifferentElementTypesWhyArticle =
         { title = "Your AST allows lists with different element types. Why?"
         , description = """Can you represent a list expression where all elements have the same type? Yes.
 And what about operations like (==) on infinitely nested triples?"""
-        , publishTime = Time.millisToPosix 1697846400000
+        , completion = Published (Time.millisToPosix 1697846400000)
         , content =
             Sequence
                 [ Paragraph
@@ -565,7 +575,7 @@ typedValue8Article =
         { title = "(Almost complete) Wrapping wrappers safely: typed-value 8.0.0"
         , description = """Preserving the knowledge of what was wrapped when wrapping again.
 typed-value 8.0.0 makes this safe."""
-        , publishTime = Time.millisToPosix 1698451200000
+        , completion = Published (Time.millisToPosix 1698451200000)
         , content =
             Sequence
                 [ Paragraph

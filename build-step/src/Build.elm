@@ -69,18 +69,23 @@ articleSectionsToRssItems =
     \articleContent ->
         case articleContent of
             Articles.Section section ->
-                [ { title = section.title
-                  , description = section.description
-                  , url = "#" ++ section.title |> Articles.sectionTitleToUrl
-                  , categories = []
-                  , author = "lue"
-                  , pubDate = Rss.DateTime section.publishTime
-                  , content = Nothing
-                  , contentEncoded =
-                        Just (articleContent |> articlesContentToHtmlStringifiable |> Html.String.toString 0)
-                  , enclosure = Nothing
-                  }
-                ]
+                case section.completion of
+                    Articles.InProgress _ ->
+                        []
+                    
+                    Articles.Published publishTime ->
+                        [ { title = section.title
+                          , description = section.description
+                          , url = "#" ++ section.title |> Articles.sectionTitleToUrl
+                          , categories = []
+                          , author = "lue"
+                          , pubDate = Rss.DateTime publishTime
+                          , content = Nothing
+                          , contentEncoded =
+                                Just (articleContent |> articlesContentToHtmlStringifiable |> Html.String.toString 0)
+                          , enclosure = Nothing
+                          }
+                        ]
 
             Articles.Paragraph _ ->
                 []
