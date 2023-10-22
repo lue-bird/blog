@@ -272,6 +272,18 @@ ui state =
             , Element.WithContext.withContextAttribute
                 (\context -> Element.WithContext.Font.color (foregroundColor context.theme))
             , Element.WithContext.Font.size 19
+            , Element.WithContext.withContextAttribute
+                (\context ->
+                    Html.Attributes.style "color-scheme"
+                        (case context.theme of
+                            BlackTheme ->
+                                "dark"
+
+                            WhiteTheme ->
+                                "light"
+                        )
+                        |> Element.WithContext.htmlAttribute
+                )
             ]
 
 
