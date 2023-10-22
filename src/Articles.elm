@@ -33,8 +33,8 @@ all =
     Sequence
         [ introduction
         , yourAstAllowsListsWithDifferentElementTypesWhyArticle
-        , whatToDoWithElmReviewErrorsArticle
         , typedValue8Article
+        , whatToDoWithElmReviewErrorsArticle
         , textOnlyParagraph """⸜(｡˃ ᵕ ˂ )⸝♡"""
         ]
 
