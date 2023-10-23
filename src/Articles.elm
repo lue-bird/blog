@@ -182,7 +182,7 @@ And what about operations like (==) on infinitely nested triples?"""
                     , Text " were not around. Code generation felt under-explored and in need of a framework to generate helpers like record update functions, codecs, html from strings and whatever based on existing elm code."
                     ]
                 , Paragraph
-                    [ Text "Well, a good chunk of work later there were significant parts in place of an ambitious "
+                    [ Text "A good chunk of work later there were significant parts in place of an ambitious "
                     , Link { description = "lue-bird/generate-elm", url = "https://github.com/lue-bird/generate-elm" }
                     , Text "."
                     ]
