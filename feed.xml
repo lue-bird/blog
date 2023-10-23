@@ -3,7 +3,7 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Sat, 21 Oct 2023 21:56:56 +0000</lastBuildDate>
+<lastBuildDate>Mon, 23 Oct 2023 12:52:55 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
 <title>Your AST allows lists with different element types. Why?</title>
@@ -33,13 +33,13 @@ type EqualsExpression
   = EqualsOfString (EqualsOf String)
   | EqualsOfInt (EqualsOf Int)
   | EqualsOfBool (EqualsOf BoolExpression)
-  | EqualsOfList (EqualsOf {- ?? -})
+  | EqualsOfList (EqualsOf ??)
 
 type ListExpression
   = ListOfString (List String)
   | ListOfInt (List Int)
   | ListOfBool (List BoolExpression)
-  | ListOfList (List {- ?? -})
+  | ListOfList (List ??)
 
 type BoolExpression
   = BoolLiteral Bool
@@ -50,7 +50,7 @@ type EqualsExpressionOfList
   = EqualsOfListOfString (EqualsOf (List String))
   | EqualsOfListOfInt (EqualsOf (List Int))
   | EqualsOfListOfBool (EqualsOf (List BoolExpression))
-  | EqualsOfListOfList (EqualsOf (List {- ?? -}))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias EqualsOf specificExpression =
+  | EqualsOfListOfList (EqualsOf (List ??))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
 type EqualsExpression string int bool
@@ -218,7 +218,7 @@ type ListExpression string int bool
           (List string)
           (List int)
           (List bool)
-          (List {- ?? -})
+          (List ??)
           (ListExpression (List string) (List int) (List bool))
       )
 
@@ -231,7 +231,7 @@ type EqualsExpression string int bool
           (EqualsOf string)
           (EqualsOf int)
           (EqualsOf bool)
-          (EqualsOf {- ?? -})
+          (EqualsOf ??)
           (EqualsExpression string int bool)
       )
 
@@ -282,64 +282,33 @@ type EqualsExpression
   | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
 </item>
 <item>
-<title>(Barely anything) What to do with elm-review errors?</title>
-<description>Something to try: Not fixing all elm-review errors immediately.</description>
-<link>https://lue-bird.github.io/blog/%23(Barely%20anything)%20What%20to%20do%20with%20elm-review%20errors%3F</link>
-<guid>https://lue-bird.github.io/blog/%23(Barely%20anything)%20What%20to%20do%20with%20elm-review%20errors%3F</guid>
-<pubDate>Sun, 22 Oct 2023 00:00:00 +0000</pubDate>
-<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;(Barely anything) What to do with elm-review errors?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Ever wanted to add helpers but introducing them at once would start a chain reaction?&lt;/p&gt;&lt;p&gt;Especially when the new helper will make existing helpers irrelevant, it seems simplest to just get the refactor done with.&lt;/p&gt;&lt;p&gt;If you feel like this (like past and sometimes current lue), here&apos;s an alternative to try:&lt;/p&gt;&lt;p&gt;Do a small, local, immediate step. Commit.
-If you&apos;re happy, slowly follow `elm-review` and compiler errors and your project&apos;s refactoring todo list items one at a time.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;listUnzipCheck =
-    case lastArgument partitionCall of
-        Just listArgument -&amp;gt;
-            let error = TODO
-            in
-            case listArgument of
-                Expression.Tuple2Literal tuple2 -&amp;gt;
-                    Just error
-                
-                nonTuple2Literal -&amp;gt;
-                    nonTuple2Literal
-                        |&amp;gt; Elm.Syntax.Expression.Extra.parseSpecificFnCall &quot;Tuple.pair&quot;
-                        |&amp;gt; Maybe.map (\_ -&amp;gt; error)
-        
-        Just TODO -&amp;gt; TODO
-
-listPartitionCheck partitionCall =
-    case fullyAppliedLastArg partitionCall.arguments of
-        TODO -&amp;gt; TODO&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Elm.Syntax.Expression.Extra exposing (getTuple2)
-getTuple2 = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Oh no! The editor gives me squigglies, the CI is red, what to do?&lt;/p&gt;&lt;p&gt;Most of these do not need to be fixed immediately!&lt;/p&gt;&lt;p&gt;They are like leaving &lt;code&gt;Debug.todo&lt;/code&gt; or failing test somewhere.
-You know, the stuff that allows you to keep less things in your mind that &quot;you still need to do&quot;.&lt;/p&gt;&lt;p&gt;In that way, they are like an automated todo list for you and your whole team.&lt;/p&gt;&lt;p&gt;If you think there won&apos;t be an automated error for something on the way, make it a new item in a todo list.
-Aggregating errors isn&apos;t scary. They have your back.&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
-</item>
-<item>
-<title>(Almost complete) Wrapping wrappers safely: typed-value 8.0.0</title>
+<title>Wrapping wrappers safely: typed-value 8.0.0</title>
 <description>Preserving the knowledge of what was wrapped when wrapping again.
 typed-value 8.0.0 makes this safe.</description>
-<link>https://lue-bird.github.io/blog/%23(Almost%20complete)%20Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</link>
-<guid>https://lue-bird.github.io/blog/%23(Almost%20complete)%20Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</guid>
-<pubDate>Sat, 28 Oct 2023 00:00:00 +0000</pubDate>
-<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;(Almost complete) Wrapping wrappers safely: typed-value 8.0.0&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s build a generic set type with a custom, user-provided order function similar to &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt; to show the power of being able to wrap a generic typed, enabled by &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; 8&lt;/p&gt;&lt;pre&gt;&lt;code&gt;module GenericSet exposing (GenericSet, insert, remove)
-
-type alias GenericSet element uniqueOrder =
-    Typed Checked uniqueOrder Internal {- internals -}
+<link>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</link>
+<guid>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</guid>
+<pubDate>Mon, 23 Oct 2023 12:52:16 +0000</pubDate>
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;Wrapping wrappers safely: typed-value 8.0.0&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s build a generic set type which doesn&apos;t store functions but still safely allows custom, user-provided order functions similar to &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt;. Showing the power of being able to wrap a generic typed, enabled by &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; 8 (we&apos;ll get to what this means exactly, don&apos;t worry)&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias GenericSet element uniqueOrder = ...
+type alias Ordering subject unique = ...
 
 insert :
     Ordering element unique
     -&amp;gt; element
     -&amp;gt; (GenericSet element unique -&amp;gt; GenericSet element unique)
-insert = x {- ... -}
+insert elementOrdering elementToInsert = ...
 
 remove :
     Ordering element unique
     -&amp;gt; element
     -&amp;gt; (GenericSet element unique -&amp;gt; GenericSet element unique)
-remove = x {- ... -}&lt;/code&gt;&lt;/pre&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Each unique &lt;code&gt;Ordering&lt;/code&gt; has a unique last type argument.&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;&lt;code&gt;GenericSet&lt;/code&gt; enforces that all operations need an &lt;code&gt;Ordering&lt;/code&gt; with the same &lt;code&gt;unique&lt;/code&gt; type argument.&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Therefore, the inner order function is enforced to be the same across every operation.&lt;/p&gt;&lt;p&gt;If we would represent an &lt;code&gt;Ordering&lt;/code&gt; as a normal opaque type, getting the actual function to order the elements would be unsafe&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Ordering subject opaque =
-    { opaque : opaque, toFunction : opaque -&amp;gt; ( subject, subject ) -&amp;gt; Order }
+remove elementOrdering elementToRemove = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To guarantee that the order function inside a given &lt;code&gt;Ordering&lt;/code&gt; is the same for every operation,&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;each unique &lt;code&gt;Ordering&lt;/code&gt; needs to have a unique last type argument.&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;&lt;code&gt;GenericSet&lt;/code&gt; needs to enforce that all operations need an &lt;code&gt;Ordering&lt;/code&gt; with the same &lt;code&gt;unique&lt;/code&gt; type argument.&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Why not just use a normal opaque type which wraps the order function to order the elements instead of this &lt;code&gt;Ordering&lt;/code&gt; type? Not a bad idea! But try to get the actual order function out of any opaque type... Any attempts to create a public accessor don&apos;t quite work either, for example&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Ordering subject opaque =
+    { opaque : opaque, toFunction : opaque -&amp;gt; (( subject, subject ) -&amp;gt; Order) }
 
+fakeOrdering : Ordering ... RealOpaque
 fakeOrdering =
     { opaque = realOrdering.opaque, toFunction = \_ -&amp;gt; fakeFunction }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Unlike opaque types, &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; gives you control over who can access the inner order function:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Ordering subject tag =
     Typed
-        Checked -- only constructible using tag
+        Checked -- only constructible using the tag ↓
         tag
         Public -- everyone can access
         (( subject, subject ) -&amp;gt; Order)&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Int.Order exposing (increasing, Increasing)
@@ -349,7 +318,10 @@ increasing =
     Typed.tag Increasing compare
 
 type Increasing
-  = Increasing&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Int.FakeOrder exposing (increasing, Increasing)
+  = Increasing -- variant not exposed&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;First attempt to fake it:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;fakeIntOrder : Ordering Int Int.Order.Increasing
+fakeIntOrder =
+    -- type error: is Tagged but should be Checked
+    Int.Order.increasing |&amp;gt; Typed.map (\_ -&amp;gt; \_ -&amp;gt; EQ)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Second attempt to fake it:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;module Int.FakeOrder exposing (increasing, Increasing)
 
 increasing : Ordering Int Increasing
 increasing =
@@ -358,20 +330,12 @@ increasing =
 type Increasing
   = Increasing&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;GenericSet.empty
     |&amp;gt; GenericSet.insert Int.Order.increasing 3
-    |&amp;gt; GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;All that was already possible before 8.0.0. What&apos;s new is how we can preserve tags while wrapping a &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;A simple example: implementing &lt;code&gt;Order.reverse&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
-reverse =
-    Typed.mapTo (Reverse {- ?? -}) (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))
+    |&amp;gt; GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;All that was already possible way before 8.0.0.&lt;/p&gt;&lt;p&gt;Now... How do we define &lt;code&gt;type alias GenericSet element uniqueOrder = ...&lt;/code&gt; or an &lt;code&gt;Order.reverse&lt;/code&gt; which sorts in opposite order?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse tag
+    = Reverse tag
 
-type Reverse tag
-    = Reverse tag&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You&apos;d need to store a tag in the inner value, which breaks the promise
-that only the module with the tag can create &lt;code&gt;Ordering&lt;/code&gt;s with that tag. Now with 8.0.0:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse
-    = Reverse
-
-reverse : Ordering subject tag -&amp;gt; Ordering subject ( Reverse, tag )
+reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
 reverse =
-    Typed.mapToWrap Reverse (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Notice how we don&apos;t have access to the tag of the argument
-but can still safely show it in the signature.&lt;/p&gt;&lt;p&gt;How did &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt; do this prior to version 8? Unsafe phantom types 🤮:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse tag
-    = Reverse
+    Typed.mapTo (Reverse ??) (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Intuitively, you might want to reach for unsafe phantom types 🤮&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse reverseOrderTag = Reverse
 
 reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
 reverse =
@@ -379,8 +343,34 @@ reverse =
 
 reverseOops : Ordering subject orderTag -&amp;gt; Ordering subject (Reverse tag)
 reverseOops =
-    Typed.mapTo Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The reversed tag can accidentally be anything. It&apos;s a free variable :(&lt;/p&gt;&lt;p&gt;Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Reverse orderTag =
-    ( ReverseTag, orderTag )
+    Typed.mapTo Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;orderTag&lt;/code&gt; and &lt;code&gt;tag&lt;/code&gt; are different type variables, so the tag of the reversed ordering can accidentally be anything. It&apos;s a free variable :(&lt;/p&gt;&lt;p&gt;Here&apos;s a similarly buggy example:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type GenericSet element orderTag
+    = GenericSet (Internals element)
+
+fromListOops :
+    Ordering element tag
+    -&amp;gt; (List element -&amp;gt; GenericSet element orderTag)
+fromListOops elementOrdering =
+    \list -&amp;gt;
+        GenericSet (Internals.fromList (elementOrdering |&amp;gt; Typed.untag) list)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt; What&apos;s new in 8.0.0 is how we can preserve tags in the type while wrapping a &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse
+    = Reverse
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject ( Reverse, tag )
+reverse =
+    Typed.mapToWrap Reverse (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Notice how we don&apos;t have access to the tag of the argument
+but can still safely show it in the signature.&lt;/p&gt;&lt;p&gt;We can use the same technique to finally fill in the &lt;code&gt;type alias GenericSet element uniqueOrder = ...&lt;/code&gt;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias GenericSet element orderTag =
+    Typed Checked ( GenericSetTag, orderTag ) Internal (Internals element)
+
+type GenericSetTag = GenericSetTag -- variant not exposed
+
+fromList :
+    Ordering element tag
+    -&amp;gt; (List element -&amp;gt; GenericSet element tag)
+fromList elementOrdering =
+    \list -&amp;gt;
+        elementOrdering
+            |&amp;gt; Typed.mapToWrap GenericSetTag
+                (\orderFunction -&amp;gt; Internals.fromList orderFunction list)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Reverse reverseOrderTag =
+    ( ReverseTag, reverseOrderTag )
 
 type ReverseTag
     = Reverse

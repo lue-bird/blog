@@ -160,6 +160,7 @@ You know, the stuff that allows you to keep less things in your mind that "you s
                 , textOnlyParagraph """In that way, they are like an automated todo list for you and your whole team."""
                 , textOnlyParagraph """If you think there won't be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn't scary. They have your back."""
+                , textOnlyParagraph """TODO: Show step-by-step refactor of adding helper, adding @deprecated, fixing the issues one by one"""
                 ]
         }
 
@@ -586,24 +587,22 @@ type EqualsExpression
 typedValue8Article : Content
 typedValue8Article =
     Section
-        { title = "(Almost complete) Wrapping wrappers safely: typed-value 8.0.0"
+        { title = "Wrapping wrappers safely: typed-value 8.0.0"
         , description = """Preserving the knowledge of what was wrapped when wrapping again.
 typed-value 8.0.0 makes this safe."""
-        , completion = Published (Time.millisToPosix 1698451200000)
+        , completion = Published (Time.millisToPosix 1698065536000)
         , content =
             Sequence
                 [ Paragraph
-                    [ Text "Let's build a generic set type with a custom, user-provided order function similar to "
+                    [ Text "Let's build a generic set type which doesn't store functions but still safely allows custom, user-provided order functions similar to "
                     , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
-                    , Text " to show the power of being able to wrap a generic typed, enabled by "
+                    , Text ". Showing the power of being able to wrap a generic typed, enabled by "
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
                     , Text " 8 (we'll get to what this means exactly, don't worry)"
                     ]
                 , elmCode """
-module GenericSet exposing (GenericSet, insert, remove)
-
-type alias GenericSet element uniqueOrder =
-    Typed Checked uniqueOrder Internal ..Type..
+type alias GenericSet element uniqueOrder = ..Type..
+type alias Ordering subject unique = ..Type..
 
 insert :
     Ordering element unique
@@ -617,25 +616,25 @@ remove :
     -> (GenericSet element unique -> GenericSet element unique)
 remove elementOrdering elementToRemove = ..expression..
 """
+                , Paragraph
+                    [ Text "To guarantee that the order function inside a given "
+                    , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                    , Text " is the same for every operation,"
+                    ]
                 , UnorderedList
                     [ Paragraph
-                        [ Text "Each unique "
+                        [ Text "each unique "
                         , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
-                        , Text " has a unique last type argument."
+                        , Text " needs to have a unique last type argument."
                         ]
                     , Paragraph
                         [ InlineElmCode [ { string = "GenericSet", syntaxKind = Just ElmSyntaxHighlight.Type } ]
-                        , Text " enforces that all operations need an "
+                        , Text " needs to enforce that all operations need an "
                         , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
                         , Text " with the same "
                         , inlineElmCode "unique"
                         , Text " type argument."
                         ]
-                    ]
-                , Paragraph
-                    [ Text "This guarantees that the order function inside a given "
-                    , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
-                    , Text " is the same across every operation."
                     ]
                 , Paragraph
                     [ Text "Why not just use a normal opaque type which wraps the order function to order the elements instead of this "
@@ -658,7 +657,7 @@ fakeOrdering =
                 , elmCode """
 type alias Ordering subject tag =
     Typed
-        Checked -- only constructible using a tag
+        Checked -- only constructible using the tag ↓
         tag
         Public -- everyone can access
         (( subject, subject ) -> Order)
@@ -671,13 +670,13 @@ increasing =
     Typed.tag Increasing compare
 
 type Increasing
-  = Increasing
+  = Increasing -- variant not exposed
 """
                 , Paragraph [ Text "First attempt to fake it:" ]
                 , elmCode """
 fakeIntOrder : Ordering Int Int.Order.Increasing
 fakeIntOrder =
-    -- type error: is Tagged but should be CHecked
+    -- type error: is Tagged but should be Checked
     Int.Order.increasing |> Typed.map (\\_ -> \\_ -> EQ)
 """
                 , Paragraph [ Text "Second attempt to fake it:" ]
@@ -696,26 +695,60 @@ GenericSet.empty
     |> GenericSet.insert Int.Order.increasing 3
     |> GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error
 """
+                , Paragraph [ Text "All that was already possible way before 8.0.0." ]
                 , Paragraph
-                    [ Text "All that was already possible way before 8.0.0."
-                    , Text " What's new is how we can preserve tags while wrapping a "
-                    , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
-                    , Text "."
+                    [ Text "Now... How do we define "
+                    , inlineElmCode "type alias GenericSet element uniqueOrder = ..Type.."
+                    , Text " or an "
+                    , inlineElmCode "Order.reverse"
+                    , Text " which sorts in opposite order?"
                     ]
-                , Paragraph [ Text "A simple example: implementing ", inlineElmCode "Order.reverse" ]
                 , elmCode """
+type Reverse tag
+    = Reverse tag
+
 reverse : Ordering subject tag -> Ordering subject (Reverse tag)
 reverse =
     Typed.mapTo (Reverse ??expression??) (\\order -> \\( a, b ) -> order ( b, a ))
-
-type Reverse tag
-    = Reverse tag
 """
                 , Paragraph
-                    [ Text """You'd need to store a tag in the inner value, which breaks the promise
-that only the module with the tag can create """
-                    , inlineElmCode "Ordering"
-                    , Text "s with that tag. Now with 8.0.0:"
+                    [ Text "Intuitively, you might want to reach for unsafe phantom types 🤮"
+                    ]
+                , elmCode """
+type Reverse reverseOrderTag = Reverse
+
+reverse : Ordering subject tag -> Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo Reverse (\\order -> \\a b -> order b a)
+
+reverseOops : Ordering subject orderTag -> Ordering subject (Reverse tag)
+reverseOops =
+    Typed.mapTo Reverse (\\order -> \\a b -> order b a)
+"""
+                , Paragraph
+                    [ inlineElmCode "orderTag"
+                    , Text " and "
+                    , inlineElmCode "tag"
+                    , Text " are different type variables, so the tag of the reversed ordering can accidentally be anything. It's a free variable :("
+                    ]
+                , Paragraph
+                    [ Text "Here's a similarly buggy example:"
+                    ]
+                , elmCode """
+type GenericSet element orderTag
+    = GenericSet (Internals element)
+
+fromListOops :
+    Ordering element tag
+    -> (List element -> GenericSet element orderTag)
+fromListOops elementOrdering =
+    \\list ->
+        GenericSet (Internals.fromList (elementOrdering |> Typed.untag) list)
+"""
+                , Paragraph
+                    [ Text " What's new in 8.0.0 is how we can preserve tags in the type while wrapping a "
+                    , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
+                    , Text ":"
                     ]
                 , elmCode """
 type Reverse
@@ -728,23 +761,25 @@ reverse =
                 , textOnlyParagraph """Notice how we don't have access to the tag of the argument
 but can still safely show it in the signature."""
                 , Paragraph
-                    [ Text "How did the order API for "
-                    , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
-                    , Text " do this prior to version 8? Unsafe phantom types 🤮"
+                    [ Text "We can use the same technique to finally fill in the "
+                    , inlineElmCode "type alias GenericSet element uniqueOrder = ..Type.."
+                    , Text ":"
                     ]
                 , elmCode """
-type Reverse tag
-    = Reverse
+type alias GenericSet element orderTag =
+    Typed Checked ( GenericSetTag, orderTag ) Internal (Internals element)
 
-reverse : Ordering subject tag -> Ordering subject (Reverse tag)
-reverse =
-    Typed.mapTo Reverse (\\order -> \\a b -> order b a)
+type GenericSetTag = GenericSetTag -- variant not exposed
 
-reverseOops : Ordering subject orderTag -> Ordering subject (Reverse tag)
-reverseOops =
-    Typed.mapTo Reverse (\\order -> \\a b -> order b a)
+fromList :
+    Ordering element tag
+    -> (List element -> GenericSet element tag)
+fromList elementOrdering =
+    \\list ->
+        elementOrdering
+            |> Typed.mapToWrap GenericSetTag
+                (\\orderFunction -> Internals.fromList orderFunction list)
 """
-                , textOnlyParagraph """The reversed tag can accidentally be anything. It's a free variable :("""
                 , textOnlyParagraph """Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:"""
                 , elmCode """
 type alias Reverse reverseOrderTag =
