@@ -1,7 +1,7 @@
 So far, I've shared ideas through elm packages.
 But well... some ideas have not worked out, some were abandoned, some are about external tools.
 
-→ [(early stages) website](https://lue-bird.github.io/blog/), built using [elm](https://elm-lang.org/).
+→ [(early stages) website](https://lue-bird.github.io/blog/)
 
 #### run locally
 ```noformatingples
