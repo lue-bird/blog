@@ -3,7 +3,7 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Mon, 23 Oct 2023 13:25:05 +0000</lastBuildDate>
+<lastBuildDate>Tue, 14 Nov 2023 00:29:57 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
 <title>Your AST allows lists with different element types. Why?</title>
@@ -279,7 +279,9 @@ type EqualsExpression
   = EqualsOfInt (EqualsOf Int)
   | EqualsOfExpression (EqualsOf EqualsExpression)
   | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
-  | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+  | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
+  -- even records!
+  | EqualsOfRecord (Dict String EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
 </item>
 <item>
 <title>Wrapping wrappers safely: typed-value 8.0.0</title>

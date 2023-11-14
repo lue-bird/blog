@@ -115,7 +115,36 @@ whatToDoWithElmReviewErrorsArticle =
             Sequence
                 [ textOnlyParagraph """Ever wanted to add helpers but introducing them at once would start a chain reaction of refactors?
 Especially when the new helper will make existing helpers irrelevant, it can feel simplest to just get the big refactor done with."""
-                , textOnlyParagraph """If you feel like this (just like past and sometimes current lue), here's an alternative to try:"""
+                , elmCode """
+isNotFunction : Expression -> Bool
+isNotFunction expression =
+    case expression of
+        Expression.Variable ( "Basics", "not" ) ->
+            True
+        
+        _ ->
+            False
+
+isNegateFunction : Expression -> Bool
+isNegateFunction expression =
+    case expression of
+        Expression.Variable ( "Basics", "negate" ) ->
+            True
+        
+        _ ->
+            False
+"""
+                , Paragraph [ Text "and you want to add" ]
+                , elmCode """
+isSpecificVariable specificFullyQualifiedVariableName =
+    case expression of
+        Expression.Variable fullyQualifiedVariableName ->
+            fullyQualifiedVariableName == specificFullyQualifiedVariableName
+        
+        _ ->
+            False
+"""
+                , Paragraph [ Text "If you feel like this (just like past and sometimes current lue), here's an alternative to try:" ]
                 , Paragraph
                     [ Text "Do a small, local, immediate step. "
                     , Italic "Commit"
@@ -161,6 +190,8 @@ You know, the stuff that allows you to keep less things in your mind that "you s
                 , textOnlyParagraph """If you think there won't be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn't scary. They have your back."""
                 , textOnlyParagraph """TODO: Show step-by-step refactor of adding helper, adding @deprecated, fixing the issues one by one"""
+                , textOnlyParagraph """If possible I'd like if elm-review doesn't slow this exploration phase...
+→ Also, elm-review rules don't really "slow down development" because they just hint at and remind you of what's left to do eventually without forcing you to do anything. (e.g. you added this helper? Do your thing but I always have your back so you don't forget that you wanted to use this helper somewhere) TODO integrate"""
                 ]
         }
 
@@ -578,6 +609,8 @@ type EqualsExpression
   | EqualsOfExpression (EqualsOf EqualsExpression)
   | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
   | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
+  -- even records!
+  | EqualsOfRecord (Dict String EqualsExpression)
 """
                 , textOnlyParagraph """Wtf?"""
                 ]
