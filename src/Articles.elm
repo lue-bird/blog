@@ -42,6 +42,7 @@ all =
     Sequence
         [ introduction
         , yourAstAllowsListsWithDifferentElementTypesWhyArticle
+        , aFunnyIdeaOnHowToRepresentAFractionSafelyArticle
         , typedValue8Article
         , whatToDoWithElmReviewErrorsArticle
         , Sequence
@@ -103,6 +104,136 @@ inlineElmCode raw =
 elmCode : String -> Content
 elmCode raw =
     ElmCode (elmCodeFromRaw raw)
+
+
+aFunnyIdeaOnHowToRepresentAFractionSafelyArticle : Content
+aFunnyIdeaOnHowToRepresentAFractionSafelyArticle =
+    Section
+        { title = "A funny idea on how to represent a fraction safely"
+        , description = """We can define non-opaque, safe number types where every value is unique."""
+        , completion = InProgress "Close to done (needs polish)"
+        , content =
+            Sequence
+                [ textOnlyParagraph """Intuitively, you might think of"""
+                , elmCode """
+type Rational
+    = N0
+    | Signed { sign : Sign, numerator : Natural1Up, denominator : Natural1Up }
+
+type Sign
+    = Positive
+    | Negative
+"""
+                , textOnlyParagraph """Annoyingly,
+there can be different elm values that represent the same number
+since numerator and denominator can share factors, like 3/7 and 6/14.
+Packages usually resolve this by making the type opaque – surprisingly, we can do better!"""
+                , textOnlyParagraph """Just before we get to that, there's something cool about defining Natural1Up as well that will be useful later.
+The simplest way to define it would be"""
+                , elmCode """
+type Natural1Up
+    = N1
+    | Successor Natural1Up
+"""
+                , textOnlyParagraph """This won't do since for example just adding 1000000 + 1000000 requires 1000000 steps (in elm at least).
+Luckily, computers do something smarter:"""
+                , elmCode """
+type Natural1Up
+    = Natural1Up (NonEmptyList Bit)
+
+type Bit
+    = O
+    | I
+"""
+                , Paragraph
+                    [ Text """We have a similar problem to the rational type shown in the first example.
+If we allow users to prepend """
+                    , inlineElmCode "O"
+                    , Text """s multiple elm values could represent the same number.
+Which would mean that checking them for equality would return false, ugh.
+So... guess we just have to make the type opaque?
+Lucky for us, an actual solution isn't actually more work:"""
+                    ]
+                , elmCode """
+type Natural1Up
+    = Natural1Up { bit1FollowedBy : List Bit }
+"""
+                , textOnlyParagraph """A little awkward but it mirrors reality.
+Oki, enough from natural numbers. Look at this safe representation of a rational number:"""
+                , elmCode """
+type alias Rational =
+    Dict
+        Prime
+        { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator
+        , exponent : Natural1Up
+        }
+
+type Prime
+    = PrimeAtIndex Natural0Up
+
+type PrimeFactorInNumeratorOrDenominator
+    = PrimeFactorInNumerator
+    | PrimeFactorInDenominator
+"""
+                , textOnlyParagraph """For the relevant primes, we write down whether the numerator or denominator has its corresponding prime as a factor and how often.
+This works because in a simplified fraction, a prime can't be both a factor of the numerator and the denominator.
+Looks all cool and clean!
+But oh well..., actually making such a dict without opaque types is even beyond what lue can do..."""
+                , textOnlyParagraph """Turns out we don't need a dict for this."""
+                , elmCode """
+type Rational
+    = N0
+    | Signed
+        { sign : Sign
+        , absolute :
+            List (Maybe { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up })
+        }
+"""
+                , Paragraph
+                    [ Text """Each index in the list corresponds to the same index in the list of primes: """
+                    , inlineElmCode """[ 2, 3, 5, 7, 11, 13, 17, ..expression.. ]"""
+                    , Text """.
+Then, for each index, we write down whether the numerator or denominator has its corresponding prime as a factor and how often,
+or if neither of them have that factor.
+So to represent e.g. 8/5:"""
+                    ]
+                , elmCode """
+Signed
+    { sign = Positive
+    , absolute =
+        [ {-2-} Just { inNumeratorOrDenominator = PrimeFactorInNumerator, exponent = Natural.n3 }
+        , {-3-} Nothing
+        , {-5-} Just { inNumeratorOrDenominator = PrimeFactorInDenominator, exponent = Natural.n1 }
+        ]
+    }
+"""
+                , Paragraph
+                    [ Text """You might have noticed that this is still not better than out original solution because we can add """
+                    , inlineElmCode "Nothing"
+                    , Text """s to the end of the list without the mathematical value changing.
+We can use a trick similar to the one we used for natural numbers:
+split the list into everything before the last which can contain """
+                    , inlineElmCode "Nothing"
+                    , Text """s and the last which can not:"""
+                    ]
+                , elmCode """
+type Rational
+    = N0
+    | Signed
+        { sign : Sign
+        , absolute :
+            { beforeLast : List (Maybe { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up })
+            , last : { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up }
+            }
+        }
+"""
+                , textOnlyParagraph """beautiful."""
+                , Paragraph
+                    [ Text """Extra: Implementing operations on these number types is ongoing in """
+                    , Link { description = "elm-number-safe", url = "https://github.com/lue-bird/elm-number-safe" }
+                    ]
+                ]
+        }
 
 
 whatToDoWithElmReviewErrorsArticle : Content
