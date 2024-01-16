@@ -362,11 +362,11 @@ And what about operations like (==) on infinitely nested triples?"""
 Starting with a classic but unsafe AST:"""
                 , elmCode """
 type Expression
-  = String String
-  | Int Int
-  | Bool Bool
-  | List (List Expression)
-  | Equals { left : Expression, right : Expression }
+    = String String
+    | Int Int
+    | Bool Bool
+    | List (List Expression)
+    | Equals { left : Expression, right : Expression }
 """
                 , textOnlyParagraph """↑ This is "probably fine" ™ practically but..."""
                 , UnorderedList
@@ -386,42 +386,42 @@ Equals { left = String "High", right = Int 5 }
                 , textOnlyParagraph """Naively, we could represent each kind of list and equals by it's own variant"""
                 , elmCode """
 type Expression
-  = String String
-  | Int Int
-  | Bool Bool
-  | List ListExpression
-  | Equals EqualsExpression
+    = String String
+    | Int Int
+    | Bool Bool
+    | List ListExpression
+    | Equals EqualsExpression
 
 
 type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
 type EqualsExpression
-  = EqualsOfString (EqualsOf String)
-  | EqualsOfInt (EqualsOf Int)
-  | EqualsOfBool (EqualsOf BoolExpression)
-  | EqualsOfList (EqualsOf ??Type??)
+    = EqualsOfString (EqualsOf String)
+    | EqualsOfInt (EqualsOf Int)
+    | EqualsOfBool (EqualsOf BoolExpression)
+    | EqualsOfList (EqualsOf ??Type??)
 
 type ListExpression
-  = ListOfString (List String)
-  | ListOfInt (List Int)
-  | ListOfBool (List BoolExpression)
-  | ListOfList (List ??Type??)
+    = ListOfString (List String)
+    | ListOfInt (List Int)
+    | ListOfBool (List BoolExpression)
+    | ListOfList (List ??Type??)
 
 type BoolExpression
-  = BoolLiteral Bool
-  | EqualsExpression EqualsExpression
+    = BoolLiteral Bool
+    | EqualsExpression EqualsExpression
 """
                 , Paragraph [ Text "The ", Italic "??", Text " just keep on expanding, let's take for example the case ", inlineElmCode "EqualsOfList" ]
                 , elmCode """
 type EqualsExpression
-  = {- ... | -} EqualsOfList EqualsExpressionOfList
+    = {- ... | -} EqualsOfList EqualsExpressionOfList
 
 type EqualsExpressionOfList
-  = EqualsOfListOfString (EqualsOf (List String))
-  | EqualsOfListOfInt (EqualsOf (List Int))
-  | EqualsOfListOfBool (EqualsOf (List BoolExpression))
-  | EqualsOfListOfList (EqualsOf (List ??Type??))
+    = EqualsOfListOfString (EqualsOf (List String))
+    | EqualsOfListOfInt (EqualsOf (List Int))
+    | EqualsOfListOfBool (EqualsOf (List BoolExpression))
+    | EqualsOfListOfList (EqualsOf (List ??Type??))
 """
                 , textOnlyParagraph """We just run into the same problem recursively."""
                 , textOnlyParagraph """We can apply some smart-smart to solve this!"""
@@ -430,28 +430,28 @@ type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
 type EqualsExpression string int bool
-  = EqualsOfString (EqualsOf string)
-  | EqualsOfInt (EqualsOf int)
-  | EqualsOfBool (EqualsOf bool)
-  | EqualsOfList (EqualsExpression (List string) (List int) (List bool))
+    = EqualsOfString (EqualsOf string)
+    | EqualsOfInt (EqualsOf int)
+    | EqualsOfBool (EqualsOf bool)
+    | EqualsOfList (EqualsExpression (List string) (List int) (List bool))
 
 
 type ListExpression string int bool
-  = ListOfString (List string)
-  | ListOfInt (List int)
-  | ListOfBool (List bool)
-  | ListOfList (ListExpression (List string) (List int) (List bool))
+    = ListOfString (List string)
+    | ListOfInt (List int)
+    | ListOfBool (List bool)
+    | ListOfList (ListExpression (List string) (List int) (List bool))
 
 type BoolKnown
-  = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)
 
 type Expression
-  = String String
-  | Int Int
-  | Bool Bool
-  | List (ListExpression String Int BoolKnown)
-  | Equals (EqualsExpression String Int BoolKnown)
+    = String String
+    | Int Int
+    | Bool Bool
+    | List (ListExpression String Int BoolKnown)
+    | Equals (EqualsExpression String Int BoolKnown)
 """
                 , Paragraph
                     [ Text "Quite cool how this works. For example, to represent a list of strings, we go down "
@@ -483,10 +483,10 @@ List
                 , elmCode """
 -- with Outer being (Type -> Type)
 type ByExpressionType string int bool
-  = String (Outer string)
-  | Int (Outer int)
-  | Bool (Outer bool)
-  | List (ByExpressionType (List string) (List int) (List bool))
+    = String (Outer string)
+    | Int (Outer int)
+    | Bool (Outer bool)
+    | List (ByExpressionType (List string) (List int) (List bool))
 
 type alias Expression =
     -- with Outer a = a
@@ -510,10 +510,10 @@ type alias EqualsExpression =
                 , textOnlyParagraph """Having one type for all expression kinds in a single place is still a nice idea, tho:"""
                 , elmCode """
 type ByExpressionType string int bool list
-  = String string
-  | Int int
-  | Bool bool
-  | List list
+    = String string
+    | Int int
+    | Bool bool
+    | List list
 
 type alias Expression =
     ByExpressionType String Int BoolKnown (ListExpression String Int BoolKnown)
@@ -536,8 +536,8 @@ type alias EqualsExpression string int bool =
         (EqualsExpression string int bool)
 
 type BoolKnown
-  = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """which actually looks pretty nice?"""
                 , elmCode """
@@ -562,22 +562,22 @@ List
                 , Paragraph [ Text "Well, it doesn't compile because \"recursive type aliases\" but the fix is as simple as converting each alias to a ", inlineElmCode "type" ]
                 , elmCode """
 type ListExpression string int bool
-  = ListExpression
-      (ByExpressionType
-          (List string)
-          (List int)
-          (List bool)
-          (ListExpression (List string) (List int) (List bool))
-      )
+    = ListExpression
+        (ByExpressionType
+            (List string)
+            (List int)
+            (List bool)
+            (ListExpression (List string) (List int) (List bool))
+        )
 
 type EqualsExpression string int bool
-  = EqualsExpression
-      (ByExpressionType
-          (EqualsOf string)
-          (EqualsOf int)
-          (EqualsOf bool)
-          (EqualsExpression (List string) (List int) (List bool))
-      )
+    = EqualsExpression
+        (ByExpressionType
+            (EqualsOf string)
+            (EqualsOf int)
+            (EqualsOf bool)
+            (EqualsExpression (List string) (List int) (List bool))
+        )
 """
                 , textOnlyParagraph """the result looks less nice but acceptable I guess"""
                 , elmCode """
@@ -610,51 +610,51 @@ List
                 , textOnlyParagraph """Let's add triples to that language"""
                 , elmCode """
 type ByExpressionType string int bool triple list
-  = String string
-  | Int int
-  | Bool bool
-  | Triple triple
-  | List list
+    = String string
+    | Int int
+    | Bool bool
+    | Triple triple
+    | List list
 
 type Expression
-  = Expression
-      (ByExpressionType
-          String
-          Int
-          BoolKnown
-          (TripleOf Expression Expression Expression)
-          (ListExpression String Int BoolKnown)
-      )
+    = Expression
+        (ByExpressionType
+            String
+            Int
+            BoolKnown
+            (TripleOf Expression Expression Expression)
+            (ListExpression String Int BoolKnown)
+        )
   
 type alias TripleOf first second third =
     { first : first, second : second, third : third }
 
 type ListExpression string int bool
-  = ListExpression
-      (ByExpressionType
-          (List string)
-          (List int)
-          (List bool)
-          (List ??Type??)
-          (ListExpression (List string) (List int) (List bool))
-      )
+    = ListExpression
+        (ByExpressionType
+            (List string)
+            (List int)
+            (List bool)
+            (List ??Type??)
+            (ListExpression (List string) (List int) (List bool))
+        )
 
 type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
 type EqualsExpression string int bool
-  = EqualsExpression
-      (ByExpressionType
-          (EqualsOf string)
-          (EqualsOf int)
-          (EqualsOf bool)
-          (EqualsOf ??Type??)
-          (EqualsExpression string int bool)
-      )
+    = EqualsExpression
+        (ByExpressionType
+            (EqualsOf string)
+            (EqualsOf int)
+            (EqualsOf bool)
+            (EqualsOf ??Type??)
+            (EqualsExpression string int bool)
+        )
 
 type BoolKnown
-  = BoolLiteral Bool
-  | Equals (EqualsExpression String Int BoolKnown)
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """The pieces don't seem to fit."""
                 , textOnlyParagraph """Do we need to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
@@ -736,12 +736,12 @@ Equals
                 , textOnlyParagraph """Strangely, with the second solution everything becomes eerily simple:"""
                 , elmCode """
 type EqualsExpression
-  = EqualsOfInt (EqualsOf Int)
-  | EqualsOfExpression (EqualsOf EqualsExpression)
-  | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
-  | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
-  -- even records!
-  | EqualsOfRecord (Dict String EqualsExpression)
+    = EqualsOfInt (EqualsOf Int)
+    | EqualsOfExpression (EqualsOf EqualsExpression)
+    | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
+    | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
+    -- even records!
+    | EqualsOfRecord (Dict String EqualsExpression)
 """
                 , textOnlyParagraph """Wtf?"""
                 ]
@@ -834,7 +834,7 @@ increasing =
     Typed.tag Increasing compare
 
 type Increasing
-  = Increasing -- variant not exposed
+    = Increasing -- variant not exposed
 """
                 , Paragraph [ Text "First attempt to fake it:" ]
                 , elmCode """
@@ -852,7 +852,7 @@ increasing =
     Typed.tag Increasing (\\_ -> EQ)
 
 type Increasing
-  = Increasing
+    = Increasing
 """
                 , elmCode """
 GenericSet.empty
