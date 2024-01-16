@@ -111,10 +111,10 @@ aFunnyIdeaForRepresentingAFractionSafelyArticle =
     Section
         { title = "A funny idea for representing a fraction safely"
         , description = """We can define non-opaque, safe number types where every value is unique."""
-        , completion = InProgress "Close to done (needs polish)"
+        , completion = Published (Time.millisToPosix 1705449600000)
         , content =
             Sequence
-                [ textOnlyParagraph """Intuitively, you might think of"""
+                [ textOnlyParagraph """A definition like ↓ seems intuitive"""
                 , elmCode """
 type Rational
     = N0
@@ -124,19 +124,23 @@ type Sign
     = Positive
     | Negative
 """
-                , textOnlyParagraph """Annoyingly,
+                , textOnlyParagraph """Looks pretty safe.
+Annoyingly,
 there can be different elm values that represent the same number
 since numerator and denominator can share factors, like 3/7 and 6/14.
+Checking these for equality would return false, ugh.
 Packages usually resolve this by making the type opaque – surprisingly, we can do better!"""
-                , textOnlyParagraph """Just before we get to that, there's something cool about defining Natural1Up as well that will be useful later.
-The simplest way to define it would be"""
+                , Paragraph
+                    [ Text """Just before we get to that, we'll define """
+                    , InlineElmCode [ { string = "Natural1Up", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                    , Text """."""
+                    ]
                 , elmCode """
 type Natural1Up
     = N1
     | Successor Natural1Up
 """
-                , textOnlyParagraph """This won't do since for example just adding 1000000 + 1000000 requires 1000000 steps (in elm at least).
-Luckily, computers do something smarter:"""
+                , textOnlyParagraph """↑ This won't do. Just adding 1000000 + 1000000 would take 1000000 steps (in elm at least)."""
                 , elmCode """
 type Natural1Up
     = Natural1Up (NonEmptyList Bit)
@@ -146,20 +150,26 @@ type Bit
     | I
 """
                 , Paragraph
-                    [ Text """We have a similar problem to the rational type shown in the first example.
-If we allow users to prepend """
+                    [ Text """↑ looks the most intuitive but similar to the """
+                    , InlineElmCode [ { string = "Rational", syntaxKind = Just ElmSyntaxHighlight.Type } ]
+                    , Text """ type above,
+if we allow users to prepend """
                     , inlineElmCode "O"
-                    , Text """s multiple elm values could represent the same number.
-Which would mean that checking them for equality would return false, ugh.
-So... guess we just have to make the type opaque?
-Lucky for us, an actual solution isn't actually more work:"""
+                    , Text """s, multiple elm values could represent the same number."""
+                    ]
+                , Paragraph
+                    [ Text """
+So... we do have to make the type opaque, just as """
+                    , Link { description = "elm-radio taught us", url = "https://elm-radio.com/episode/intro-to-opaque-types" }
+                    , Text """?
+Not so fast, the solution doesn't actually mean more work:"""
                     ]
                 , elmCode """
 type Natural1Up
     = Natural1Up { bit1FollowedBy : List Bit }
 """
                 , textOnlyParagraph """A little awkward but it mirrors reality.
-Oki, enough from natural numbers. Look at this safe representation of a rational number:"""
+Oki, enough from natural numbers. Have a look at this cute representation of a rational number:"""
                 , elmCode """
 type alias Rational =
     Dict
@@ -208,13 +218,13 @@ Signed
     }
 """
                 , Paragraph
-                    [ Text """You might have noticed that this is still not better than out original solution because we can add """
+                    [ Text """You might have noticed that this is still not better than our original solution because users can add """
                     , inlineElmCode "Nothing"
                     , Text """s to the end of the list without the mathematical value changing.
 We can use a trick similar to the one we used for natural numbers:
-split the list into everything before the last which can contain """
+split the list into the last element which can not contain """
                     , inlineElmCode "Nothing"
-                    , Text """s and the last which can not:"""
+                    , Text """ and everything before which can:"""
                     ]
                 , elmCode """
 type Rational
