@@ -42,7 +42,7 @@ all =
     Sequence
         [ introduction
         , yourAstAllowsListsWithDifferentElementTypesWhyArticle
-        , aFunnyIdeaOnHowToRepresentAFractionSafelyArticle
+        , aFunnyIdeaForRepresentingAFractionSafelyArticle
         , typedValue8Article
         , whatToDoWithElmReviewErrorsArticle
         , Sequence
@@ -106,10 +106,10 @@ elmCode raw =
     ElmCode (elmCodeFromRaw raw)
 
 
-aFunnyIdeaOnHowToRepresentAFractionSafelyArticle : Content
-aFunnyIdeaOnHowToRepresentAFractionSafelyArticle =
+aFunnyIdeaForRepresentingAFractionSafelyArticle : Content
+aFunnyIdeaForRepresentingAFractionSafelyArticle =
     Section
-        { title = "A funny idea on how to represent a fraction safely"
+        { title = "A funny idea for representing a fraction safely"
         , description = """We can define non-opaque, safe number types where every value is unique."""
         , completion = InProgress "Close to done (needs polish)"
         , content =
