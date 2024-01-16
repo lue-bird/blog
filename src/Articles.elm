@@ -169,7 +169,7 @@ type Natural1Up
     = Natural1Up { bit1FollowedBy : List Bit }
 """
                 , textOnlyParagraph """A little awkward but it mirrors reality.
-Oki, enough from natural numbers. Have a look at this cute representation of a rational number:"""
+Oki, enough about natural numbers. Have a look at this cute representation of a rational number:"""
                 , elmCode """
 type alias Rational =
     Dict
