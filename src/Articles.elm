@@ -507,7 +507,7 @@ type alias EqualsExpression =
                     , InlineElmCode [ { string = "Outer", syntaxKind = Just ElmSyntaxHighlight.Type } ]
                     , Text " can only be at that level: We want to represent \"list of a == list of a\", not \"list of (a == a)\"."
                     ]
-                , textOnlyParagraph """Having one type for all expression kinds are in one place is still a nice idea, tho:"""
+                , textOnlyParagraph """Having one type for all expression kinds in a single place is still a nice idea, tho:"""
                 , elmCode """
 type ByExpressionType string int bool list
   = String string
