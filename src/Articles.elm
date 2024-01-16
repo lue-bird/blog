@@ -131,7 +131,7 @@ since numerator and denominator can share factors, like 3/7 and 6/14.
 Checking these for equality would return false, ugh.
 Packages usually resolve this by making the type opaque – surprisingly, we can do better!"""
                 , Paragraph
-                    [ Text """Just before we get to that, we'll define """
+                    [ Text """Just before we get to that, let's define """
                     , InlineElmCode [ { string = "Natural1Up", syntaxKind = Just ElmSyntaxHighlight.Type } ]
                     , Text """."""
                     ]
