@@ -44,6 +44,7 @@ all =
         , yourAstAllowsListsWithDifferentElementTypesWhyArticle
         , aFunnyIdeaForRepresentingAFractionSafelyArticle
         , typedValue8Article
+        , whatsNeededToDefineAnAppArticle
         , whatToDoWithElmReviewErrorsArticle
         , Sequence
             [ Paragraph [ Text "Oki, that's it for the articles. Planned:" ]
@@ -1000,6 +1001,143 @@ sortingKey toKeyTyped keyOrdering =
                 }
             )
 """
+                ]
+        }
+
+
+whatsNeededToDefineAnAppArticle : Content
+whatsNeededToDefineAnAppArticle =
+    Section
+        { title = "What's needed to define an app"
+        , description = "The simplest architecture to define apps"
+        , completion = InProgress "needs many examples and needs to be more engaging/visual"
+        , content =
+            Sequence
+                [ "🔦 Imagine a flashlight app with a switch that turns the light on when it's off and vice versa. To properly define it, we need the following abilities" |> textOnlyParagraph
+                , UnorderedList
+                    [ """👀💭 The app can see when a user toggles the switch. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off"""
+                        |> textOnlyParagraph
+                    , "✎ The app can turn the physical light on or off"
+                        |> textOnlyParagraph
+                    ]
+                , "So in general" |> textOnlyParagraph
+                , UnorderedList
+                    [ """👀💭 An app can see and remember what happens on the outside.""" |> textOnlyParagraph
+                    , "✎ An app can trigger actions on the outside."
+                        |> textOnlyParagraph
+                    ]
+                , "What our way of defining apps should avoid" |> textOnlyParagraph
+                , UnorderedList
+                    [ """Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page"""
+                        |> textOnlyParagraph
+                    , "Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour"
+                        |> textOnlyParagraph
+                    ]
+                , "Try going through frameworks you already know and find cases where these issues pop up." |> textOnlyParagraph
+                , "Respecting all these points, we end up with an app definition that needs" |> textOnlyParagraph
+                , UnorderedList
+                    [ [ Text "💭 A value to represent what the app remembers or better: what it knows. Let's call it ", Italic "state" ]
+                        |> Paragraph
+                    , "💭 A state to represent that the app has just been started and so doesn't remember anything"
+                        |> textOnlyParagraph
+                    , "✎ A way to trigger actions on the outside based on what the app knows"
+                        |> textOnlyParagraph
+                    , "👀 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state"
+                        |> textOnlyParagraph
+                    ]
+                , "so in code this would look something like this:"
+                    |> textOnlyParagraph
+                , elmCode """
+type InterfaceWithTheOutside state
+    = EyeOnTheOutside ..Type..
+    | ActionOnTheOutside ..Type..
+
+type JustStartedOr runningState
+    = JustStartedSoItKnowsNothing
+    | RunningState state
+
+anyApp : JustStartedOr runningState -> List (InterfaceWithTheOutside runningState)
+anyApp = ..expression..
+"""
+                , "The whole app signature defined in one line, neat. A flashlight app which on startup sets the light to on could look something like"
+                    |> textOnlyParagraph
+                , elmCode """
+
+type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : JustStartedOr LightActivation -> List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    \\justStartedOrRunning ->
+        let
+            lightActivation : LightActivation
+            lightActivation =
+                case justStartedOrRunning of
+                    JustStartedSoItKnowsNothing ->
+                        LightOn
+                    
+                    RunningState lightActivation ->
+                        lightActivation
+        in
+        case lightActivation of
+            LightOn ->
+                [ ActionOnTheOutside PhysicalLightOn
+                , EyeOnTheOutside (Switch (\\Pressed -> LightOff))
+                ]
+
+            LightOff ->
+                [ ActionOnTheOutside PhysicalLightOff
+                , EyeOnTheOutside (Switch (\\Pressed -> LightOn))
+                ]
+"""
+                , "Since the \"justs started so it knows nothing\" state is in practice always equivalent to some \"running state\", we can make this simplification"
+                    |> textOnlyParagraph
+                , elmCode """
+type InterfaceWithTheOutside state
+    = EyeOnTheOutside ..Type..
+    | ActionOnTheOutside ..Type..
+
+anyApp :
+    { initialState : state
+    , interface : state -> List (InterfaceWithTheOutside state)
+    }
+anyApp = ..expression..
+"""
+                , "With that, our flashlight app is now"
+                    |> textOnlyParagraph
+                , elmCode """
+
+type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : LightActivation -> List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    { initialState = LightOn
+    , interface =
+        \\lightActivation ->
+            case lightActivation of
+                LightOn ->
+                    [ ActionOnTheOutside PhysicalLightOn
+                    , EyeOnTheOutside (Switch (\\Pressed -> LightOff))
+                    ]
+
+                LightOff ->
+                    [ ActionOnTheOutside PhysicalLightOff
+                    , EyeOnTheOutside (Switch (\\Pressed -> LightOn))
+                    ]
+    }
+"""
+                , "Pretty cool, ey?"
+                    |> textOnlyParagraph
+                , Paragraph
+                    [ "Note: There's an implementation of this architecture for the web: " |> Text
+                    , Link
+                        { description = "elm-state-interface"
+                        , url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/"
+                        }
+                    ]
                 ]
         }
 
