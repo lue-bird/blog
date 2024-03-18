@@ -54,8 +54,10 @@ all =
                         [ Text "\"elm-typesafe-radio\" series"
                         ]
                     , UnorderedList
-                        [ Paragraph [ Text "phantom types" ]
-                        , Paragraph [ Text "opaque types" ]
+                        [ Paragraph [ Text "booleans and ifs" ]
+                        , Paragraph [ Text "tuples" ]
+                        , Paragraph [ Text "✅ ", Link { description = "phantom types", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-review-opaque-type/latest/" } ]
+                        , Paragraph [ Text "✅ ", Link { description = "opaque types", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-review-phantom-type/latest/" } ]
                         ]
                     ]
                 ]
@@ -1085,7 +1087,7 @@ flashlightApp =
 """
                 , "It's almost eerie how we can say \"That's it!\""
                     |> textOnlyParagraph
-                , "In practice, the \"just started so it knows nothing\" state is always equivalent to some \"running state\", we can make this simplification"
+                , "In practice, the state \"just started so it knows nothing\" is always equivalent to some \"running state\", so we can make this simplification"
                     |> textOnlyParagraph
                 , elmCode """
 type InterfaceWithTheOutside state
