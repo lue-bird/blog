@@ -47,20 +47,7 @@ all =
         , whatsNeededToDefineAnAppArticle
         , whatToDoWithElmReviewErrorsArticle
         , Sequence
-            [ Paragraph [ Text "Oki, that's it for the articles. Planned:" ]
-            , UnorderedList
-                [ Sequence
-                    [ Paragraph
-                        [ Text "\"elm-typesafe-radio\" series"
-                        ]
-                    , UnorderedList
-                        [ Paragraph [ Text "booleans and ifs" ]
-                        , Paragraph [ Text "tuples" ]
-                        , Paragraph [ Text "✅ ", Link { description = "phantom types", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-review-opaque-type/latest/" } ]
-                        , Paragraph [ Text "✅ ", Link { description = "opaque types", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-review-phantom-type/latest/" } ]
-                        ]
-                    ]
-                ]
+            [ Paragraph [ Text "Oki, that's it for the articles." ]
             ]
         , textOnlyParagraph """⸜(｡˃ ᵕ ˂ )⸝♡"""
         ]
