@@ -1008,9 +1008,9 @@ sortingKey toKeyTyped keyOrdering =
 whatsNeededToDefineAnAppArticle : Content
 whatsNeededToDefineAnAppArticle =
     Section
-        { title = "What's needed to define an app"
+        { title = "The simplest app definition"
         , description = "The simplest architecture to define apps"
-        , completion = InProgress "needs many examples and needs to be more engaging/visual"
+        , completion = InProgress "needs refinement"
         , content =
             Sequence
                 [ "🔦 Imagine a flashlight app with a switch that turns the light on when it's off and vice versa. To properly define it, we need the following abilities" |> textOnlyParagraph
@@ -1026,15 +1026,7 @@ whatsNeededToDefineAnAppArticle =
                     , "✎ An app can trigger actions on the outside."
                         |> textOnlyParagraph
                     ]
-                , "What our way of defining apps should avoid" |> textOnlyParagraph
-                , UnorderedList
-                    [ """Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page"""
-                        |> textOnlyParagraph
-                    , "Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour"
-                        |> textOnlyParagraph
-                    ]
-                , "Try going through frameworks you already know and find cases where these issues pop up." |> textOnlyParagraph
-                , "Respecting all these points, we end up with an app definition that needs" |> textOnlyParagraph
+                , "In the simplest app definition I could come up with, we end up with" |> textOnlyParagraph
                 , UnorderedList
                     [ [ Text "💭 A value to represent what the app remembers or better: what it knows. Let's call it ", Italic "state" ]
                         |> Paragraph
@@ -1048,13 +1040,13 @@ whatsNeededToDefineAnAppArticle =
                 , "so in code this would look something like this:"
                     |> textOnlyParagraph
                 , elmCode """
-type InterfaceWithTheOutside state
+type InterfaceWithTheOutside whatComesBack
     = EyeOnTheOutside ..Type..
     | ActionOnTheOutside ..Type..
 
 type JustStartedOr runningState
     = JustStartedSoItKnowsNothing
-    | RunningState state
+    | RunningState runningState
 
 anyApp : JustStartedOr runningState -> List (InterfaceWithTheOutside runningState)
 anyApp = ..expression..
@@ -1091,7 +1083,9 @@ flashlightApp =
                 , EyeOnTheOutside (Switch (\\Pressed -> LightOn))
                 ]
 """
-                , "Since the \"justs started so it knows nothing\" state is in practice always equivalent to some \"running state\", we can make this simplification"
+                , "It's almost eerie how we can say \"That's it!\""
+                    |> textOnlyParagraph
+                , "In practice, the \"just started so it knows nothing\" state is always equivalent to some \"running state\", we can make this simplification"
                     |> textOnlyParagraph
                 , elmCode """
 type InterfaceWithTheOutside state
@@ -1131,6 +1125,14 @@ flashlightApp =
 """
                 , "Pretty cool, ey?"
                     |> textOnlyParagraph
+                , "And we almost by accident managed to avoid hard problems that almost every framework has:" |> textOnlyParagraph
+                , UnorderedList
+                    [ """Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page"""
+                        |> textOnlyParagraph
+                    , "Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour"
+                        |> textOnlyParagraph
+                    ]
+                , "Try going through frameworks you already know and find cases where these issues pop up." |> textOnlyParagraph
                 , Paragraph
                     [ "Note: There's an implementation of this architecture for the web: " |> Text
                     , Link
