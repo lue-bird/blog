@@ -44,7 +44,7 @@ all =
         , yourAstAllowsListsWithDifferentElementTypesWhyArticle
         , aFunnyIdeaForRepresentingAFractionSafelyArticle
         , typedValue8Article
-        , whatsNeededToDefineAnAppArticle
+        , theSimplestAppDefinitionArticle
         , whatToDoWithElmReviewErrorsArticle
         , Sequence
             [ Paragraph [ Text "Oki, that's it for the articles." ]
@@ -994,25 +994,25 @@ sortingKey toKeyTyped keyOrdering =
         }
 
 
-whatsNeededToDefineAnAppArticle : Content
-whatsNeededToDefineAnAppArticle =
+theSimplestAppDefinitionArticle : Content
+theSimplestAppDefinitionArticle =
     Section
         { title = "The simplest app definition"
         , description = "The simplest architecture to define apps"
-        , completion = InProgress "needs refinement"
+        , completion = InProgress "waiting for elm-state-interface 2.0.0 release within the next 2 weeks"
         , content =
             Sequence
-                [ "🔦 Imagine a flashlight app with a switch that turns the light on when it's off and vice versa. To properly define it, we need the following abilities" |> textOnlyParagraph
+                [ "🔦 Imagine a flashlight app with a switch that turns on the light when it's off and vice versa." |> textOnlyParagraph
                 , UnorderedList
-                    [ """👀💭 The app can see when a user toggles the switch. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off"""
+                    [ """📡💭 The app can detect the exact moment the switch is toggled. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off"""
                         |> textOnlyParagraph
                     , "✎ The app can turn the physical light on or off"
                         |> textOnlyParagraph
                     ]
-                , "So in general" |> textOnlyParagraph
+                , "So in general, an app definition has to allow" |> textOnlyParagraph
                 , UnorderedList
-                    [ """👀💭 An app can see and remember what happens on the outside.""" |> textOnlyParagraph
-                    , "✎ An app can trigger actions on the outside."
+                    [ """📡💭 detecting and remembering what happens on the outside""" |> textOnlyParagraph
+                    , "✎ triggering actions on the outside"
                         |> textOnlyParagraph
                     ]
                 , "In the simplest app definition I could come up with, we end up with" |> textOnlyParagraph
@@ -1023,15 +1023,15 @@ whatsNeededToDefineAnAppArticle =
                         |> textOnlyParagraph
                     , "✎ A way to trigger actions on the outside based on what the app knows"
                         |> textOnlyParagraph
-                    , "👀 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state"
+                    , "📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state"
                         |> textOnlyParagraph
                     ]
                 , "so in code this would look something like this:"
                     |> textOnlyParagraph
                 , elmCode """
 type InterfaceWithTheOutside whatComesBack
-    = EyeOnTheOutside ..Type..
-    | ActionOnTheOutside ..Type..
+    = DetectorOnTheOutside (DetectorOnTheOutside whatComesBack)
+    | ActionOnTheOutside ActionOnTheOutside
 
 type JustStartedOr runningState
     = JustStartedSoItKnowsNothing
@@ -1040,7 +1040,17 @@ type JustStartedOr runningState
 anyApp : JustStartedOr runningState -> List (InterfaceWithTheOutside runningState)
 anyApp = ..expression..
 """
-                , "The whole app signature defined in one line, neat. A flashlight app which on startup sets the light to on could look something like"
+                , "The whole app signature defined in one line as a single function, almost insulting!" |> textOnlyParagraph
+                , "How these \"interface\" types look like dependents on the platform, nothing you have to do as a user. For our flashlight, it's something like" |> textOnlyParagraph
+                , elmCode """
+type DetectorOnTheOutside whatComesBack
+    = SwitchToggled whatComesBack
+
+type ActionOnTheOutside
+    = PhysicalLightOn
+    | PhysicalLightOff
+"""
+                , "A flashlight app which on startup sets the light to on could look something like"
                     |> textOnlyParagraph
                 , elmCode """
 
@@ -1064,21 +1074,26 @@ flashlightApp =
         case lightActivation of
             LightOn ->
                 [ ActionOnTheOutside PhysicalLightOn
-                , EyeOnTheOutside (Switch (\\Pressed -> LightOff))
+                , DetectorOnTheOutside (SwitchToggled LightOff)
                 ]
 
             LightOff ->
                 [ ActionOnTheOutside PhysicalLightOff
-                , EyeOnTheOutside (Switch (\\Pressed -> LightOn))
+                , DetectorOnTheOutside (SwitchToggled LightOn)
                 ]
 """
                 , "It's almost eerie how we can say \"That's it!\""
                     |> textOnlyParagraph
-                , "In practice, the state \"just started so it knows nothing\" is always equivalent to some \"running state\", so we can make this simplification"
-                    |> textOnlyParagraph
+                , [ Text "In practice, the state "
+                  , InlineElmCode [ { syntaxKind = ElmSyntaxHighlight.Variant |> Just, string = "JustStartedSoItKnowsNothing" } ]
+                  , Text " is always equivalent to some "
+                  , InlineElmCode [ { syntaxKind = ElmSyntaxHighlight.Variant |> Just, string = "RunningState" } ]
+                  , Text ". Like, when you have a home screen, you want to be able to return to it. So we can make this simplification"
+                  ]
+                    |> Paragraph
                 , elmCode """
-type InterfaceWithTheOutside state
-    = EyeOnTheOutside ..Type..
+type InterfaceWithTheOutside whatComesBack
+    = DetectorOnTheOutside ..Type..
     | ActionOnTheOutside ..Type..
 
 anyApp :
@@ -1103,12 +1118,12 @@ flashlightApp =
             case lightActivation of
                 LightOn ->
                     [ ActionOnTheOutside PhysicalLightOn
-                    , EyeOnTheOutside (Switch (\\Pressed -> LightOff))
+                    , DetectorOnTheOutside (SwitchToggled LightOff)
                     ]
 
                 LightOff ->
                     [ ActionOnTheOutside PhysicalLightOff
-                    , EyeOnTheOutside (Switch (\\Pressed -> LightOn))
+                    , DetectorOnTheOutside (SwitchToggled LightOn)
                     ]
     }
 """
@@ -1123,7 +1138,7 @@ flashlightApp =
                     ]
                 , "Try going through frameworks you already know and find cases where these issues pop up." |> textOnlyParagraph
                 , Paragraph
-                    [ "Note: There's an implementation of this architecture for the web: " |> Text
+                    [ "Good news at the end: For the web, this architecture has already been implemented: " |> Text
                     , Link
                         { description = "elm-state-interface"
                         , url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/"
