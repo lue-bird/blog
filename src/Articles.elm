@@ -999,7 +999,7 @@ theSimplestAppDefinitionArticle =
     Section
         { title = "The simplest app definition"
         , description = "The simplest architecture to define apps"
-        , completion = InProgress "waiting for elm-state-interface 2.0.0 release within the next 2 weeks"
+        , completion = Published (Time.millisToPosix 1712426002312)
         , content =
             Sequence
                 [ "🔦 Imagine a flashlight app with a switch that turns on the light when it's off and vice versa." |> textOnlyParagraph

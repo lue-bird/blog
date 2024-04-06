@@ -3,7 +3,7 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Tue, 16 Jan 2024 21:57:19 +0000</lastBuildDate>
+<lastBuildDate>Sat, 06 Apr 2024 17:52:45 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
 <title>Your AST allows lists with different element types. Why?</title>
@@ -300,7 +300,7 @@ Annoyingly,
 there can be different elm values that represent the same number
 since numerator and denominator can share factors, like 3/7 and 6/14.
 Checking these for equality would return false, ugh.
-Packages usually resolve this by making the type opaque – surprisingly, we can do better!&lt;/p&gt;&lt;p&gt;Just before we get to that, we&apos;ll define &lt;code&gt;Natural1Up&lt;/code&gt;.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Natural1Up
+Packages usually resolve this by making the type opaque – surprisingly, we can do better!&lt;/p&gt;&lt;p&gt;Just before we get to that, let&apos;s define &lt;code&gt;Natural1Up&lt;/code&gt;.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Natural1Up
     = N1
     | Successor Natural1Up&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;↑ This won&apos;t do. Just adding 1000000 + 1000000 would take 1000000 steps (in elm at least).&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Natural1Up
     = Natural1Up (NonEmptyList Bit)
@@ -312,7 +312,7 @@ if we allow users to prepend &lt;code&gt;O&lt;/code&gt;s, multiple elm values co
 So... we do have to make the type opaque, just as &lt;a href=&quot;https://elm-radio.com/episode/intro-to-opaque-types&quot;&gt;elm-radio taught us&lt;/a&gt;?
 Not so fast, the solution doesn&apos;t actually mean more work:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Natural1Up
     = Natural1Up { bit1FollowedBy : List Bit }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A little awkward but it mirrors reality.
-Oki, enough from natural numbers. Have a look at this cute representation of a rational number:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Rational =
+Oki, enough about natural numbers. Have a look at this cute representation of a rational number:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Rational =
     Dict
         Prime
         { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator
@@ -477,6 +477,81 @@ sortingKey toKeyTyped keyOrdering =
                 , keyOrder = keyOrder
                 }
             )&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+</item>
+<item>
+<title>The simplest app definition</title>
+<description>The simplest architecture to define apps</description>
+<link>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</link>
+<guid>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</guid>
+<pubDate>Tue, 20 Jan 1970 19:40:25 +0000</pubDate>
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;The simplest app definition&lt;/h3&gt;&lt;div&gt;&lt;p&gt;🔦 Imagine a flashlight app with a switch that turns on the light when it&apos;s off and vice versa.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 The app can detect the exact moment the switch is toggled. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ The app can turn the physical light on or off&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;So in general, an app definition has to allow&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 detecting and remembering what happens on the outside&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ triggering actions on the outside&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;In the simplest app definition I could come up with, we end up with&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;💭 A value to represent what the app remembers or better: what it knows. Let&apos;s call it &lt;i&gt;state&lt;/i&gt;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;💭 A state to represent that the app has just been started and so doesn&apos;t remember anything&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ A way to trigger actions on the outside based on what the app knows&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;so in code this would look something like this:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type InterfaceWithTheOutside whatComesBack
+    = DetectorOnTheOutside (DetectorOnTheOutside whatComesBack)
+    | ActionOnTheOutside ActionOnTheOutside
+
+type JustStartedOr runningState
+    = JustStartedSoItKnowsNothing
+    | RunningState runningState
+
+anyApp : JustStartedOr runningState -&amp;gt; List (InterfaceWithTheOutside runningState)
+anyApp = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The whole app signature defined in one line as a single function, almost insulting!&lt;/p&gt;&lt;p&gt;How these &quot;interface&quot; types look like dependents on the platform, nothing you have to do as a user. For our flashlight, it&apos;s something like&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type DetectorOnTheOutside whatComesBack
+    = SwitchToggled whatComesBack
+
+type ActionOnTheOutside
+    = PhysicalLightOn
+    | PhysicalLightOff&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A flashlight app which on startup sets the light to on could look something like&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : JustStartedOr LightActivation -&amp;gt; List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    \justStartedOrRunning -&amp;gt;
+        let
+            lightActivation : LightActivation
+            lightActivation =
+                case justStartedOrRunning of
+                    JustStartedSoItKnowsNothing -&amp;gt;
+                        LightOn
+                    
+                    RunningState lightActivation -&amp;gt;
+                        lightActivation
+        in
+        case lightActivation of
+            LightOn -&amp;gt;
+                [ ActionOnTheOutside PhysicalLightOn
+                , DetectorOnTheOutside (SwitchToggled LightOff)
+                ]
+
+            LightOff -&amp;gt;
+                [ ActionOnTheOutside PhysicalLightOff
+                , DetectorOnTheOutside (SwitchToggled LightOn)
+                ]&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It&apos;s almost eerie how we can say &quot;That&apos;s it!&quot;&lt;/p&gt;&lt;p&gt;In practice, the state &lt;code&gt;JustStartedSoItKnowsNothing&lt;/code&gt; is always equivalent to some &lt;code&gt;RunningState&lt;/code&gt;. Like, when you have a home screen, you want to be able to return to it. So we can make this simplification&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type InterfaceWithTheOutside whatComesBack
+    = DetectorOnTheOutside ...
+    | ActionOnTheOutside ...
+
+anyApp :
+    { initialState : state
+    , interface : state -&amp;gt; List (InterfaceWithTheOutside state)
+    }
+anyApp = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With that, our flashlight app is now&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : LightActivation -&amp;gt; List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    { initialState = LightOn
+    , interface =
+        \lightActivation -&amp;gt;
+            case lightActivation of
+                LightOn -&amp;gt;
+                    [ ActionOnTheOutside PhysicalLightOn
+                    , DetectorOnTheOutside (SwitchToggled LightOff)
+                    ]
+
+                LightOff -&amp;gt;
+                    [ ActionOnTheOutside PhysicalLightOff
+                    , DetectorOnTheOutside (SwitchToggled LightOn)
+                    ]
+    }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Pretty cool, ey?&lt;/p&gt;&lt;p&gt;And we almost by accident managed to avoid hard problems that almost every framework has:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Try going through frameworks you already know and find cases where these issues pop up.&lt;/p&gt;&lt;p&gt;Good news at the end: For the web, this architecture has already been implemented: &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/&quot;&gt;elm-state-interface&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
 </item>
 </channel>
 </rss>
