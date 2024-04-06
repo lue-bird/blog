@@ -1041,7 +1041,7 @@ anyApp : JustStartedOr runningState -> List (InterfaceWithTheOutside runningStat
 anyApp = ..expression..
 """
                 , "The whole app signature defined in one line as a single function, almost insulting!" |> textOnlyParagraph
-                , "How these \"interface\" types look like dependents on the platform, nothing you have to do as a user. For our flashlight, it's something like" |> textOnlyParagraph
+                , "How these \"interface\" types look like depends on the platform, nothing you have to do as a user. For our flashlight, it's something like" |> textOnlyParagraph
                 , elmCode """
 type DetectorOnTheOutside whatComesBack
     = SwitchToggled whatComesBack
