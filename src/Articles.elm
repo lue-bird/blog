@@ -45,6 +45,7 @@ all =
         , aFunnyIdeaForRepresentingAFractionSafelyArticle
         , typedValue8Article
         , theSimplestAppDefinitionArticle
+        , theElmIcebergArticle
         , whatToDoWithElmReviewErrorsArticle
         , Sequence
             [ Paragraph [ Text "Oki, that's it for the articles." ]
@@ -1146,6 +1147,142 @@ flashlightApp =
                     ]
                 ]
         }
+
+
+theElmIcebergArticle : Content
+theElmIcebergArticle =
+    Section
+        { title = "The elm iceberg"
+        , description = "what deep secrets lie below us"
+        , completion = InProgress "just a sketch"
+        , content =
+            Sequence
+                [ "Crust" |> textOnlyParagraph
+                , UnorderedList
+                    [ """some literals have no corresponding patterns → negative Int, Float"""
+                        |> textOnlyParagraph
+                    , """main can be of type Html"""
+                        |> textOnlyParagraph
+                    , """== can crash → function, Json.Decode.Value, Regex"""
+                        |> textOnlyParagraph
+                    , [ "Html.Attributes are sometimes not equivalent to the html attributes with the same name → " |> Text
+                      , Link { description = "Html.Attributes.value is a js property", url = "https://github.com/elm/html/blob/1.0.0/src/Html/Attributes.elm#L439-L441" }
+                      , ", ..." |> Text
+                      ]
+                        |> Paragraph
+                    , """elm can run outside of the browser → Platform.worker"""
+                        |> textOnlyParagraph
+                    , """elm on the backend → elm studio, lamdera, pine, elm-pages, ..."""
+                        |> textOnlyParagraph
+                    , [ "json encoder and decoder can be created in one: " |> Text
+                      , packageLink "miniBill/elm-codec"
+                      , ", " |> Text
+                      , packageLink "MartinSStewart/elm-serialize"
+                      , ", ..." |> Text
+                      ]
+                        |> Paragraph
+                    , [ "Dict and Set types with arbitrary key types exist → AssocList, AnyDict, " |> Text
+                      , packageLink "miniBill/elm-generic-dict"
+                      , ", ..." |> Text
+                      ]
+                        |> Paragraph
+                    , """import aliases can't contain dots""" |> textOnlyParagraph
+                    , [ "elm-lang.org contains a TODO → " |> Text
+                      , Link { description = "section on url parsing", url = "https://guide.elm-lang.org/webapps/url_parsing" }
+                      , " under Synthesis" |> Text
+                      ]
+                        |> Paragraph
+                    , """there is a type for a value that's impossible to ever construct and it's very useful → Never, never""" |> textOnlyParagraph
+                    ]
+                , "Mantle" |> textOnlyParagraph
+                , UnorderedList
+                    [ """andMap = map2 (|>)""" |> textOnlyParagraph
+                    , """modBy 0 and other operations can throw runtime errors""" |> textOnlyParagraph
+                    , """Int is unsound → 2^ -1 == 0.5 : Int""" |> textOnlyParagraph
+                    , """main can be of type Svg"""
+                        |> textOnlyParagraph
+                    , """type parameters that aren't used still make the base type different to the compiler → phantom types"""
+                        |> textOnlyParagraph
+                    , [ "the implicit record type alias constructor functions are not created when there is indirection or the record is extensible → " |> Text
+                      , Link { description = "summary on situations where constructor is not created", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-no-record-type-alias-constructor-function/latest#only-works-in-very-limited-scenarios" }
+                      ]
+                        |> Paragraph
+                    , """effect module where"""
+                        |> textOnlyParagraph
+                    , """It's basically impossible to use both Parser and Parser.Advanced in the same module → both expose the same operators and these can't be qualified"""
+                        |> textOnlyParagraph
+                    , """Bitwise.shiftRightZfBy"""
+                        |> textOnlyParagraph
+                    , [ "thread blocked indefinitely in an MVar operation and Map.!: given key is not an element in the map → let, (mutual) recursion, lambda, exports, missing annotations → " |> Text
+                      , Link { description = "summary issue on blocking", url = "https://github.com/gren-lang/compiler/issues/105" }
+                      , ", " |> Text
+                      , Link { description = "summary issue on missing key", url = "https://github.com/gren-lang/compiler/issues/104" }
+                      , " ..." |> Text
+                      ]
+                        |> Paragraph
+                    , [ "elm was picked partially because it sounds like element → " |> Text
+                      , Link { description = "google groups chat with evan", url = "https://groups.google.com/g/elm-discuss/c/S4zbHJWPXvU/m/JyavEHDDQucJ" }
+                      ]
+                        |> Paragraph
+                    ]
+                , "Outer core" |> textOnlyParagraph
+                , UnorderedList
+                    [ """Performance improvements → adding ++ "" to a appended string variables, converting 3 == 5 to 3 < 5 || 3 > 5, avoiding currying and composition""" |> textOnlyParagraph
+                    , """obscure Platform primitives → Platform.sendToSelf, sendToApp, ..."""
+                        |> textOnlyParagraph
+                    , """main is kind of a reserved word → you can't have a top-level expose with that name if the type is not either Html, Svg or Program"""
+                        |> textOnlyParagraph
+                    , """a phantom type can store an arbitrary, extensible amount of knowledge about the contained value → phantom record builder"""
+                        |> textOnlyParagraph
+                    , """&& binds more than || → False && False || True is True while False && (False || True) is False"""
+                        |> textOnlyParagraph
+                    , [ "you don't have to nest andThens → " |> Text
+                      , packageLink "mtamc/and-collect"
+                      ]
+                        |> Paragraph
+                    ]
+                , "Inner core" |> textOnlyParagraph
+                , UnorderedList
+                    [ """the fish operators"""
+                        |> textOnlyParagraph
+                    , [ "endo operation type arguments can be hidden through recursion → " |> Text
+                      , Link { description = "Demystifying Jeremy's interfaces", url = "https://discourse.elm-lang.org/t/demystifying-jeremys-interfaces/8834" }
+                      ]
+                        |> Paragraph
+                    , [ """you can monkey patch elm's Http requests to perform tasks → """
+                            |> Text
+                      , Link { description = "lobanov/elm-taskport", url = "https://dark.elm.dmy.fr/packages/lobanov/elm-taskport/latest/" }
+                      ]
+                        |> Paragraph
+                    , [ "you can directly call js functions from elm and some packages use it → " |> Text
+                      , Link { description = "randomness ellie", url = "https://ellie-app.com/hpXzJxh4HRda1" }
+                      , ", " |> Text
+                      , Link { description = "WebAudio.Context.currentTime", url = "https://dark.elm.dmy.fr/packages/hayleigh-dot-dev/elm-web-audio/latest/WebAudio-Context#currentTime" }
+                      ]
+                        |> Paragraph
+                    , """semantic versioning is broken in small details → e.g. number → comparable for result types not being considered major"""
+                        |> textOnlyParagraph
+                    ]
+                , "No light reaches this place" |> textOnlyParagraph
+                , UnorderedList
+                    [ [ "edkelly303/elm-any-type-forms, edkelly303/elm-multitool → " |> Text
+                      , Link { description = "Control.tag0", url = "https://dark.elm.dmy.fr/packages/edkelly303/elm-any-type-forms/latest/Control#tag0" }
+                      , "and friends" |> Text
+                      ]
+                        |> Paragraph
+                    ]
+                , [ "Hey, there's likely a lot more out there that I forgor or don't know about. Please " |> Text
+                  , Link { description = "suggest them", url = "https://github.com/lue-bird/blog/issues/new" }
+                  , " so they can be added here" |> Text
+                  ]
+                    |> Paragraph
+                ]
+        }
+
+
+packageLink : String -> ParagraphPart
+packageLink name =
+    Link { description = name, url = "https://dark.elm.dmy.fr/packages/" ++ name ++ "/latest/" }
 
 
 sectionTitleToUrl : String -> String
