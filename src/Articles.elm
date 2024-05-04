@@ -1213,7 +1213,12 @@ theElmIcebergArticle =
                       , " under Synthesis" |> Text
                       ]
                         |> Paragraph
-                    , """there is a type for a value that's impossible to ever construct and it's very useful → Never, never""" |> textOnlyParagraph
+                    , [ "there is a type for a value that's impossible to ever construct and it's very useful → " |> Text
+                      , Link { description = "Never", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/Basics#Never" }
+                      , ", " |> Text
+                      , Link { description = "never", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/Basics#never" }
+                      ]
+                        |> Paragraph
                     ]
                 , "Mantle" |> textOnlyParagraph
                 , UnorderedList
