@@ -1217,7 +1217,11 @@ theElmIcebergArticle =
                     ]
                 , "Mantle" |> textOnlyParagraph
                 , UnorderedList
-                    [ """andMap = map2 (|>)""" |> textOnlyParagraph
+                    [ [ "andMap = map2 (|>)" |> inlineElmCode
+                      , " → " |> Text
+                      , Link { description = "article  Running Out of Maps by Joël Quenneville", url = "https://thoughtbot.com/blog/running-out-of-maps" }
+                      ]
+                        |> Paragraph
                     , """modBy 0 and other operations can throw runtime errors""" |> textOnlyParagraph
                     , """Int is unsound → 2^ -1 == 0.5 : Int""" |> textOnlyParagraph
                     , """main can be of type Svg"""
