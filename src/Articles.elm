@@ -1261,17 +1261,41 @@ theElmIcebergArticle =
                     ]
                 , "Outer core" |> textOnlyParagraph
                 , UnorderedList
-                    [ """Performance improvements → adding ++ "" to a appended string variables, converting 3 == 5 to 3 < 5 || 3 > 5, avoiding currying and composition""" |> textOnlyParagraph
-                    , """obscure Platform primitives → Platform.sendToSelf, sendToApp, ..."""
-                        |> textOnlyParagraph
+                    [ [ "Micro performance improvements → adding " |> Text
+                      , inlineElmCode "variable ++ \"\""
+                      , " to a appended string variables, converting " |> Text
+                      , inlineElmCode "3 == 5"
+                      , " to " |> Text
+                      , inlineElmCode "3 < 5 || 3 > 5"
+                      , ", avoiding currying and composition" |> Text
+                      ]
+                        |> Paragraph
+                    , [ "obscure Platform primitives → " |> Text
+                      , Link { description = "Platform.sendToSelf", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/Platform#sendToSelf" }
+                      , ", " |> Text
+                      , Link { description = "Platform.sendToApp", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/Platform#sendToApp" }
+                      , ", ..." |> Text
+                      ]
+                        |> Paragraph
                     , """main is kind of a reserved word → you can't have a top-level expose with that name if the type is not either Html, Svg or Program"""
                         |> textOnlyParagraph
                     , """the fish operators"""
                         |> textOnlyParagraph
                     , """a phantom type can store an arbitrary, extensible amount of knowledge about the contained value → extensible phantom record builder"""
                         |> textOnlyParagraph
-                    , """&& binds more than || → False && False || True is True while False && (False || True) is False"""
-                        |> textOnlyParagraph
+                    , [ inlineElmCode "(&&)"
+                      , " binds more than " |> Text
+                      , inlineElmCode "(||)"
+                      , " → " |> Text
+                      , inlineElmCode "False && False || True"
+                      , " is " |> Text
+                      , inlineElmCode "True"
+                      , " while " |> Text
+                      , inlineElmCode "False && (False || True)"
+                      , " is " |> Text
+                      , inlineElmCode "False"
+                      ]
+                        |> Paragraph
                     , [ "you don't have to nest andThens → " |> Text
                       , packageLink "mtamc/and-collect"
                       ]
@@ -1293,7 +1317,9 @@ theElmIcebergArticle =
                       , packageLink "linsyking/elm-anytype"
                       ]
                         |> Paragraph
-                    , [ "List.minimum & friends are different depending on list order → having tuples with NaN first lets elm keep the first one" |> Text
+                    , [ Link { description = "List.minimum", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/List#minimum" }
+                      , " & friends are different depending on list order → having tuples with NaN first lets elm keep the first one, see e.g. " |> Text
+                      , Link { description = "elm-review-simplify comment", url = "https://github.com/jfmengels/elm-review-simplify/issues/306#issuecomment-2063461710" }
                       ]
                         |> Paragraph
                     , [ "endo operation type arguments can be hidden through recursion → " |> Text
