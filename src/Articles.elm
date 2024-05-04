@@ -1154,12 +1154,14 @@ theElmIcebergArticle =
     Section
         { title = "The elm iceberg"
         , description = "what deep secrets lie below us"
-        , completion = InProgress "just a sketch"
+        , completion = InProgress "still collecting bits and pieces and code formatting"
         , content =
             Sequence
                 [ "Crust" |> textOnlyParagraph
                 , UnorderedList
-                    [ """some literals have no corresponding patterns → negative Int, Float"""
+                    [ """record setter can't directly update qualified reference""" |> textOnlyParagraph
+                    , """The same qualification can point to different modules → import List.Extra as List""" |> textOnlyParagraph
+                    , """some literals have no corresponding patterns → negative Int, Float"""
                         |> textOnlyParagraph
                     , """main can be of type Html"""
                         |> textOnlyParagraph
@@ -1172,8 +1174,17 @@ theElmIcebergArticle =
                         |> Paragraph
                     , """elm can run outside of the browser → Platform.worker"""
                         |> textOnlyParagraph
-                    , """elm on the backend → elm studio, lamdera, pine, elm-pages, ..."""
-                        |> textOnlyParagraph
+                    , [ "elm on the backend → " |> Text
+                      , Link { description = "elm studio", url = "https://www.elm.studio/" }
+                      , ", " |> Text
+                      , Link { description = "lamdera", url = "https://www.lamdera.com/" }
+                      , ", " |> Text
+                      , Link { description = "pine", url = "https://github.com/pine-vm/pine" }
+                      , ", " |> Text
+                      , Link { description = "elm-pages", url = "https://elm-pages.com/" }
+                      , ", ..." |> Text
+                      ]
+                        |> Paragraph
                     , [ "json encoder and decoder can be created in one: " |> Text
                       , packageLink "miniBill/elm-codec"
                       , ", " |> Text
@@ -1224,6 +1235,10 @@ theElmIcebergArticle =
                       , Link { description = "google groups chat with evan", url = "https://groups.google.com/g/elm-discuss/c/S4zbHJWPXvU/m/JyavEHDDQucJ" }
                       ]
                         |> Paragraph
+                    , [ "import List exposing (List) is invalid → " |> Text
+                      , Link { description = "elm/core issue", url = "https://github.com/elm/core/issues/1037" }
+                      ]
+                        |> Paragraph
                     ]
                 , "Outer core" |> textOnlyParagraph
                 , UnorderedList
@@ -1232,7 +1247,9 @@ theElmIcebergArticle =
                         |> textOnlyParagraph
                     , """main is kind of a reserved word → you can't have a top-level expose with that name if the type is not either Html, Svg or Program"""
                         |> textOnlyParagraph
-                    , """a phantom type can store an arbitrary, extensible amount of knowledge about the contained value → phantom record builder"""
+                    , """the fish operators"""
+                        |> textOnlyParagraph
+                    , """a phantom type can store an arbitrary, extensible amount of knowledge about the contained value → extensible phantom record builder"""
                         |> textOnlyParagraph
                     , """&& binds more than || → False && False || True is True while False && (False || True) is False"""
                         |> textOnlyParagraph
@@ -1240,11 +1257,26 @@ theElmIcebergArticle =
                       , packageLink "mtamc/and-collect"
                       ]
                         |> Paragraph
+                    , [ "crash through packages → " |> Text
+                      , packageLink "jjant/unwrap"
+                      ]
+                        |> Paragraph
                     ]
                 , "Inner core" |> textOnlyParagraph
                 , UnorderedList
-                    [ """the fish operators"""
-                        |> textOnlyParagraph
+                    [ [ "typesafe n-vectors → " |> Text
+                      , Link { description = "static-array", url = "https://dark.elm.dmy.fr/packages/Orasund/elm-static-array/latest/" }
+                      , ", " |> Text
+                      , Link { description = "typesafe-array", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typesafe-array/latest/" }
+                      ]
+                        |> Paragraph
+                    , [ "elm equivalent of ts any → " |> Text
+                      , packageLink "linsyking/elm-anytype"
+                      ]
+                        |> Paragraph
+                    , [ "List.minimum & friends are different depending on list order → having tuples with NaN first lets elm keep the first one" |> Text
+                      ]
+                        |> Paragraph
                     , [ "endo operation type arguments can be hidden through recursion → " |> Text
                       , Link { description = "Demystifying Jeremy's interfaces", url = "https://discourse.elm-lang.org/t/demystifying-jeremys-interfaces/8834" }
                       ]
