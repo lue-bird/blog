@@ -1227,8 +1227,9 @@ theElmIcebergArticle =
                       , Link { description = "article  Running Out of Maps by Joël Quenneville", url = "https://thoughtbot.com/blog/running-out-of-maps" }
                       ]
                         |> Paragraph
-                    , """modBy 0 and other operations can throw runtime errors""" |> textOnlyParagraph
-                    , """Int is unsound → 2^ -1 == 0.5 : Int""" |> textOnlyParagraph
+                    , [ inlineElmCode "modBy 0", " and other operations can throw runtime errors" |> Text ]
+                        |> Paragraph
+                    , [ "Int is unsound → " |> Text, inlineElmCode "2^ -1 == 0.5", " : Int" |> Text ] |> Paragraph
                     , """main can be of type Svg"""
                         |> textOnlyParagraph
                     , """type parameters that aren't used still make the base type different to the compiler → phantom types"""
@@ -1254,7 +1255,8 @@ theElmIcebergArticle =
                       , Link { description = "google groups chat with evan", url = "https://groups.google.com/g/elm-discuss/c/S4zbHJWPXvU/m/JyavEHDDQucJ" }
                       ]
                         |> Paragraph
-                    , [ "import List exposing (List) is invalid → " |> Text
+                    , [ inlineElmCode "import List exposing (List)"
+                      , " is invalid → " |> Text
                       , Link { description = "elm/core issue", url = "https://github.com/elm/core/issues/1037" }
                       ]
                         |> Paragraph
@@ -1264,7 +1266,7 @@ theElmIcebergArticle =
                     [ [ "Micro performance improvements → adding " |> Text
                       , inlineElmCode "variable ++ \"\""
                       , " to a appended string variables, converting " |> Text
-                      , inlineElmCode "3 == 5"
+                      , inlineElmCode "3 /= 5"
                       , " to " |> Text
                       , inlineElmCode "3 < 5 || 3 > 5"
                       , ", avoiding currying and composition" |> Text
