@@ -1160,7 +1160,10 @@ theElmIcebergArticle =
                 [ "Crust" |> textOnlyParagraph
                 , UnorderedList
                     [ """record setter can't directly update qualified reference""" |> textOnlyParagraph
-                    , """The same qualification can point to different modules → import List.Extra as List""" |> textOnlyParagraph
+                    , [ "The same qualification can point to different modules → " |> Text
+                      , inlineElmCode "import List.Extra as List"
+                      ]
+                        |> Paragraph
                     , """some literals have no corresponding patterns → negative Int, Float"""
                         |> textOnlyParagraph
                     , """main can be of type Html"""
@@ -1266,9 +1269,9 @@ theElmIcebergArticle =
                     [ [ "Micro performance improvements → adding " |> Text
                       , inlineElmCode "variable ++ \"\""
                       , " to a appended string variables, converting " |> Text
-                      , inlineElmCode "3 /= 5"
+                      , inlineElmCode "aComparable /= bComparable"
                       , " to " |> Text
-                      , inlineElmCode "3 < 5 || 3 > 5"
+                      , inlineElmCode "aComparable < bComparable || aComparable > bComparable"
                       , ", avoiding currying and composition" |> Text
                       ]
                         |> Paragraph
