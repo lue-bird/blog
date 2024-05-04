@@ -1165,15 +1165,19 @@ theElmIcebergArticle =
                         |> textOnlyParagraph
                     , """main can be of type Html"""
                         |> textOnlyParagraph
-                    , """== can crash → function, Json.Decode.Value, Regex"""
-                        |> textOnlyParagraph
+                    , [ "== can crash → " |> Text
+                      , Link { description = "function, Json.Decode.Value, Regex", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/Basics#==" }
+                      ]
+                        |> Paragraph
                     , [ "Html.Attributes are sometimes not equivalent to the html attributes with the same name → " |> Text
                       , Link { description = "Html.Attributes.value is a js property", url = "https://github.com/elm/html/blob/1.0.0/src/Html/Attributes.elm#L439-L441" }
                       , ", ..." |> Text
                       ]
                         |> Paragraph
-                    , """elm can run outside of the browser → Platform.worker"""
-                        |> textOnlyParagraph
+                    , [ "elm can run outside of the browser → " |> Text
+                      , Link { description = "Platform.worker", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/Platform#worker" }
+                      ]
+                        |> Paragraph
                     , [ "elm on the backend → " |> Text
                       , Link { description = "elm studio", url = "https://www.elm.studio/" }
                       , ", " |> Text
@@ -1192,8 +1196,14 @@ theElmIcebergArticle =
                       , ", ..." |> Text
                       ]
                         |> Paragraph
-                    , [ "Dict and Set types with arbitrary key types exist → AssocList, AnyDict, " |> Text
+                    , [ "Dict and Set types with arbitrary key types exist → " |> Text
+                      , packageLink "pzp1997/assoc-list"
+                      , ", " |> Text
+                      , packageLink "owanturist/elm-avl-dict"
+                      , ", " |> Text
                       , packageLink "miniBill/elm-generic-dict"
+                      , ", " |> Text
+                      , packageLink "turboMaCk/any-dict"
                       , ", ..." |> Text
                       ]
                         |> Paragraph
