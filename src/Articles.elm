@@ -1245,8 +1245,9 @@ theElmIcebergArticle =
                         |> textOnlyParagraph
                     , """It's basically impossible to use both Parser and Parser.Advanced in the same module → both expose the same operators and these can't be qualified"""
                         |> textOnlyParagraph
-                    , """Bitwise.shiftRightZfBy"""
-                        |> textOnlyParagraph
+                    , [ Link { description = "Bitwise.shiftRightZfBy", url = "https://dark.elm.dmy.fr/packages/elm/core/latest/Bitwise#shiftRightZfBy" }
+                      ]
+                        |> Paragraph
                     , [ "thread blocked indefinitely in an MVar operation and Map.!: given key is not an element in the map → let, (mutual) recursion, lambda, exports, missing annotations → " |> Text
                       , Link { description = "summary issue on blocking", url = "https://github.com/gren-lang/compiler/issues/105" }
                       , ", " |> Text
