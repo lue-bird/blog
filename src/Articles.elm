@@ -1299,7 +1299,7 @@ theElmIcebergArticle =
                 , UnorderedList
                     [ [ "edkelly303/elm-any-type-forms, edkelly303/elm-multitool → " |> Text
                       , Link { description = "Control.tag0", url = "https://dark.elm.dmy.fr/packages/edkelly303/elm-any-type-forms/latest/Control#tag0" }
-                      , "and friends" |> Text
+                      , " and friends" |> Text
                       ]
                         |> Paragraph
                     ]
