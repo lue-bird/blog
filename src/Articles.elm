@@ -1283,8 +1283,10 @@ theElmIcebergArticle =
                         |> textOnlyParagraph
                     , """the fish operators"""
                         |> textOnlyParagraph
-                    , """a phantom type can store an arbitrary, extensible amount of knowledge about the contained value → extensible phantom record builder"""
-                        |> textOnlyParagraph
+                    , [ "a phantom type can store an arbitrary, extensible amount of knowledge about the contained value → extensible phantom record builder, see e.g. " |> Text
+                      , Link { description = "video The phantom builder pattern by Jeroen Engels", url = "https://www.youtube.com/watch?v=Trp3tmpMb-o" }
+                      ]
+                        |> Paragraph
                     , [ inlineElmCode "(&&)"
                       , " binds more than " |> Text
                       , inlineElmCode "(||)"
