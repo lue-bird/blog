@@ -41,6 +41,7 @@ all : Content
 all =
     Sequence
         [ introduction
+        , recommendationsForFurtherSurfing
         , yourAstAllowsListsWithDifferentElementTypesWhyArticle
         , aFunnyIdeaForRepresentingAFractionSafelyArticle
         , typedValue8Article
@@ -71,6 +72,29 @@ introduction =
             , Text "."
             ]
         ]
+
+
+recommendationsForFurtherSurfing : Content
+recommendationsForFurtherSurfing =
+    Section
+        { title = "recommendations for further surfing"
+        , description = "A bunch of places you might want to visit from here"
+        , completion = InProgress "always changing, never \"done\""
+        , content =
+            Sequence
+                [ UnorderedList
+                    [ [ Link { description = "articles about an open web by Rohan Kumar", url = "https://seirdy.one/posts/" } ]
+                        |> Paragraph
+                    , [ Link { description = "articles about static analysis by Jeroen Engels", url = "https://jfmengels.net/" } ]
+                        |> Paragraph
+                    , [ Link { description = "podcast about personal programmer stories by Lindsay Wardell", url = "https://podcasters.spotify.com/pod/show/humansideofdev/episodes/8---All-About-Management-with-Blake-Thomas-e2j7s2h" } ]
+                        |> Paragraph
+                    , [ Link { description = "articles mostly about functional programming by Michael Hendricks", url = "https://m.ndrix.org/a/" } ]
+                        |> Paragraph
+                    ]
+                , "all support rss" |> textOnlyParagraph
+                ]
+        }
 
 
 elmCodeFromRaw : String -> ElmSyntaxHighlight.SyntaxHighlightable
