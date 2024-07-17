@@ -1251,7 +1251,7 @@ theElmIcebergArticle =
                 , UnorderedList
                     [ [ "andMap = map2 (|>)" |> inlineElmCode
                       , " → " |> Text
-                      , Link { description = "article  Running Out of Maps by Joël Quenneville", url = "https://thoughtbot.com/blog/running-out-of-maps" }
+                      , Link { description = "article \"Running Out of Maps\" by Joël Quenneville", url = "https://thoughtbot.com/blog/running-out-of-maps" }
                       ]
                         |> Paragraph
                     , [ inlineElmCode "modBy 0", " and other operations can throw runtime errors" |> Text ]
@@ -1291,7 +1291,11 @@ theElmIcebergArticle =
                     ]
                 , "Outer core" |> textOnlyParagraph
                 , UnorderedList
-                    [ [ "Micro performance improvements → adding " |> Text
+                    [ [ Text "fold/TCO recursion into generators, decoders or anything represented as a function is stack unsafe → "
+                      , Link { description = "article \"An Elm debugging story\" by Joël Quenneville", url = "https://thoughtbot.com/blog/elm-debugging-story" }
+                      ]
+                        |> Paragraph
+                    , [ "Micro performance improvements → adding " |> Text
                       , inlineElmCode "variable ++ \"\""
                       , " to a appended string variables, converting " |> Text
                       , inlineElmCode "aComparable /= bComparable"
@@ -1426,6 +1430,61 @@ summed2 =
                   , " so they can be added here" |> Text
                   ]
                     |> Paragraph
+                ]
+        }
+
+
+elm20AnnouncementShitpostArticle : Content
+elm20AnnouncementShitpostArticle =
+    Section
+        { title = "elm 0.20.0 announcement"
+        , description = "elm 0.20.0 is finally here."
+        , completion = InProgress "this is not real"
+        , content =
+            Sequence
+                [ Paragraph [ Italic "⚠ shitpost" ]
+                , Paragraph
+                    [ "Evan has been experimenting on the language for the past few years and things have finally reached a coherent set of changes."
+                        |> Text
+                    , """A few community members gave been approached in the past year to help take over the communication part of elm for within the community and for the public
+so Evan can focus on what he is excited for. As part of that push I'm proud to present the new stable elm compiler!"""
+                        |> Text
+                    ]
+                , UnorderedList
+                    [ Paragraph
+                        [ Text "removed tuples and triples. THis also means elm/core has no Tuple module anymore"
+                        ]
+                    , Paragraph
+                        [ Text "removed record pattern where variable names are inherited from destructured field names"
+                        ]
+                    , Paragraph
+                        [ Text "removed automatic record type alias constructor functions"
+                        ]
+                    , Paragraph
+                        [ Text "modules are dead, long live packages. This means that instead of String.fromInt and String.toInt you now use intToString and intToString"
+                        ]
+                    , Paragraph
+                        [ Text "elm.json is now configuration directly in elm code"
+                        ]
+                    , Paragraph
+                        [ Text "new record syntax: ( Name \"Franziska\" , Status \"Hi!\" ) : ( Name String , Status String ). Note that single field syntax and variant syntax are identical"
+                        ]
+                    , Paragraph
+                        [ Text "structural variants: AnonymousUser : ( AnonymousUser | LoggedInUser ( Email Email, Handle String ) ). Sometimes, we just want a one-off way to represent choice."
+                        ]
+                    , Paragraph
+                        [ Text "A reworked architecture: state-interface. This means Platform.Cmd, Platform.Sub, Task, Process and everything Platform function beside worker has been removed"
+                        ]
+                    , Paragraph
+                        [ Text "removed elm/url in favor of elm-app-url"
+                        ]
+                    , Paragraph
+                        [ Text "removed elm/regex in favor of elm/parser. We didn't want to have a core package that allows you to write bad elm code so we removed it."
+                        ]
+                    , Paragraph
+                        [ Text "moved elm/virtual-dom into elm/browser."
+                        ]
+                    ]
                 ]
         }
 
