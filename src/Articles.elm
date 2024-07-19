@@ -1313,6 +1313,10 @@ theElmIcebergArticle =
                         |> Paragraph
                     , """main is kind of a reserved word → you can't have a top-level expose with that name if the type is not either Html, Svg or Program"""
                         |> textOnlyParagraph
+                    , [ Text "multiline string pattern is valid elm → "
+                      , Link { description = "issue in elm-syntax", url = "https://github.com/stil4m/elm-syntax/issues/134" }
+                      ]
+                        |> Paragraph
                     , """the fish operators"""
                         |> textOnlyParagraph
                     , [ "a phantom type can store an arbitrary, extensible amount of knowledge about the contained value → extensible phantom record builder, see e.g. " |> Text
