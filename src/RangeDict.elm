@@ -76,14 +76,14 @@ toListMap rangeAndValueToElement =
                 []
 
 
-foldl : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
-foldl reduce initialFolded (RangeDict rangeDict) =
-    FastDict.foldl (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
-
-
 foldr : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldr reduce initialFolded (RangeDict rangeDict) =
     FastDict.foldr (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
+
+
+foldl : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
+foldl reduce initialFolded (RangeDict rangeDict) =
+    FastDict.foldl (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
 
 
 union : RangeDict v -> RangeDict v -> RangeDict v

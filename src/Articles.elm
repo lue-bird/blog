@@ -97,30 +97,6 @@ recommendationsForFurtherSurfing =
         }
 
 
-elmCodeFromRaw : String -> ElmSyntaxHighlight.SyntaxHighlightable
-elmCodeFromRaw raw =
-    let
-        rawStrippedOfBlankStartAndEnd : String
-        rawStrippedOfBlankStartAndEnd =
-            raw
-                |> String.lines
-                |> List.Extra.dropWhile String.Extra.isBlank
-                |> List.Extra.dropWhileRight String.Extra.isBlank
-                |> String.join "\n"
-    in
-    rawStrippedOfBlankStartAndEnd |> ElmSyntaxHighlight.for
-
-
-inlineElmCode : String -> ParagraphPart
-inlineElmCode raw =
-    InlineElmCode (elmCodeFromRaw raw)
-
-
-elmCode : String -> Content
-elmCode raw =
-    ElmCode (elmCodeFromRaw raw)
-
-
 aFunnyIdeaForRepresentingAFractionSafelyArticle : Content
 aFunnyIdeaForRepresentingAFractionSafelyArticle =
     Section
@@ -1438,6 +1414,38 @@ summed2 =
         }
 
 
+packageLink : String -> ParagraphPart
+packageLink name =
+    Link
+        { description = name
+        , url = [ "https://dark.elm.dmy.fr/packages/", name, "/latest/" ] |> String.concat
+        }
+
+
+elmCodeFromRaw : String -> ElmSyntaxHighlight.SyntaxHighlightable
+elmCodeFromRaw raw =
+    let
+        rawStrippedOfBlankStartAndEnd : String
+        rawStrippedOfBlankStartAndEnd =
+            raw
+                |> String.lines
+                |> List.Extra.dropWhile String.Extra.isBlank
+                |> List.Extra.dropWhileRight String.Extra.isBlank
+                |> String.join "\n"
+    in
+    rawStrippedOfBlankStartAndEnd |> ElmSyntaxHighlight.for
+
+
+inlineElmCode : String -> ParagraphPart
+inlineElmCode raw =
+    InlineElmCode (elmCodeFromRaw raw)
+
+
+elmCode : String -> Content
+elmCode raw =
+    ElmCode (elmCodeFromRaw raw)
+
+
 elm20AnnouncementShitpostArticle : Content
 elm20AnnouncementShitpostArticle =
     Section
@@ -1490,14 +1498,6 @@ so Evan can focus on what he is excited for. As part of that push I'm proud to p
                         ]
                     ]
                 ]
-        }
-
-
-packageLink : String -> ParagraphPart
-packageLink name =
-    Link
-        { description = name
-        , url = [ "https://dark.elm.dmy.fr/packages/", name, "/latest/" ] |> String.concat
         }
 
 

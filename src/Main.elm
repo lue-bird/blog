@@ -151,111 +151,6 @@ foregroundColor theme =
             Element.WithContext.rgb 0 0 0
 
 
-blackThemeColorToWhiteTheme : Color -> Color
-blackThemeColorToWhiteTheme =
-    \color ->
-        color
-            -- hsl lightness does not match perceived lightness so this is an approximation at best
-            -- I'd love to find a package with LHC or something similar
-            |> Color.toHsla
-            |> (\hsla ->
-                    { hsla | lightness = 0.18, saturation = 1 }
-               )
-            |> Color.fromHsla
-
-
-interactiveColor : Theme -> Element.WithContext.Color
-interactiveColor theme =
-    -- Element.WithContext.rgb 1 0.5 0
-    (case theme of
-        BlackTheme ->
-            interactiveColorForBlackTheme
-
-        WhiteTheme ->
-            interactiveColorForBlackTheme |> blackThemeColorToWhiteTheme
-    )
-        |> Color.toRgba
-        |> Element.WithContext.fromRgb
-
-
-interactiveColorForBlackTheme : Color
-interactiveColorForBlackTheme =
-    Color.rgb 0.49 0.83 1
-
-
-linkUi : { url : String, label : Element.WithContext.Element Context event } -> Element.WithContext.Element Context event
-linkUi config =
-    Element.WithContext.link
-        [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
-        , Element.WithContext.withContextAttribute
-            (\context -> Element.WithContext.Border.color (interactiveColor context.theme))
-        , Element.WithContext.withContextAttribute
-            (\context -> Element.WithContext.Font.color (interactiveColor context.theme))
-        ]
-        config
-
-
-elmCodeUi : Theme -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event_)
-elmCodeUi theme =
-    \syntaxHighlightable ->
-        Html.code []
-            (syntaxHighlightable
-                |> List.map
-                    (\segment ->
-                        Html.code
-                            (case segment.syntaxKind of
-                                Nothing ->
-                                    []
-
-                                Just syntaxKind ->
-                                    [ Html.Attributes.style "color"
-                                        (syntaxKind |> syntaxKindToColor theme |> Color.toCssString)
-                                    ]
-                            )
-                            [ Html.text segment.string
-                            ]
-                    )
-            )
-
-
-syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
-syntaxKindToColor theme =
-    case theme of
-        BlackTheme ->
-            syntaxKindToColorForBlackTheme
-
-        WhiteTheme ->
-            \syntaxKind ->
-                syntaxKindToColorForBlackTheme syntaxKind |> blackThemeColorToWhiteTheme
-
-
-syntaxKindToColorForBlackTheme : ElmSyntaxHighlight.SyntaxKind -> Color
-syntaxKindToColorForBlackTheme =
-    -- light purple Color.rgb 0.97 0.42 1
-    \syntaxKind ->
-        case syntaxKind of
-            ElmSyntaxHighlight.Type ->
-                Color.rgb 0.9 0.55 1
-
-            ElmSyntaxHighlight.Variant ->
-                Color.rgb 0.24 0.75 0.62
-
-            ElmSyntaxHighlight.Field ->
-                Color.rgb 0.4 0.9 0
-
-            ElmSyntaxHighlight.ModuleNameOrAlias ->
-                Color.rgb 0.45 0.5 1
-
-            ElmSyntaxHighlight.Variable ->
-                Color.rgb 0.85 0.8 0.1
-
-            ElmSyntaxHighlight.Flow ->
-                Color.rgb 1 0.45 0.35
-
-            ElmSyntaxHighlight.DeclarationRelated ->
-                Color.rgb 0.55 0.75 1
-
-
 articleContentUi : Articles.Content -> Element.WithContext.Element Context event_
 articleContentUi =
     \articleContent ->
@@ -446,6 +341,111 @@ paragraphPartUi =
                     { url = link.url
                     , label = Element.WithContext.text link.description
                     }
+
+
+blackThemeColorToWhiteTheme : Color -> Color
+blackThemeColorToWhiteTheme =
+    \color ->
+        color
+            -- hsl lightness does not match perceived lightness so this is an approximation at best
+            -- I'd love to find a package with LHC or something similar
+            |> Color.toHsla
+            |> (\hsla ->
+                    { hsla | lightness = 0.18, saturation = 1 }
+               )
+            |> Color.fromHsla
+
+
+interactiveColor : Theme -> Element.WithContext.Color
+interactiveColor theme =
+    -- Element.WithContext.rgb 1 0.5 0
+    (case theme of
+        BlackTheme ->
+            interactiveColorForBlackTheme
+
+        WhiteTheme ->
+            interactiveColorForBlackTheme |> blackThemeColorToWhiteTheme
+    )
+        |> Color.toRgba
+        |> Element.WithContext.fromRgb
+
+
+interactiveColorForBlackTheme : Color
+interactiveColorForBlackTheme =
+    Color.rgb 0.49 0.83 1
+
+
+linkUi : { url : String, label : Element.WithContext.Element Context event } -> Element.WithContext.Element Context event
+linkUi config =
+    Element.WithContext.link
+        [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
+        , Element.WithContext.withContextAttribute
+            (\context -> Element.WithContext.Border.color (interactiveColor context.theme))
+        , Element.WithContext.withContextAttribute
+            (\context -> Element.WithContext.Font.color (interactiveColor context.theme))
+        ]
+        config
+
+
+elmCodeUi : Theme -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event_)
+elmCodeUi theme =
+    \syntaxHighlightable ->
+        Html.code []
+            (syntaxHighlightable
+                |> List.map
+                    (\segment ->
+                        Html.code
+                            (case segment.syntaxKind of
+                                Nothing ->
+                                    []
+
+                                Just syntaxKind ->
+                                    [ Html.Attributes.style "color"
+                                        (syntaxKind |> syntaxKindToColor theme |> Color.toCssString)
+                                    ]
+                            )
+                            [ Html.text segment.string
+                            ]
+                    )
+            )
+
+
+syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
+syntaxKindToColor theme =
+    case theme of
+        BlackTheme ->
+            syntaxKindToColorForBlackTheme
+
+        WhiteTheme ->
+            \syntaxKind ->
+                syntaxKindToColorForBlackTheme syntaxKind |> blackThemeColorToWhiteTheme
+
+
+syntaxKindToColorForBlackTheme : ElmSyntaxHighlight.SyntaxKind -> Color
+syntaxKindToColorForBlackTheme =
+    -- light purple Color.rgb 0.97 0.42 1
+    \syntaxKind ->
+        case syntaxKind of
+            ElmSyntaxHighlight.Type ->
+                Color.rgb 0.9 0.55 1
+
+            ElmSyntaxHighlight.Variant ->
+                Color.rgb 0.24 0.75 0.62
+
+            ElmSyntaxHighlight.Field ->
+                Color.rgb 0.4 0.9 0
+
+            ElmSyntaxHighlight.ModuleNameOrAlias ->
+                Color.rgb 0.45 0.5 1
+
+            ElmSyntaxHighlight.Variable ->
+                Color.rgb 0.85 0.8 0.1
+
+            ElmSyntaxHighlight.Flow ->
+                Color.rgb 1 0.45 0.35
+
+            ElmSyntaxHighlight.DeclarationRelated ->
+                Color.rgb 0.55 0.75 1
 
 
 type alias Context =
