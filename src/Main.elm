@@ -281,12 +281,14 @@ articleContentUi =
                             }
                         , (case section.completion of
                             Articles.Published publishTime ->
-                                "🌐 published y"
-                                    ++ (publishTime |> Time.toYear Time.utc |> String.fromInt)
-                                    ++ " m"
-                                    ++ (publishTime |> Time.toMonth Time.utc |> monthToInt |> String.fromInt)
-                                    ++ " d"
-                                    ++ (publishTime |> Time.toDay Time.utc |> String.fromInt)
+                                [ "🌐 published y"
+                                , publishTime |> Time.toYear Time.utc |> String.fromInt
+                                , " m"
+                                , publishTime |> Time.toMonth Time.utc |> monthToInt |> String.fromInt
+                                , " d"
+                                , publishTime |> Time.toDay Time.utc |> String.fromInt
+                                ]
+                                    |> String.concat
 
                             Articles.InProgress progress ->
                                 "! 🛠️ in progress: " ++ progress
@@ -316,9 +318,11 @@ articleContentUi =
                             [ Html.Attributes.style "overflow" "scroll"
                             , Html.Attributes.style "overflow-y" "hidden"
                             , Html.Attributes.style "scrollbar-color"
-                                ((interactiveColor context.theme |> Element.WithContext.toRgb |> Color.fromRgba |> Color.toCssString)
-                                    ++ " "
-                                    ++ (Color.rgba 0 0 0 0 |> Color.toCssString)
+                                ([ interactiveColor context.theme |> Element.WithContext.toRgb |> Color.fromRgba |> Color.toCssString
+                                 , " "
+                                 , Color.rgba 0 0 0 0 |> Color.toCssString
+                                 ]
+                                    |> String.concat
                                 )
                             , Html.Attributes.style "scrollbar-width" "thin"
                             , Html.Attributes.style "white-space" "pre-line"

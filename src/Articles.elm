@@ -1495,7 +1495,10 @@ so Evan can focus on what he is excited for. As part of that push I'm proud to p
 
 packageLink : String -> ParagraphPart
 packageLink name =
-    Link { description = name, url = "https://dark.elm.dmy.fr/packages/" ++ name ++ "/latest/" }
+    Link
+        { description = name
+        , url = [ "https://dark.elm.dmy.fr/packages/", name, "/latest/" ] |> String.concat
+        }
 
 
 sectionTitleToUrl : String -> String
