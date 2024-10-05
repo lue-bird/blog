@@ -5,7 +5,6 @@ port module Main exposing (main)
 import Articles
 import Browser
 import Color exposing (Color)
-import Element
 import ElmSyntaxHighlight
 import Html exposing (Html)
 import Html.Attributes
@@ -70,66 +69,61 @@ uiDocument =
 
 ui : State -> Html Event
 ui state =
-    Element.column
-        [ Element.centerX
-        , Element.paddingXY 19 0
-        ]
-        [ Html.button
-            [ domBackgroundColor (foregroundColor state.theme)
-            , domFontColor (backgroundColor state.theme)
-            , Html.Attributes.style "border-radius" "0px 0px 1000px 1000px"
-            , Html.Attributes.style "padding" " 0px 30px 10px 30px"
-            , Html.Attributes.style "text-align" "center"
-            , Html.Attributes.style "vertical-align" "middle"
-            , Html.Attributes.style "border" "none"
-            , domFontSize 20
-            , Html.Events.onClick
-                (case state.theme of
-                    WhiteTheme ->
-                        ThemeSelected BlackTheme
+    Html.div
+        [ domBackgroundColor (backgroundColor state.theme)
+        , domFontColor (foregroundColor state.theme)
+        , domFontSize 19
+        , Html.Attributes.style "color-scheme"
+            (case state.theme of
+                BlackTheme ->
+                    "dark"
 
-                    BlackTheme ->
-                        ThemeSelected WhiteTheme
-                )
-            ]
-            [ -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
-              -- ☀︎ ☀️ 💡
-              Html.text "ᝰ"
-            ]
-            |> Element.html
-        , Element.column
-            [ Element.paddingXY 0 40
-            , Element.width (Element.maximum 700 Element.fill)
-            , Element.centerX
-            ]
-            [ Articles.all
-                |> articleContentUi { theme = state.theme }
-                |> Element.html
-            ]
+                WhiteTheme ->
+                    "light"
+            )
+
+        --, Html.Attributes.style "position" "fixed"
+        , Html.Attributes.style "top" "0"
+        , Html.Attributes.style "right" "0"
+        , Html.Attributes.style "bottom" "0"
+        , Html.Attributes.style "left" "0"
         ]
-        |> Element.layoutWith
-            { options =
-                [ Element.focusStyle
-                    { shadow = Nothing
-                    , borderColor = Nothing
-                    , backgroundColor = Nothing
-                    }
+        [ Html.div
+            [ Html.Attributes.style "padding-left" "19px"
+            , Html.Attributes.style "padding-right" "19px"
+            , Html.Attributes.style "max-width" "700px"
+            , Html.Attributes.style "margin" "auto"
+            ]
+            [ Html.button
+                [ domBackgroundColor (foregroundColor state.theme)
+                , domFontColor (backgroundColor state.theme)
+                , Html.Attributes.style "border-radius" "0px 0px 1000px 1000px"
+                , Html.Attributes.style "padding" " 0px 30px 10px 30px"
+                , Html.Attributes.style "text-align" "center"
+                , Html.Attributes.style "vertical-align" "middle"
+                , Html.Attributes.style "border" "none"
+                , domFontSize 20
+                , Html.Events.onClick
+                    (case state.theme of
+                        WhiteTheme ->
+                            ThemeSelected BlackTheme
+
+                        BlackTheme ->
+                            ThemeSelected WhiteTheme
+                    )
                 ]
-            }
-            [ domBackgroundColor (backgroundColor state.theme) |> Element.htmlAttribute
-            , domFontColor (foregroundColor state.theme) |> Element.htmlAttribute
-            , domFontSize 19
-                |> Element.htmlAttribute
-            , Html.Attributes.style "color-scheme"
-                (case state.theme of
-                    BlackTheme ->
-                        "dark"
-
-                    WhiteTheme ->
-                        "light"
-                )
-                |> Element.htmlAttribute
+                [ -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
+                  -- ☀︎ ☀️ 💡
+                  Html.text "ᝰ"
+                ]
+            , Html.div
+                [ Html.Attributes.style "padding-top" "40px"
+                ]
+                [ Articles.all
+                    |> articleContentUi { theme = state.theme }
+                ]
             ]
+        ]
 
 
 backgroundColor : Theme -> Color.Color
