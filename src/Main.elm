@@ -322,6 +322,11 @@ paragraphPartUi context =
                     }
 
 
+domFontSizePercentage : Float -> Html.Attribute event_
+domFontSizePercentage heightInRem =
+    Html.Attributes.style "font-size" ((heightInRem |> String.fromFloat) ++ "rem")
+
+
 domBackgroundColor : Color -> Html.Attribute event_
 domBackgroundColor color =
     Html.Attributes.style "background-color" (color |> Color.toCssString)
@@ -431,11 +436,6 @@ syntaxKindToColorForBlackTheme =
 domFontColor : Color -> Html.Attribute event_
 domFontColor color =
     Html.Attributes.style "color" (color |> Color.toCssString)
-
-
-domFontSizePercentage : Float -> Html.Attribute event_
-domFontSizePercentage heightInRem =
-    Html.Attributes.style "font-size" ((heightInRem |> String.fromFloat) ++ "rem")
 
 
 port toJS : Json.Encode.Value -> Cmd msg_
