@@ -15,7 +15,7 @@ empty =
 
 singleton : Elm.Syntax.Range.Range -> v -> RangeDict v
 singleton range value =
-    RangeDict (FastDict.singleton (rangeAsString range) value)
+    RangeDict (FastDict.singleton (rangeToComparable range) value)
 
 
 {-| Indirect conversion from a list to key-value pairs to avoid successive List.map calls.
@@ -28,7 +28,7 @@ mapFromList toAssociation list =
                 ( range, v ) =
                     toAssociation element
             in
-            FastDict.insert (rangeAsString range) v acc
+            FastDict.insert (rangeToComparable range) v acc
         )
         FastDict.empty
         list
@@ -46,7 +46,7 @@ unionFromListMap elementToDict =
 
 insert : Elm.Syntax.Range.Range -> v -> RangeDict v -> RangeDict v
 insert range value (RangeDict rangeDict) =
-    RangeDict (FastDict.insert (rangeAsString range) value rangeDict)
+    RangeDict (FastDict.insert (rangeToComparable range) value rangeDict)
 
 
 justValuesMap : (Elm.Syntax.Range.Range -> value -> Maybe valueMapped) -> RangeDict value -> RangeDict valueMapped
@@ -91,8 +91,8 @@ union (RangeDict aRangeDict) (RangeDict bRangeDict) =
     RangeDict (FastDict.union aRangeDict bRangeDict)
 
 
-rangeAsString : Elm.Syntax.Range.Range -> ( ( Int, Int ), ( Int, Int ) )
-rangeAsString range =
+rangeToComparable : Elm.Syntax.Range.Range -> ( ( Int, Int ), ( Int, Int ) )
+rangeToComparable range =
     ( ( range.start.row, range.start.column )
     , ( range.end.row, range.end.column )
     )
