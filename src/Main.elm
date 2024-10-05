@@ -7,7 +7,6 @@ import Browser
 import Color exposing (Color)
 import Element
 import Element.Background
-import Element.Font
 import Element.Input
 import ElmSyntaxHighlight
 import Html exposing (Html)
@@ -78,8 +77,8 @@ ui state =
         , Element.paddingXY 19 0
         ]
         [ Element.Input.button
-            [ Element.Background.color (foregroundColor state.theme)
-            , Element.Font.color (backgroundColor state.theme)
+            [ Element.Background.color (foregroundColor state.theme |> Color.toRgba |> Element.fromRgb)
+            , fontColor (backgroundColor state.theme) |> Element.htmlAttribute
             , Html.Attributes.style "border-radius" "0px 0px 1000px 1000px" |> Element.htmlAttribute
             , Element.paddingEach { left = 30, right = 30, bottom = 10, top = 10 }
             , Element.alignLeft
@@ -112,9 +111,10 @@ ui state =
                     }
                 ]
             }
-            [ Element.Background.color (backgroundColor state.theme)
-            , Element.Font.color (foregroundColor state.theme)
-            , Element.Font.size 19
+            [ Element.Background.color (backgroundColor state.theme |> Color.toRgba |> Element.fromRgb)
+            , fontColor (foregroundColor state.theme) |> Element.htmlAttribute
+            , fontSize 19
+                |> Element.htmlAttribute
             , Html.Attributes.style "color-scheme"
                 (case state.theme of
                     BlackTheme ->
@@ -127,24 +127,24 @@ ui state =
             ]
 
 
-backgroundColor : Theme -> Element.Color
+backgroundColor : Theme -> Color.Color
 backgroundColor theme =
     case theme of
         BlackTheme ->
-            Element.rgb 0 0 0
+            Color.rgb 0 0 0
 
         WhiteTheme ->
-            Element.rgb 1 1 1
+            Color.rgb 1 1 1
 
 
-foregroundColor : Theme -> Element.Color
+foregroundColor : Theme -> Color.Color
 foregroundColor theme =
     case theme of
         BlackTheme ->
-            Element.rgb 1 1 1
+            Color.rgb 1 1 1
 
         WhiteTheme ->
-            Element.rgb 0 0 0
+            Color.rgb 0 0 0
 
 
 articleContentUi : { theme : Theme } -> Articles.Content -> Element.Element event_
@@ -163,7 +163,8 @@ articleContentUi context =
                             { label =
                                 [ section.title |> Element.text |> Element.el [] ]
                                     |> Element.paragraph
-                                        [ Element.Font.size 30
+                                        [ fontSize 30
+                                            |> Element.htmlAttribute
                                         , Html.Attributes.style "overflow-wrap" "break-word"
                                             |> Element.htmlAttribute
                                         , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
@@ -188,8 +189,10 @@ articleContentUi context =
                             |> Element.text
                             |> List.singleton
                             |> Element.paragraph
-                                [ Element.Font.size 14
-                                , Element.Font.family [ Element.Font.monospace ]
+                                [ fontSize 14
+                                    |> Element.htmlAttribute
+                                , Html.Attributes.style "font-family" "monospace"
+                                    |> Element.htmlAttribute
                                 ]
                         ]
                     , section.content |> articleContentUi context
@@ -251,7 +254,8 @@ articleContentUi context =
                                 Element.row [ Element.width Element.fill ]
                                     [ Element.text "•"
                                         |> Element.el
-                                            [ Element.Font.size 22
+                                            [ fontSize 22
+                                                |> Element.htmlAttribute
                                             , Element.alignTop
                                             , Element.paddingEach { left = 0, top = 0, bottom = 0, right = 10 }
                                             ]
@@ -315,8 +319,8 @@ paragraphPartUi context =
                 Element.text string
 
             Articles.Italic string ->
-                Element.text string
-                    |> Element.el [ Element.Font.italic ]
+                Html.em [] [ Html.text string ]
+                    |> Element.html
 
             Articles.InlineElmCode elmCode ->
                 elmCode
@@ -370,11 +374,8 @@ linkUi context config =
             |> Element.htmlAttribute
         , Html.Attributes.style "border-color" (interactiveColor context.theme |> Color.toCssString)
             |> Element.htmlAttribute
-        , Element.Font.color
-            (interactiveColor context.theme
-                |> Color.toRgba
-                |> Element.fromRgb
-            )
+        , fontColor (interactiveColor context.theme)
+            |> Element.htmlAttribute
         ]
         config
 
@@ -400,6 +401,17 @@ elmCodeUi theme =
                             ]
                     )
             )
+
+
+fontColor : Color -> Html.Attribute event_
+fontColor color =
+    Html.Attributes.style "color" (color |> Color.toCssString)
+
+
+fontSize : Int -> Html.Attribute event_
+fontSize heightInPixels =
+    -- TODO switch to rem?
+    Html.Attributes.style "font-size" ((heightInPixels |> String.fromInt) ++ "px")
 
 
 syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
