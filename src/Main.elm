@@ -7,7 +7,6 @@ import Browser
 import Color exposing (Color)
 import Element
 import Element.Background
-import Element.Border
 import Element.Font
 import Element.Input
 import ElmSyntaxHighlight
@@ -81,7 +80,7 @@ ui state =
         [ Element.Input.button
             [ Element.Background.color (foregroundColor state.theme)
             , Element.Font.color (backgroundColor state.theme)
-            , Element.Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 1000, bottomRight = 1000 }
+            , Html.Attributes.style "border-radius" "0px 0px 1000px 1000px" |> Element.htmlAttribute
             , Element.paddingEach { left = 30, right = 30, bottom = 10, top = 10 }
             , Element.alignLeft
             ]
@@ -209,7 +208,7 @@ articleContentUi context =
                     [ Html.Attributes.style "overflow" "scroll"
                     , Html.Attributes.style "overflow-y" "hidden"
                     , Html.Attributes.style "scrollbar-color"
-                        ([ interactiveColor context.theme |> Element.toRgb |> Color.fromRgba |> Color.toCssString
+                        ([ interactiveColor context.theme |> Color.toCssString
                          , " "
                          , Color.rgba 0 0 0 0 |> Color.toCssString
                          ]
@@ -348,18 +347,15 @@ blackThemeColorToWhiteTheme =
             |> Color.fromHsla
 
 
-interactiveColor : Theme -> Element.Color
+interactiveColor : Theme -> Color.Color
 interactiveColor theme =
     -- Element.rgb 1 0.5 0
-    (case theme of
+    case theme of
         BlackTheme ->
             interactiveColorForBlackTheme
 
         WhiteTheme ->
             interactiveColorForBlackTheme |> blackThemeColorToWhiteTheme
-    )
-        |> Color.toRgba
-        |> Element.fromRgb
 
 
 interactiveColorForBlackTheme : Color
@@ -370,9 +366,15 @@ interactiveColorForBlackTheme =
 linkUi : { theme : Theme } -> { url : String, label : Element.Element event } -> Element.Element event
 linkUi context config =
     Element.link
-        [ Element.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
-        , Element.Border.color (interactiveColor context.theme)
-        , Element.Font.color (interactiveColor context.theme)
+        [ Html.Attributes.style "border-bottom" "1px"
+            |> Element.htmlAttribute
+        , Html.Attributes.style "border-color" (interactiveColor context.theme |> Color.toCssString)
+            |> Element.htmlAttribute
+        , Element.Font.color
+            (interactiveColor context.theme
+                |> Color.toRgba
+                |> Element.fromRgb
+            )
         ]
         config
 
