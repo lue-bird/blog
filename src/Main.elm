@@ -64,8 +64,7 @@ uiDocument : State -> Browser.Document Event
 uiDocument =
     \state ->
         { title = "lue blog"
-        , body =
-            state |> ui |> List.singleton
+        , body = [ state |> ui ]
         }
 
 
@@ -206,7 +205,14 @@ articleContentUi context =
                         |> Element.htmlAttribute
                     , Element.width Element.fill
                     ]
-                    (parts |> List.map (\part -> part |> paragraphPartUi context))
+                    (parts
+                        |> List.map
+                            (\part ->
+                                part
+                                    |> paragraphPartUi context
+                                    |> Element.html
+                            )
+                    )
 
             Articles.ElmCode elmCode ->
                 Html.pre
@@ -233,7 +239,7 @@ articleContentUi context =
                         , Html.Attributes.style "hyphens" "none"
                         , Html.Attributes.style "font-size" "0.8em"
                         ]
-                        [ elmCode |> elmCodeUi context.theme ]
+                        [ elmCode |> elmCodeUi context.theme [] ]
                     ]
                     |> Element.html
 
@@ -313,24 +319,20 @@ monthToInt =
                 12
 
 
-paragraphPartUi : { theme : Theme } -> Articles.ParagraphPart -> Element.Element event_
+paragraphPartUi : { theme : Theme } -> Articles.ParagraphPart -> Html.Html event_
 paragraphPartUi context =
     \paragraphPart ->
         case paragraphPart of
             Articles.Text string ->
-                Element.text string
+                Html.text string
 
             Articles.Italic string ->
                 Html.em [] [ Html.text string ]
-                    |> Element.html
 
             Articles.InlineElmCode elmCode ->
                 elmCode
                     |> elmCodeUi context.theme
-                    |> Element.html
-                    |> Element.el
                         [ Html.Attributes.style "font-size" "0.9em"
-                            |> Element.htmlAttribute
                         ]
 
             Articles.Link link ->
@@ -338,7 +340,6 @@ paragraphPartUi context =
                     { url = link.url
                     , label = Html.text link.description
                     }
-                    |> Element.html
 
 
 domBackgroundColor : Color -> Html.Attribute event_
@@ -386,8 +387,8 @@ linkUi context config =
         [ config.label ]
 
 
-elmCodeUi : Theme -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event_)
-elmCodeUi theme =
+elmCodeUi : Theme -> List (Html.Attribute event) -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event)
+elmCodeUi theme additionalDomModifiers =
     \syntaxHighlightable ->
         Html.code []
             (syntaxHighlightable
@@ -396,12 +397,12 @@ elmCodeUi theme =
                         Html.code
                             (case segment.syntaxKind of
                                 Nothing ->
-                                    []
+                                    additionalDomModifiers
 
                                 Just syntaxKind ->
-                                    [ Html.Attributes.style "color"
+                                    Html.Attributes.style "color"
                                         (syntaxKind |> syntaxKindToColor theme |> Color.toCssString)
-                                    ]
+                                        :: additionalDomModifiers
                             )
                             [ Html.text segment.string
                             ]
