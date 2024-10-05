@@ -1,7 +1,7 @@
 module RangeDict exposing (RangeDict, any, empty, foldl, get, insert, justValuesMap, mapFromList, member, remove, singleton, toListMap, union, unionFromListMap)
 
 import Dict exposing (Dict)
-import Elm.Syntax.Range exposing (Location, Range)
+import Elm.Syntax.Range
 
 
 type RangeDict v
@@ -13,14 +13,14 @@ empty =
     RangeDict Dict.empty
 
 
-singleton : Range -> v -> RangeDict v
+singleton : Elm.Syntax.Range.Range -> v -> RangeDict v
 singleton range value =
     RangeDict (Dict.singleton (rangeAsString range) value)
 
 
 {-| Indirect conversion from a list to key-value pairs to avoid successive List.map calls.
 -}
-mapFromList : (a -> ( Range, v )) -> List a -> RangeDict v
+mapFromList : (a -> ( Elm.Syntax.Range.Range, v )) -> List a -> RangeDict v
 mapFromList toAssociation list =
     List.foldl
         (\element acc ->
@@ -44,27 +44,27 @@ unionFromListMap elementToDict =
                 empty
 
 
-insert : Range -> v -> RangeDict v -> RangeDict v
+insert : Elm.Syntax.Range.Range -> v -> RangeDict v -> RangeDict v
 insert range value (RangeDict rangeDict) =
     RangeDict (Dict.insert (rangeAsString range) value rangeDict)
 
 
-remove : Range -> RangeDict v -> RangeDict v
+remove : Elm.Syntax.Range.Range -> RangeDict v -> RangeDict v
 remove range (RangeDict rangeDict) =
     RangeDict (Dict.remove (rangeAsString range) rangeDict)
 
 
-get : Range -> RangeDict v -> Maybe v
+get : Elm.Syntax.Range.Range -> RangeDict v -> Maybe v
 get range (RangeDict rangeDict) =
     Dict.get (rangeAsString range) rangeDict
 
 
-member : Range -> RangeDict v -> Bool
+member : Elm.Syntax.Range.Range -> RangeDict v -> Bool
 member range (RangeDict rangeDict) =
     Dict.member (rangeAsString range) rangeDict
 
 
-justValuesMap : (Range -> value -> Maybe valueMapped) -> RangeDict value -> RangeDict valueMapped
+justValuesMap : (Elm.Syntax.Range.Range -> value -> Maybe valueMapped) -> RangeDict value -> RangeDict valueMapped
 justValuesMap rangeAndValueMap =
     \rangeDict ->
         rangeDict
@@ -80,7 +80,7 @@ justValuesMap rangeAndValueMap =
                 empty
 
 
-toListMap : (Range -> value -> element) -> RangeDict value -> List element
+toListMap : (Elm.Syntax.Range.Range -> value -> element) -> RangeDict value -> List element
 toListMap rangeAndValueToElement =
     \rangeDict ->
         rangeDict
@@ -91,12 +91,12 @@ toListMap rangeAndValueToElement =
                 []
 
 
-foldl : (Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
+foldl : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldl reduce initialFolded (RangeDict rangeDict) =
     Dict.foldl (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
 
 
-foldr : (Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
+foldr : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldr reduce initialFolded (RangeDict rangeDict) =
     Dict.foldr (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
 
@@ -113,20 +113,20 @@ union (RangeDict aRangeDict) (RangeDict bRangeDict) =
     RangeDict (Dict.union aRangeDict bRangeDict)
 
 
-rangeAsString : Range -> ( ( Int, Int ), ( Int, Int ) )
+rangeAsString : Elm.Syntax.Range.Range -> ( ( Int, Int ), ( Int, Int ) )
 rangeAsString range =
     ( ( range.start.row, range.start.column )
     , ( range.end.row, range.end.column )
     )
 
 
-rangeFromTupleTuple : ( ( Int, Int ), ( Int, Int ) ) -> Range
+rangeFromTupleTuple : ( ( Int, Int ), ( Int, Int ) ) -> Elm.Syntax.Range.Range
 rangeFromTupleTuple =
     \( start, end ) ->
         { start = start |> locationFromTuple, end = end |> locationFromTuple }
 
 
-locationFromTuple : ( Int, Int ) -> Location
+locationFromTuple : ( Int, Int ) -> Elm.Syntax.Range.Location
 locationFromTuple =
     \( row, column ) ->
         { row = row, column = column }

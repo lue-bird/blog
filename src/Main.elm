@@ -3,7 +3,7 @@ port module Main exposing (main)
 {-| -}
 
 import Articles
-import Audio exposing (AudioData)
+import Audio
 import Browser
 import Browser.Dom
 import Browser.Events
@@ -600,7 +600,7 @@ paragraphPartUi =
                     }
 
 
-audio : AudioData -> State -> Audio.Audio
+audio : Audio.AudioData -> State -> Audio.Audio
 audio _ =
     \state ->
         audioKinds

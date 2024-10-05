@@ -44,7 +44,7 @@ module Reaction exposing
 
 -}
 
-import Audio exposing (AudioCmd)
+import Audio
 
 
 {-| application update result
@@ -126,7 +126,7 @@ toTuple3 :
          ->
             ( state
             , Cmd event
-            , AudioCmd event
+            , Audio.AudioCmd event
             )
         )
 toTuple3 interpretEffect =
@@ -172,7 +172,7 @@ toTuple2 interpretEffect =
 -}
 type alias EffectInterpretation event =
     { commands : List (Cmd event)
-    , audioCommands : List (AudioCmd event)
+    , audioCommands : List (Audio.AudioCmd event)
     }
 
 
@@ -181,7 +181,7 @@ commands commandList =
     { commands = commandList, audioCommands = [] }
 
 
-audioCommands : List (AudioCmd event) -> EffectInterpretation event
+audioCommands : List (Audio.AudioCmd event) -> EffectInterpretation event
 audioCommands audioCommandList =
     { commands = [], audioCommands = audioCommandList }
 
