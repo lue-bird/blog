@@ -3,12 +3,8 @@ port module Main exposing (main)
 {-| -}
 
 import Articles
-import Audio
 import Browser
-import Browser.Dom
-import Browser.Events
 import Color exposing (Color)
-import Duration
 import Element.WithContext
 import Element.WithContext.Background
 import Element.WithContext.Border
@@ -19,199 +15,47 @@ import Html exposing (Html)
 import Html.Attributes
 import Json.Decode
 import Json.Encode
-import Key
-import Random
-import Reaction exposing (Reaction)
 import RecordWithoutConstructorFunction exposing (RecordWithoutConstructorFunction)
-import Task
 import Time
 
 
 type Event
-    = AudioLoaded { piece : AudioKind, result : Result Audio.LoadError Audio.Source }
-    | GameWindowSized { width : Float, height : Float }
-    | InitialRandomSeedReceived Random.Seed
-    | FrameTickPassed Time.Posix
-    | KeyPressed Key.Key
-    | KeyReleased Key.Key
-    | ThemeSelected Theme
+    = ThemeSelected Theme
 
 
 type alias State =
     RecordWithoutConstructorFunction
-        { audio : EachAudio (Result Audio.LoadError Audio.Source)
-        , theme : Theme
-        , windowSize : { width : Float, height : Float }
-        , audioTimes : EachAudio (List Time.Posix)
-        , keysPressed : List Key.Key
-        , randomSeed : Random.Seed
-        , lastTick : Time.Posix
+        { theme : Theme
         }
 
 
-type Effect
-    = LoadAudio AudioKind
-    | RequestInitialRandomSeed
-    | GameRequestInitialWindowSize
-
-
-main : Program () (Audio.Model Event State) (Audio.Msg Event)
+main : Program () State Event
 main =
-    Audio.documentWithAudio
+    Browser.document
         { init =
-            init >> Reaction.toTuple3 interpretEffect
+            \() -> ( initialState, Cmd.none )
         , update =
-            \_ event ->
-                reactTo event >> Reaction.toTuple3 interpretEffect
+            \event state ->
+                ( reactTo event state, Cmd.none )
         , subscriptions =
-            \_ -> subscriptions
+            \_ -> Sub.none
         , view =
-            \_ -> uiDocument
-        , audio = audio
-        , audioPort =
-            { toJS = audioPortToJS
-            , fromJS = audioPortFromJS
-            }
+            \state -> state |> uiDocument
         }
 
 
-audioKinds : List AudioKind
-audioKinds =
-    [ AudioRoomChange ]
-
-
-init : () -> Reaction State Effect
-init () =
-    Reaction.to
-        { audio = eachAudio (Err Audio.UnknownError)
-        , theme = BlackTheme
-        , windowSize =
-            -- dummy
-            { width = 0, height = 0 }
-        , audioTimes = eachAudio []
-        , keysPressed = []
-        , randomSeed =
-            -- dummy
-            Random.initialSeed 1635127483
-        , lastTick =
-            -- dummy
-            Time.millisToPosix 0
-        }
-        |> Reaction.effectsAdd
-            [ RequestInitialRandomSeed
-            , GameRequestInitialWindowSize
-            ]
-        |> Reaction.effectsAdd
-            (audioKinds |> List.map LoadAudio)
-
-
-eachAudio : perKind -> EachAudio perKind
-eachAudio perKind =
-    { roomChange = perKind
+initialState : State
+initialState =
+    { theme = BlackTheme
     }
 
 
-reactTo : Event -> (State -> Reaction State Effect)
+reactTo : Event -> (State -> State)
 reactTo event =
     case event of
-        AudioLoaded audioLoaded ->
-            \state ->
-                Reaction.to
-                    { state
-                        | audio =
-                            state.audio
-                                |> alterAudioOfKind audioLoaded.piece (\_ -> audioLoaded.result)
-                    }
-
         ThemeSelected newTheme ->
             \state ->
-                Reaction.to
-                    { state | theme = newTheme }
-
-        GameWindowSized size ->
-            \state -> Reaction.to { state | windowSize = size }
-
-        InitialRandomSeedReceived initialRandomSeed ->
-            \state ->
-                Reaction.to
-                    { state | randomSeed = initialRandomSeed }
-
-        FrameTickPassed newSimulationTime ->
-            \state ->
-                Reaction.to
-                    { state
-                        | lastTick = newSimulationTime
-                    }
-
-        KeyPressed key ->
-            \state ->
-                Reaction.to
-                    { state | keysPressed = state.keysPressed |> (::) key }
-
-        KeyReleased key ->
-            \state ->
-                Reaction.to
-                    { state
-                        | keysPressed =
-                            state.keysPressed |> List.filter (\keyPressed -> keyPressed /= key)
-                    }
-
-
-alterAudioOfKind : AudioKind -> (a -> a) -> EachAudio a -> EachAudio a
-alterAudioOfKind kind f =
-    case kind of
-        AudioRoomChange ->
-            \r -> { r | roomChange = r.roomChange |> f }
-
-
-subscriptions : State -> Sub Event
-subscriptions =
-    \_ ->
-        [ Browser.Events.onResize
-            (\width height ->
-                { width = width |> toFloat, height = height |> toFloat }
-                    |> GameWindowSized
-            )
-        , Browser.Events.onAnimationFrame FrameTickPassed
-        , Browser.Events.onKeyDown (Json.Decode.map KeyPressed Key.decoder)
-        , Browser.Events.onKeyUp (Json.Decode.map KeyReleased Key.decoder)
-        ]
-            |> Sub.batch
-
-
-interpretEffect : Effect -> Reaction.EffectInterpretation Event
-interpretEffect =
-    \effect ->
-        case effect of
-            LoadAudio piece ->
-                Reaction.audioCommands
-                    [ Audio.loadAudio
-                        (\result -> AudioLoaded { result = result, piece = piece })
-                        ([ "public/", piece |> audioPieceToName, ".mp3" ] |> String.concat)
-                    ]
-
-            RequestInitialRandomSeed ->
-                Reaction.commands [ Random.independentSeed |> Random.generate InitialRandomSeedReceived ]
-
-            GameRequestInitialWindowSize ->
-                Reaction.commands
-                    [ Browser.Dom.getViewport
-                        |> Task.perform
-                            (\viewport ->
-                                { width = viewport.viewport.width
-                                , height = viewport.viewport.height
-                                }
-                                    |> GameWindowSized
-                            )
-                    ]
-
-
-audioPieceToName : AudioKind -> String
-audioPieceToName =
-    \audioPiece ->
-        case audioPiece of
-            AudioRoomChange ->
-                "room-change"
+                { state | theme = newTheme }
 
 
 uiDocument : State -> Browser.Document Event
@@ -600,41 +444,6 @@ paragraphPartUi =
                     }
 
 
-audio : Audio.AudioData -> State -> Audio.Audio
-audio _ =
-    \state ->
-        audioKinds
-            |> List.map
-                (\audioKind ->
-                    audioWith (state.audio |> accessAudioOfKind audioKind)
-                        (\loadedAudio ->
-                            state.audioTimes
-                                |> accessAudioOfKind audioKind
-                                |> List.map
-                                    (\time -> Audio.audio loadedAudio (Duration.addTo time (Duration.seconds 0.07)))
-                                |> Audio.group
-                        )
-                )
-            |> Audio.group
-
-
-accessAudioOfKind : AudioKind -> EachAudio a -> a
-accessAudioOfKind kind =
-    case kind of
-        AudioRoomChange ->
-            .roomChange
-
-
-audioWith : Result error_ value -> (value -> Audio.Audio) -> Audio.Audio
-audioWith source with =
-    case source of
-        Err _ ->
-            Audio.silence
-
-        Ok loadedAudio ->
-            with loadedAudio
-
-
 type alias Context =
     { theme : Theme }
 
@@ -644,16 +453,7 @@ type Theme
     | BlackTheme
 
 
-type AudioKind
-    = AudioRoomChange
+port toJS : Json.Encode.Value -> Cmd msg_
 
 
-type alias EachAudio perKind =
-    { roomChange : perKind
-    }
-
-
-port audioPortToJS : Json.Encode.Value -> Cmd msg_
-
-
-port audioPortFromJS : (Json.Decode.Value -> msg) -> Sub msg
+port fromJS : (Json.Decode.Value -> msg) -> Sub msg
