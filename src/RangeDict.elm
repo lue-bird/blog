@@ -1,4 +1,4 @@
-module RangeDict exposing (RangeDict, any, empty, foldl, get, insert, justValuesMap, mapFromList, member, remove, singleton, toListMap, union, unionFromListMap)
+module RangeDict exposing (RangeDict, empty, foldl, insert, justValuesMap, mapFromList, singleton, toListMap, union, unionFromListMap)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Range
@@ -8,7 +8,7 @@ type RangeDict v
     = RangeDict (Dict ( ( Int, Int ), ( Int, Int ) ) v)
 
 
-empty : RangeDict v
+empty : RangeDict v_
 empty =
     RangeDict Dict.empty
 
@@ -49,21 +49,6 @@ insert range value (RangeDict rangeDict) =
     RangeDict (Dict.insert (rangeAsString range) value rangeDict)
 
 
-remove : Elm.Syntax.Range.Range -> RangeDict v -> RangeDict v
-remove range (RangeDict rangeDict) =
-    RangeDict (Dict.remove (rangeAsString range) rangeDict)
-
-
-get : Elm.Syntax.Range.Range -> RangeDict v -> Maybe v
-get range (RangeDict rangeDict) =
-    Dict.get (rangeAsString range) rangeDict
-
-
-member : Elm.Syntax.Range.Range -> RangeDict v -> Bool
-member range (RangeDict rangeDict) =
-    Dict.member (rangeAsString range) rangeDict
-
-
 justValuesMap : (Elm.Syntax.Range.Range -> value -> Maybe valueMapped) -> RangeDict value -> RangeDict valueMapped
 justValuesMap rangeAndValueMap =
     \rangeDict ->
@@ -99,13 +84,6 @@ foldl reduce initialFolded (RangeDict rangeDict) =
 foldr : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldr reduce initialFolded (RangeDict rangeDict) =
     Dict.foldr (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
-
-
-any : (v -> Bool) -> RangeDict v -> Bool
-any isFound rangeDict =
-    foldl (\_ value soFar -> soFar || isFound value)
-        False
-        rangeDict
 
 
 union : RangeDict v -> RangeDict v -> RangeDict v
