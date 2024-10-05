@@ -1,21 +1,21 @@
 module RangeDict exposing (RangeDict, empty, foldl, insert, justValuesMap, mapFromList, singleton, toListMap, union, unionFromListMap)
 
-import Dict exposing (Dict)
 import Elm.Syntax.Range
+import FastDict
 
 
 type RangeDict v
-    = RangeDict (Dict ( ( Int, Int ), ( Int, Int ) ) v)
+    = RangeDict (FastDict.Dict ( ( Int, Int ), ( Int, Int ) ) v)
 
 
 empty : RangeDict v_
 empty =
-    RangeDict Dict.empty
+    RangeDict FastDict.empty
 
 
 singleton : Elm.Syntax.Range.Range -> v -> RangeDict v
 singleton range value =
-    RangeDict (Dict.singleton (rangeAsString range) value)
+    RangeDict (FastDict.singleton (rangeAsString range) value)
 
 
 {-| Indirect conversion from a list to key-value pairs to avoid successive List.map calls.
@@ -28,9 +28,9 @@ mapFromList toAssociation list =
                 ( range, v ) =
                     toAssociation element
             in
-            Dict.insert (rangeAsString range) v acc
+            FastDict.insert (rangeAsString range) v acc
         )
-        Dict.empty
+        FastDict.empty
         list
         |> RangeDict
 
@@ -46,7 +46,7 @@ unionFromListMap elementToDict =
 
 insert : Elm.Syntax.Range.Range -> v -> RangeDict v -> RangeDict v
 insert range value (RangeDict rangeDict) =
-    RangeDict (Dict.insert (rangeAsString range) value rangeDict)
+    RangeDict (FastDict.insert (rangeAsString range) value rangeDict)
 
 
 justValuesMap : (Elm.Syntax.Range.Range -> value -> Maybe valueMapped) -> RangeDict value -> RangeDict valueMapped
@@ -78,17 +78,17 @@ toListMap rangeAndValueToElement =
 
 foldl : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldl reduce initialFolded (RangeDict rangeDict) =
-    Dict.foldl (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
+    FastDict.foldl (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
 
 
 foldr : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldr reduce initialFolded (RangeDict rangeDict) =
-    Dict.foldr (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
+    FastDict.foldr (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
 
 
 union : RangeDict v -> RangeDict v -> RangeDict v
 union (RangeDict aRangeDict) (RangeDict bRangeDict) =
-    RangeDict (Dict.union aRangeDict bRangeDict)
+    RangeDict (FastDict.union aRangeDict bRangeDict)
 
 
 rangeAsString : Elm.Syntax.Range.Range -> ( ( Int, Int ), ( Int, Int ) )

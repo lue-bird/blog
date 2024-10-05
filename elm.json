@@ -26,6 +26,7 @@
             "lue-bird/elm-linear-direction": "11.2.0",
             "lue-bird/elm-no-record-type-alias-constructor-function": "1.0.8",
             "lue-bird/elm-rosetree-path": "2.0.5",
+            "miniBill/elm-fast-dict": "1.2.1",
             "miniBill/elm-ui-with-context": "2.0.0",
             "stil4m/elm-syntax": "7.3.6",
             "w0rm/elm-physics": "5.1.3",
