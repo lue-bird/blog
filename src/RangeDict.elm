@@ -1,4 +1,4 @@
-module RangeDict exposing (RangeDict, empty, foldl, insert, justValuesMap, mapFromList, singleton, toListMap, union, unionFromListMap)
+module RangeDict exposing (RangeDict(..), empty, foldl, insert, justValuesMap, mapFromList, singleton, toListMap, union, unionFromListMap)
 
 import Elm.Syntax.Range
 import FastDict
