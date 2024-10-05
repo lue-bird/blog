@@ -165,17 +165,15 @@ articleContentUi context =
                     [ Element.column [ Element.spacing 7 ]
                         [ linkUi context
                             { label =
-                                [ section.title |> Element.text |> Element.el [] ]
-                                    |> Element.paragraph
+                                [ section.title |> Html.text ]
+                                    |> Html.p
                                         [ domFontSize 30
-                                            |> Element.htmlAttribute
                                         , Html.Attributes.style "overflow-wrap" "break-word"
-                                            |> Element.htmlAttribute
                                         , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
-                                            |> Element.htmlAttribute
                                         ]
                             , url = "#" ++ Articles.sectionTitleToUrl section.title
                             }
+                            |> Element.html
                         , (case section.completion of
                             Articles.Published publishTime ->
                                 [ "🌐 published y"
@@ -338,8 +336,9 @@ paragraphPartUi context =
             Articles.Link link ->
                 linkUi context
                     { url = link.url
-                    , label = Element.text link.description
+                    , label = Html.text link.description
                     }
+                    |> Element.html
 
 
 domBackgroundColor : Color -> Html.Attribute event_
@@ -376,17 +375,15 @@ interactiveColorForBlackTheme =
     Color.rgb 0.49 0.83 1
 
 
-linkUi : { theme : Theme } -> { url : String, label : Element.Element event } -> Element.Element event
+linkUi : { theme : Theme } -> { url : String, label : Html.Html event } -> Html.Html event
 linkUi context config =
-    Element.link
-        [ Html.Attributes.style "border-bottom" "1px"
-            |> Element.htmlAttribute
+    Html.a
+        [ Html.Attributes.href config.url
+        , Html.Attributes.style "border-bottom" "1px"
         , Html.Attributes.style "border-color" (interactiveColor context.theme |> Color.toCssString)
-            |> Element.htmlAttribute
         , domFontColor (interactiveColor context.theme)
-            |> Element.htmlAttribute
         ]
-        config
+        [ config.label ]
 
 
 elmCodeUi : Theme -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event_)
