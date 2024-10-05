@@ -6,11 +6,10 @@ import Articles
 import Browser
 import Color exposing (Color)
 import Element
-import Element.Background
-import Element.Input
 import ElmSyntaxHighlight
 import Html exposing (Html)
 import Html.Attributes
+import Html.Events
 import Json.Decode
 import Json.Encode
 import RecordWithoutConstructorFunction exposing (RecordWithoutConstructorFunction)
@@ -76,24 +75,29 @@ ui state =
         [ Element.centerX
         , Element.paddingXY 19 0
         ]
-        [ Element.Input.button
-            [ Element.Background.color (foregroundColor state.theme |> Color.toRgba |> Element.fromRgb)
-            , fontColor (backgroundColor state.theme) |> Element.htmlAttribute
-            , Html.Attributes.style "border-radius" "0px 0px 1000px 1000px" |> Element.htmlAttribute
-            , Element.paddingEach { left = 30, right = 30, bottom = 10, top = 10 }
-            , Element.alignLeft
-            ]
-            (case state.theme of
-                WhiteTheme ->
-                    { label = "ᝰ" |> Element.text -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
-                    , onPress = ThemeSelected BlackTheme |> Just
-                    }
+        [ Html.button
+            [ domBackgroundColor (foregroundColor state.theme)
+            , domFontColor (backgroundColor state.theme)
+            , Html.Attributes.style "border-radius" "0px 0px 1000px 1000px"
+            , Html.Attributes.style "padding" " 0px 30px 10px 30px"
+            , Html.Attributes.style "text-align" "center"
+            , Html.Attributes.style "vertical-align" "middle"
+            , Html.Attributes.style "border" "none"
+            , domFontSize 20
+            , Html.Events.onClick
+                (case state.theme of
+                    WhiteTheme ->
+                        ThemeSelected BlackTheme
 
-                BlackTheme ->
-                    { label = "ᝰ" |> Element.text -- ☀︎ ☀️ 💡
-                    , onPress = ThemeSelected WhiteTheme |> Just
-                    }
-            )
+                    BlackTheme ->
+                        ThemeSelected WhiteTheme
+                )
+            ]
+            [ -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
+              -- ☀︎ ☀️ 💡
+              Html.text "ᝰ"
+            ]
+            |> Element.html
         , Element.column
             [ Element.paddingXY 0 40
             , Element.width (Element.maximum 700 Element.fill)
@@ -111,9 +115,9 @@ ui state =
                     }
                 ]
             }
-            [ Element.Background.color (backgroundColor state.theme |> Color.toRgba |> Element.fromRgb)
-            , fontColor (foregroundColor state.theme) |> Element.htmlAttribute
-            , fontSize 19
+            [ domBackgroundColor (backgroundColor state.theme) |> Element.htmlAttribute
+            , domFontColor (foregroundColor state.theme) |> Element.htmlAttribute
+            , domFontSize 19
                 |> Element.htmlAttribute
             , Html.Attributes.style "color-scheme"
                 (case state.theme of
@@ -163,7 +167,7 @@ articleContentUi context =
                             { label =
                                 [ section.title |> Element.text |> Element.el [] ]
                                     |> Element.paragraph
-                                        [ fontSize 30
+                                        [ domFontSize 30
                                             |> Element.htmlAttribute
                                         , Html.Attributes.style "overflow-wrap" "break-word"
                                             |> Element.htmlAttribute
@@ -189,7 +193,7 @@ articleContentUi context =
                             |> Element.text
                             |> List.singleton
                             |> Element.paragraph
-                                [ fontSize 14
+                                [ domFontSize 14
                                     |> Element.htmlAttribute
                                 , Html.Attributes.style "font-family" "monospace"
                                     |> Element.htmlAttribute
@@ -254,7 +258,7 @@ articleContentUi context =
                                 Element.row [ Element.width Element.fill ]
                                     [ Element.text "•"
                                         |> Element.el
-                                            [ fontSize 22
+                                            [ domFontSize 22
                                                 |> Element.htmlAttribute
                                             , Element.alignTop
                                             , Element.paddingEach { left = 0, top = 0, bottom = 0, right = 10 }
@@ -338,6 +342,11 @@ paragraphPartUi context =
                     }
 
 
+domBackgroundColor : Color -> Html.Attribute event_
+domBackgroundColor color =
+    Html.Attributes.style "background-color" (color |> Color.toCssString)
+
+
 blackThemeColorToWhiteTheme : Color -> Color
 blackThemeColorToWhiteTheme =
     \color ->
@@ -374,7 +383,7 @@ linkUi context config =
             |> Element.htmlAttribute
         , Html.Attributes.style "border-color" (interactiveColor context.theme |> Color.toCssString)
             |> Element.htmlAttribute
-        , fontColor (interactiveColor context.theme)
+        , domFontColor (interactiveColor context.theme)
             |> Element.htmlAttribute
         ]
         config
@@ -401,17 +410,6 @@ elmCodeUi theme =
                             ]
                     )
             )
-
-
-fontColor : Color -> Html.Attribute event_
-fontColor color =
-    Html.Attributes.style "color" (color |> Color.toCssString)
-
-
-fontSize : Int -> Html.Attribute event_
-fontSize heightInPixels =
-    -- TODO switch to rem?
-    Html.Attributes.style "font-size" ((heightInPixels |> String.fromInt) ++ "px")
 
 
 syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
@@ -450,6 +448,17 @@ syntaxKindToColorForBlackTheme =
 
             ElmSyntaxHighlight.DeclarationRelated ->
                 Color.rgb 0.55 0.75 1
+
+
+domFontColor : Color -> Html.Attribute event_
+domFontColor color =
+    Html.Attributes.style "color" (color |> Color.toCssString)
+
+
+domFontSize : Int -> Html.Attribute event_
+domFontSize heightInPixels =
+    -- TODO switch to rem?
+    Html.Attributes.style "font-size" ((heightInPixels |> String.fromInt) ++ "px")
 
 
 port toJS : Json.Encode.Value -> Cmd msg_
