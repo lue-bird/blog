@@ -102,7 +102,9 @@ ui state =
             , Element.width (Element.maximum 700 Element.fill)
             , Element.centerX
             ]
-            [ Articles.all |> articleContentUi { theme = state.theme }
+            [ Articles.all
+                |> articleContentUi { theme = state.theme }
+                |> Element.html
             ]
         ]
         |> Element.layoutWith
@@ -150,29 +152,28 @@ foregroundColor theme =
             Color.rgb 0 0 0
 
 
-articleContentUi : { theme : Theme } -> Articles.Content -> Element.Element event_
+articleContentUi : { theme : Theme } -> Articles.Content -> Html.Html event_
 articleContentUi context =
     -- IGNORE TCO
     \articleContent ->
         case articleContent of
             Articles.Section section ->
-                Element.column
-                    [ Element.spacing 39
-                    , Element.width Element.fill
-                    , Element.paddingEach { left = 0, top = 40, bottom = 55, right = 0 }
+                Html.div
+                    [ Html.Attributes.style "padding" "40 0 55 0"
                     ]
-                    [ Element.column [ Element.spacing 7 ]
+                    [ Html.div []
                         [ linkUi context
                             { label =
                                 [ section.title |> Html.text ]
                                     |> Html.p
                                         [ domFontSize 30
                                         , Html.Attributes.style "overflow-wrap" "break-word"
+                                        , Html.Attributes.style "padding-top" "20px"
+                                        , Html.Attributes.style "margin-bottom" "0px"
                                         , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
                                         ]
                             , url = "#" ++ Articles.sectionTitleToUrl section.title
                             }
-                            |> Element.html
                         , (case section.completion of
                             Articles.Published publishTime ->
                                 [ "🌐 published y"
@@ -187,36 +188,37 @@ articleContentUi context =
                             Articles.InProgress progress ->
                                 "! 🛠️ in progress: " ++ progress
                           )
-                            |> Element.text
+                            |> Html.text
                             |> List.singleton
-                            |> Element.paragraph
+                            |> Html.p
                                 [ domFontSize 14
-                                    |> Element.htmlAttribute
                                 , Html.Attributes.style "font-family" "monospace"
-                                    |> Element.htmlAttribute
                                 ]
                         ]
+                    , Html.br [] []
                     , section.content |> articleContentUi context
                     ]
 
             Articles.Paragraph parts ->
-                Element.paragraph
+                Html.p
                     [ Html.Attributes.style "overflow-wrap" "break-word"
-                        |> Element.htmlAttribute
-                    , Element.width Element.fill
+                    , Html.Attributes.style "white-space" "normal"
+                    , Html.Attributes.style "line-height" "1.25"
+                    , Html.Attributes.style "margin-top" "0px"
+                    , Html.Attributes.style "margin-bottom" "0px"
                     ]
                     (parts
                         |> List.map
                             (\part ->
-                                part
-                                    |> paragraphPartUi context
-                                    |> Element.html
+                                part |> paragraphPartUi context
                             )
                     )
 
             Articles.ElmCode elmCode ->
                 Html.pre
-                    [ Html.Attributes.style "overflow" "scroll"
+                    [ Html.Attributes.style "margin-top" "0px"
+                    , Html.Attributes.style "margin-bottom" "0px"
+                    , Html.Attributes.style "overflow" "scroll"
                     , Html.Attributes.style "overflow-y" "hidden"
                     , Html.Attributes.style "scrollbar-color"
                         ([ interactiveColor context.theme |> Color.toCssString
@@ -241,40 +243,28 @@ articleContentUi context =
                         ]
                         [ elmCode |> elmCodeUi context.theme [] ]
                     ]
-                    |> Element.html
 
             Articles.Sequence contentList ->
-                Element.column
-                    [ Element.spacing 22
-                    , Element.width Element.fill
-                    ]
-                    (contentList |> List.map (\item -> item |> articleContentUi context))
+                Html.div
+                    []
+                    (contentList
+                        |> List.map (\item -> item |> articleContentUi context)
+                        |> List.intersperse (Html.br [] [])
+                    )
 
             Articles.UnorderedList unorderedList ->
-                Element.column
-                    [ Element.spacing 20
-                    , Element.paddingEach { left = 20, top = 14, bottom = 14, right = 0 }
-                    , Element.width Element.fill
+                Html.ul
+                    [ Html.Attributes.style "padding" "14 0 14 20"
                     ]
                     (unorderedList
                         |> List.map
                             (\item ->
-                                Element.row [ Element.width Element.fill ]
-                                    [ Element.text "•"
-                                        |> Element.el
-                                            [ domFontSize 22
-                                                |> Element.htmlAttribute
-                                            , Element.alignTop
-                                            , Element.paddingEach { left = 0, top = 0, bottom = 0, right = 10 }
-                                            ]
-                                    , item
+                                Html.li []
+                                    [ item
                                         |> articleContentUi context
-                                        |> Element.el
-                                            [ Element.alignTop
-                                            , Element.width Element.fill
-                                            ]
                                     ]
                             )
+                        |> List.intersperse (Html.br [] [])
                     )
 
 
