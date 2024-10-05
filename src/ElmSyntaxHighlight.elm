@@ -167,7 +167,7 @@ expressionSyntaxKindMap context =
                                         }
                                         context
                                     -- if there is a bug
-                                    |> Maybe.withDefault Elm.Syntax.Range.emptyRange
+                                    |> Maybe.withDefault Elm.Syntax.Range.empty
                         in
                         case operatorSymbol of
                             "|>" ->
@@ -206,7 +206,7 @@ expressionSyntaxKindMap context =
                                 }
                                 context
                             -- if there is a bug
-                            |> Maybe.withDefault Elm.Syntax.Range.emptyRange
+                            |> Maybe.withDefault Elm.Syntax.Range.empty
                         )
                         Flow
                     |> RangeDict.insert
@@ -217,7 +217,7 @@ expressionSyntaxKindMap context =
                                 }
                                 context
                             -- if there is a bug
-                            |> Maybe.withDefault Elm.Syntax.Range.emptyRange
+                            |> Maybe.withDefault Elm.Syntax.Range.empty
                         )
                         Flow
 
@@ -275,7 +275,7 @@ expressionSyntaxKindMap context =
                                             }
                                             context
                                         -- if there is a bug
-                                        |> Maybe.withDefault Elm.Syntax.Range.emptyRange
+                                        |> Maybe.withDefault Elm.Syntax.Range.empty
                                     )
                                     DeclarationRelated
                        )
@@ -318,7 +318,7 @@ expressionSyntaxKindMap context =
                                             }
                                             context
                                         -- if there is a bug
-                                        |> Maybe.withDefault Elm.Syntax.Range.emptyRange
+                                        |> Maybe.withDefault Elm.Syntax.Range.empty
                                     )
                                     Flow
                        )
