@@ -489,10 +489,23 @@ tokenFindRangeIn searchRange context =
 rangeContainsLocation : Elm.Syntax.Range.Location -> Elm.Syntax.Range.Range -> Bool
 rangeContainsLocation location =
     \range ->
-        not
-            ((Elm.Syntax.Range.compareLocations location range.start == LT)
-                || (Elm.Syntax.Range.compareLocations location range.end == GT)
-            )
+        case Elm.Syntax.Range.compareLocations range.start location of
+            GT ->
+                False
+
+            EQ ->
+                False
+
+            LT ->
+                case Elm.Syntax.Range.compareLocations range.end location of
+                    GT ->
+                        True
+
+                    LT ->
+                        False
+
+                    EQ ->
+                        False
 
 
 typeAnnotationSyntaxKindMap : Elm.Syntax.Node.Node Elm.Syntax.TypeAnnotation.TypeAnnotation -> RangeDict SyntaxKind
