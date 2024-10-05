@@ -5,11 +5,11 @@ port module Main exposing (main)
 import Articles
 import Browser
 import Color exposing (Color)
-import Element.WithContext
-import Element.WithContext.Background
-import Element.WithContext.Border
-import Element.WithContext.Font
-import Element.WithContext.Input
+import Element
+import Element.Background
+import Element.Border
+import Element.Font
+import Element.Input
 import ElmSyntaxHighlight
 import Html exposing (Html)
 import Html.Attributes
@@ -19,14 +19,19 @@ import RecordWithoutConstructorFunction exposing (RecordWithoutConstructorFuncti
 import Time
 
 
-type Event
-    = ThemeSelected Theme
-
-
 type alias State =
     RecordWithoutConstructorFunction
         { theme : Theme
         }
+
+
+type Event
+    = ThemeSelected Theme
+
+
+type Theme
+    = WhiteTheme
+    | BlackTheme
 
 
 main : Program () State Event
@@ -69,108 +74,101 @@ uiDocument =
 
 ui : State -> Html Event
 ui state =
-    Element.WithContext.column
-        [ Element.WithContext.centerX
-        , Element.WithContext.paddingXY 19 0
+    Element.column
+        [ Element.centerX
+        , Element.paddingXY 19 0
         ]
-        [ Element.WithContext.withContext
-            (\context ->
-                Element.WithContext.Input.button
-                    [ Element.WithContext.Background.color (foregroundColor context.theme)
-                    , Element.WithContext.Font.color (backgroundColor context.theme)
-                    , Element.WithContext.Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 1000, bottomRight = 1000 }
-                    , Element.WithContext.paddingEach { left = 30, right = 30, bottom = 10, top = 10 }
-                    , Element.WithContext.alignLeft
-                    ]
-                    (case context.theme of
-                        WhiteTheme ->
-                            { label = "ᝰ" |> Element.WithContext.text -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
-                            , onPress = ThemeSelected BlackTheme |> Just
-                            }
+        [ Element.Input.button
+            [ Element.Background.color (foregroundColor state.theme)
+            , Element.Font.color (backgroundColor state.theme)
+            , Element.Border.roundEach { topLeft = 0, topRight = 0, bottomLeft = 1000, bottomRight = 1000 }
+            , Element.paddingEach { left = 30, right = 30, bottom = 10, top = 10 }
+            , Element.alignLeft
+            ]
+            (case state.theme of
+                WhiteTheme ->
+                    { label = "ᝰ" |> Element.text -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
+                    , onPress = ThemeSelected BlackTheme |> Just
+                    }
 
-                        BlackTheme ->
-                            { label = "ᝰ" |> Element.WithContext.text -- ☀︎ ☀️ 💡
-                            , onPress = ThemeSelected WhiteTheme |> Just
-                            }
-                    )
+                BlackTheme ->
+                    { label = "ᝰ" |> Element.text -- ☀︎ ☀️ 💡
+                    , onPress = ThemeSelected WhiteTheme |> Just
+                    }
             )
-        , Element.WithContext.column
-            [ Element.WithContext.paddingXY 0 40
-            , Element.WithContext.width (Element.WithContext.maximum 700 Element.WithContext.fill)
-            , Element.WithContext.centerX
+        , Element.column
+            [ Element.paddingXY 0 40
+            , Element.width (Element.maximum 700 Element.fill)
+            , Element.centerX
             ]
-            [ Articles.all |> articleContentUi
+            [ Articles.all |> articleContentUi { theme = state.theme }
             ]
         ]
-        |> Element.WithContext.layoutWith { theme = state.theme }
+        |> Element.layoutWith
             { options =
-                [ Element.WithContext.focusStyle
+                [ Element.focusStyle
                     { shadow = Nothing
                     , borderColor = Nothing
                     , backgroundColor = Nothing
                     }
                 ]
             }
-            [ Element.WithContext.withContextAttribute
-                (\context -> Element.WithContext.Background.color (backgroundColor context.theme))
-            , Element.WithContext.withContextAttribute
-                (\context -> Element.WithContext.Font.color (foregroundColor context.theme))
-            , Element.WithContext.Font.size 19
-            , Element.WithContext.withContextAttribute
-                (\context ->
-                    Html.Attributes.style "color-scheme"
-                        (case context.theme of
-                            BlackTheme ->
-                                "dark"
+            [ Element.Background.color (backgroundColor state.theme)
+            , Element.Font.color (foregroundColor state.theme)
+            , Element.Font.size 19
+            , Html.Attributes.style "color-scheme"
+                (case state.theme of
+                    BlackTheme ->
+                        "dark"
 
-                            WhiteTheme ->
-                                "light"
-                        )
-                        |> Element.WithContext.htmlAttribute
+                    WhiteTheme ->
+                        "light"
                 )
+                |> Element.htmlAttribute
             ]
 
 
-backgroundColor : Theme -> Element.WithContext.Color
+backgroundColor : Theme -> Element.Color
 backgroundColor theme =
     case theme of
         BlackTheme ->
-            Element.WithContext.rgb 0 0 0
+            Element.rgb 0 0 0
 
         WhiteTheme ->
-            Element.WithContext.rgb 1 1 1
+            Element.rgb 1 1 1
 
 
-foregroundColor : Theme -> Element.WithContext.Color
+foregroundColor : Theme -> Element.Color
 foregroundColor theme =
     case theme of
         BlackTheme ->
-            Element.WithContext.rgb 1 1 1
+            Element.rgb 1 1 1
 
         WhiteTheme ->
-            Element.WithContext.rgb 0 0 0
+            Element.rgb 0 0 0
 
 
-articleContentUi : Articles.Content -> Element.WithContext.Element Context event_
-articleContentUi =
+articleContentUi : { theme : Theme } -> Articles.Content -> Element.Element event_
+articleContentUi context =
+    -- IGNORE TCO
     \articleContent ->
         case articleContent of
             Articles.Section section ->
-                Element.WithContext.column
-                    [ Element.WithContext.spacing 39
-                    , Element.WithContext.width Element.WithContext.fill
-                    , Element.WithContext.paddingEach { left = 0, top = 40, bottom = 55, right = 0 }
+                Element.column
+                    [ Element.spacing 39
+                    , Element.width Element.fill
+                    , Element.paddingEach { left = 0, top = 40, bottom = 55, right = 0 }
                     ]
-                    [ Element.WithContext.column [ Element.WithContext.spacing 7 ]
-                        [ linkUi
+                    [ Element.column [ Element.spacing 7 ]
+                        [ linkUi context
                             { label =
-                                [ section.title |> Element.WithContext.text |> Element.WithContext.el [] ]
-                                    |> Element.WithContext.paragraph
-                                        [ Element.WithContext.Font.size 30
+                                [ section.title |> Element.text |> Element.el [] ]
+                                    |> Element.paragraph
+                                        [ Element.Font.size 30
                                         , Html.Attributes.style "overflow-wrap" "break-word"
-                                            |> Element.WithContext.htmlAttribute
+                                            |> Element.htmlAttribute
                                         , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
-                                            |> Element.WithContext.htmlAttribute
+                                            |> Element.htmlAttribute
                                         ]
                             , url = "#" ++ Articles.sectionTitleToUrl section.title
                             }
@@ -188,84 +186,81 @@ articleContentUi =
                             Articles.InProgress progress ->
                                 "! 🛠️ in progress: " ++ progress
                           )
-                            |> Element.WithContext.text
+                            |> Element.text
                             |> List.singleton
-                            |> Element.WithContext.paragraph
-                                [ Element.WithContext.Font.size 14
-                                , Element.WithContext.Font.family [ Element.WithContext.Font.monospace ]
+                            |> Element.paragraph
+                                [ Element.Font.size 14
+                                , Element.Font.family [ Element.Font.monospace ]
                                 ]
                         ]
-                    , section.content |> articleContentUi
+                    , section.content |> articleContentUi context
                     ]
 
             Articles.Paragraph parts ->
-                Element.WithContext.paragraph
+                Element.paragraph
                     [ Html.Attributes.style "overflow-wrap" "break-word"
-                        |> Element.WithContext.htmlAttribute
-                    , Element.WithContext.width Element.WithContext.fill
+                        |> Element.htmlAttribute
+                    , Element.width Element.fill
                     ]
-                    (parts |> List.map paragraphPartUi)
+                    (parts |> List.map (\part -> part |> paragraphPartUi context))
 
             Articles.ElmCode elmCode ->
-                Element.WithContext.withContext
-                    (\context ->
-                        Html.pre
-                            [ Html.Attributes.style "overflow" "scroll"
-                            , Html.Attributes.style "overflow-y" "hidden"
-                            , Html.Attributes.style "scrollbar-color"
-                                ([ interactiveColor context.theme |> Element.WithContext.toRgb |> Color.fromRgba |> Color.toCssString
-                                 , " "
-                                 , Color.rgba 0 0 0 0 |> Color.toCssString
-                                 ]
-                                    |> String.concat
-                                )
-                            , Html.Attributes.style "scrollbar-width" "thin"
-                            , Html.Attributes.style "white-space" "pre-line"
-                            , Html.Attributes.style "width" "fit-content"
-                            , Html.Attributes.style "min-width" "100%"
-                            , Html.Attributes.style "width" "0px"
-                            ]
-                            [ Html.code
-                                [ Html.Attributes.style "white-space" "pre"
-                                , Html.Attributes.style "word-spacing" "normal"
-                                , Html.Attributes.style "word-break" "normal"
-                                , Html.Attributes.style "overflow-wrap" "normal"
-                                , Html.Attributes.style "hyphens" "none"
-                                , Html.Attributes.style "font-size" "0.8em"
-                                ]
-                                [ elmCode |> elmCodeUi context.theme ]
-                            ]
-                            |> Element.WithContext.html
-                    )
+                Html.pre
+                    [ Html.Attributes.style "overflow" "scroll"
+                    , Html.Attributes.style "overflow-y" "hidden"
+                    , Html.Attributes.style "scrollbar-color"
+                        ([ interactiveColor context.theme |> Element.toRgb |> Color.fromRgba |> Color.toCssString
+                         , " "
+                         , Color.rgba 0 0 0 0 |> Color.toCssString
+                         ]
+                            |> String.concat
+                        )
+                    , Html.Attributes.style "scrollbar-width" "thin"
+                    , Html.Attributes.style "white-space" "pre-line"
+                    , Html.Attributes.style "width" "fit-content"
+                    , Html.Attributes.style "min-width" "100%"
+                    , Html.Attributes.style "width" "0px"
+                    ]
+                    [ Html.code
+                        [ Html.Attributes.style "white-space" "pre"
+                        , Html.Attributes.style "word-spacing" "normal"
+                        , Html.Attributes.style "word-break" "normal"
+                        , Html.Attributes.style "overflow-wrap" "normal"
+                        , Html.Attributes.style "hyphens" "none"
+                        , Html.Attributes.style "font-size" "0.8em"
+                        ]
+                        [ elmCode |> elmCodeUi context.theme ]
+                    ]
+                    |> Element.html
 
             Articles.Sequence contentList ->
-                Element.WithContext.column
-                    [ Element.WithContext.spacing 22
-                    , Element.WithContext.width Element.WithContext.fill
+                Element.column
+                    [ Element.spacing 22
+                    , Element.width Element.fill
                     ]
-                    (contentList |> List.map articleContentUi)
+                    (contentList |> List.map (\item -> item |> articleContentUi context))
 
             Articles.UnorderedList unorderedList ->
-                Element.WithContext.column
-                    [ Element.WithContext.spacing 20
-                    , Element.WithContext.paddingEach { left = 20, top = 14, bottom = 14, right = 0 }
-                    , Element.WithContext.width Element.WithContext.fill
+                Element.column
+                    [ Element.spacing 20
+                    , Element.paddingEach { left = 20, top = 14, bottom = 14, right = 0 }
+                    , Element.width Element.fill
                     ]
                     (unorderedList
                         |> List.map
                             (\item ->
-                                Element.WithContext.row [ Element.WithContext.width Element.WithContext.fill ]
-                                    [ Element.WithContext.text "•"
-                                        |> Element.WithContext.el
-                                            [ Element.WithContext.Font.size 22
-                                            , Element.WithContext.alignTop
-                                            , Element.WithContext.paddingEach { left = 0, top = 0, bottom = 0, right = 10 }
+                                Element.row [ Element.width Element.fill ]
+                                    [ Element.text "•"
+                                        |> Element.el
+                                            [ Element.Font.size 22
+                                            , Element.alignTop
+                                            , Element.paddingEach { left = 0, top = 0, bottom = 0, right = 10 }
                                             ]
                                     , item
-                                        |> articleContentUi
-                                        |> Element.WithContext.el
-                                            [ Element.WithContext.alignTop
-                                            , Element.WithContext.width Element.WithContext.fill
+                                        |> articleContentUi context
+                                        |> Element.el
+                                            [ Element.alignTop
+                                            , Element.width Element.fill
                                             ]
                                     ]
                             )
@@ -313,33 +308,30 @@ monthToInt =
                 12
 
 
-paragraphPartUi : Articles.ParagraphPart -> Element.WithContext.Element Context event_
-paragraphPartUi =
+paragraphPartUi : { theme : Theme } -> Articles.ParagraphPart -> Element.Element event_
+paragraphPartUi context =
     \paragraphPart ->
         case paragraphPart of
             Articles.Text string ->
-                Element.WithContext.text string
+                Element.text string
 
             Articles.Italic string ->
-                Element.WithContext.text string
-                    |> Element.WithContext.el [ Element.WithContext.Font.italic ]
+                Element.text string
+                    |> Element.el [ Element.Font.italic ]
 
             Articles.InlineElmCode elmCode ->
-                Element.WithContext.withContext
-                    (\context ->
-                        elmCode
-                            |> elmCodeUi context.theme
-                            |> Element.WithContext.html
-                            |> Element.WithContext.el
-                                [ Html.Attributes.style "font-size" "0.9em"
-                                    |> Element.WithContext.htmlAttribute
-                                ]
-                    )
+                elmCode
+                    |> elmCodeUi context.theme
+                    |> Element.html
+                    |> Element.el
+                        [ Html.Attributes.style "font-size" "0.9em"
+                            |> Element.htmlAttribute
+                        ]
 
             Articles.Link link ->
-                linkUi
+                linkUi context
                     { url = link.url
-                    , label = Element.WithContext.text link.description
+                    , label = Element.text link.description
                     }
 
 
@@ -356,9 +348,9 @@ blackThemeColorToWhiteTheme =
             |> Color.fromHsla
 
 
-interactiveColor : Theme -> Element.WithContext.Color
+interactiveColor : Theme -> Element.Color
 interactiveColor theme =
-    -- Element.WithContext.rgb 1 0.5 0
+    -- Element.rgb 1 0.5 0
     (case theme of
         BlackTheme ->
             interactiveColorForBlackTheme
@@ -367,7 +359,7 @@ interactiveColor theme =
             interactiveColorForBlackTheme |> blackThemeColorToWhiteTheme
     )
         |> Color.toRgba
-        |> Element.WithContext.fromRgb
+        |> Element.fromRgb
 
 
 interactiveColorForBlackTheme : Color
@@ -375,14 +367,12 @@ interactiveColorForBlackTheme =
     Color.rgb 0.49 0.83 1
 
 
-linkUi : { url : String, label : Element.WithContext.Element Context event } -> Element.WithContext.Element Context event
-linkUi config =
-    Element.WithContext.link
-        [ Element.WithContext.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
-        , Element.WithContext.withContextAttribute
-            (\context -> Element.WithContext.Border.color (interactiveColor context.theme))
-        , Element.WithContext.withContextAttribute
-            (\context -> Element.WithContext.Font.color (interactiveColor context.theme))
+linkUi : { theme : Theme } -> { url : String, label : Element.Element event } -> Element.Element event
+linkUi context config =
+    Element.link
+        [ Element.Border.widthEach { left = 0, right = 0, top = 0, bottom = 1 }
+        , Element.Border.color (interactiveColor context.theme)
+        , Element.Font.color (interactiveColor context.theme)
         ]
         config
 
@@ -446,15 +436,6 @@ syntaxKindToColorForBlackTheme =
 
             ElmSyntaxHighlight.DeclarationRelated ->
                 Color.rgb 0.55 0.75 1
-
-
-type alias Context =
-    { theme : Theme }
-
-
-type Theme
-    = WhiteTheme
-    | BlackTheme
 
 
 port toJS : Json.Encode.Value -> Cmd msg_

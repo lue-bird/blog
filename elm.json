@@ -26,6 +26,7 @@
             "lue-bird/elm-linear-direction": "11.2.0",
             "lue-bird/elm-no-record-type-alias-constructor-function": "1.0.8",
             "lue-bird/elm-rosetree-path": "2.0.5",
+            "mdgriffith/elm-ui": "1.1.8",
             "miniBill/elm-fast-dict": "1.2.1",
             "miniBill/elm-ui-with-context": "2.0.0",
             "stil4m/elm-syntax": "7.3.6",
@@ -51,7 +52,6 @@
             "ianmackenzie/elm-triangular-mesh": "1.1.0",
             "ianmackenzie/elm-units-interval": "3.2.0",
             "lue-bird/elm-partial-or-complete": "1.0.2",
-            "mdgriffith/elm-ui": "1.1.8",
             "mgold/elm-nonempty-list": "4.2.0",
             "rtfeldman/elm-hex": "1.0.0",
             "stil4m/structured-writer": "1.0.3"
