@@ -72,7 +72,6 @@ ui state =
     Html.div
         [ domBackgroundColor (backgroundColor state.theme)
         , domFontColor (foregroundColor state.theme)
-        , domFontSize 19
         , Html.Attributes.style "color-scheme"
             (case state.theme of
                 BlackTheme ->
@@ -81,8 +80,6 @@ ui state =
                 WhiteTheme ->
                     "light"
             )
-
-        --, Html.Attributes.style "position" "fixed"
         , Html.Attributes.style "top" "0"
         , Html.Attributes.style "right" "0"
         , Html.Attributes.style "bottom" "0"
@@ -102,7 +99,7 @@ ui state =
                 , Html.Attributes.style "text-align" "center"
                 , Html.Attributes.style "vertical-align" "middle"
                 , Html.Attributes.style "border" "none"
-                , domFontSize 20
+                , Html.Attributes.style "font-size" "20px"
                 , Html.Events.onClick
                     (case state.theme of
                         WhiteTheme ->
@@ -158,14 +155,13 @@ articleContentUi context =
                     [ Html.div []
                         [ linkUi context
                             { label =
-                                [ section.title |> Html.text ]
-                                    |> Html.p
-                                        [ domFontSize 30
-                                        , Html.Attributes.style "overflow-wrap" "break-word"
-                                        , Html.Attributes.style "padding-top" "20px"
-                                        , Html.Attributes.style "margin-bottom" "0px"
-                                        , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
-                                        ]
+                                Html.h1
+                                    [ Html.Attributes.style "overflow-wrap" "break-word"
+                                    , Html.Attributes.style "padding-top" "20px"
+                                    , Html.Attributes.style "margin-bottom" "0px"
+                                    , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
+                                    ]
+                                    [ section.title |> Html.text ]
                             , url = "#" ++ Articles.sectionTitleToUrl section.title
                             }
                         , (case section.completion of
@@ -185,7 +181,7 @@ articleContentUi context =
                             |> Html.text
                             |> List.singleton
                             |> Html.p
-                                [ domFontSize 14
+                                [ domFontSizePercentage 0.85
                                 , Html.Attributes.style "font-family" "monospace"
                                 ]
                         ]
@@ -233,7 +229,7 @@ articleContentUi context =
                         , Html.Attributes.style "word-break" "normal"
                         , Html.Attributes.style "overflow-wrap" "normal"
                         , Html.Attributes.style "hyphens" "none"
-                        , Html.Attributes.style "font-size" "0.8em"
+                        , Html.Attributes.style "font-size" "1rem"
                         ]
                         [ elmCode |> elmCodeUi context.theme [] ]
                     ]
@@ -316,7 +312,7 @@ paragraphPartUi context =
             Articles.InlineElmCode elmCode ->
                 elmCode
                     |> elmCodeUi context.theme
-                        [ Html.Attributes.style "font-size" "0.9em"
+                        [ Html.Attributes.style "font-size" "1rem"
                         ]
 
             Articles.Link link ->
@@ -437,10 +433,9 @@ domFontColor color =
     Html.Attributes.style "color" (color |> Color.toCssString)
 
 
-domFontSize : Int -> Html.Attribute event_
-domFontSize heightInPixels =
-    -- TODO switch to rem?
-    Html.Attributes.style "font-size" ((heightInPixels |> String.fromInt) ++ "px")
+domFontSizePercentage : Float -> Html.Attribute event_
+domFontSizePercentage heightInRem =
+    Html.Attributes.style "font-size" ((heightInRem |> String.fromFloat) ++ "rem")
 
 
 port toJS : Json.Encode.Value -> Cmd msg_
