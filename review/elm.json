@@ -24,7 +24,7 @@
             "lue-bird/elm-review-equals-caseable": "1.0.0",
             "lue-bird/elm-review-import-simple": "1.0.3",
             "lue-bird/elm-review-multiple-append-to-concat": "1.0.2",
-            "lue-bird/elm-review-no-catch-all-for-specific-remaining-patterns": "1.0.0",
+            "lue-bird/elm-review-no-catch-all-for-specific-remaining-patterns": "1.0.1",
             "lue-bird/elm-review-opaque-type": "1.0.1",
             "lue-bird/elm-review-pattern": "1.0.2",
             "lue-bird/elm-review-phantom-type": "1.0.2",
