@@ -1,28 +1,13 @@
-# Made by Isaac Van Doren. Source at https://github.com/isaacvando/elm-to-gh-pages.
-name: Deploy an Elm app to GitHub Pages
+name: website
 
-on:
-  # Runs on pushes targeting the default branch
-  push:
-    branches: ["main"]
+on: push
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# Cancel current deployment when a new push occurs
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+permissions: 
+  contents: write
 
 jobs:
-  build-and-deploy:
-    environment:
-      name: github-pages
+  publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    concurrency: ci-${{ github.ref }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,8 +16,11 @@ jobs:
       - uses: bahmutov/npm-install@v1
 
       - run: npx vite build
-          
+
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+        uses: crazy-max/ghaction-github-pages@v4
         with:
-          folder: dist
+          target_branch: gh-pages
+          build_dir: dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
