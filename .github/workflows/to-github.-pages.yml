@@ -24,10 +24,6 @@ concurrency:
 jobs:
   install-js-packages:
     runs-on: ubuntu-latest
-    name: Build and test
-    steps:
-      - uses: actions/checkout@v4
-      - uses: bahmutov/npm-install@v1
   deploy:
     environment:
       name: github-pages
@@ -35,7 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Build js dependencies
+        uses: bahmutov/npm-install@v1
 
       - name: Build Elm artifact
         uses: jorelali/setup-elm@v5
