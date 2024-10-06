@@ -6,13 +6,11 @@ import Articles
 import Browser
 import Color exposing (Color)
 import ElmSyntaxHighlight
-import Html exposing (Html)
-import Html.Attributes
-import Html.Events
 import Json.Decode
 import Json.Encode
 import RecordWithoutConstructorFunction exposing (RecordWithoutConstructorFunction)
 import Time
+import Web
 
 
 type alias State =
@@ -30,18 +28,17 @@ type Theme
     | BlackTheme
 
 
-main : Program () State Event
+main : Web.Program State
 main =
-    Browser.document
-        { init =
-            \() -> ( initialState, Cmd.none )
-        , update =
-            \event state ->
-                ( reactTo event state, Cmd.none )
-        , subscriptions =
-            \_ -> Sub.none
-        , view =
-            \state -> state |> uiDocument
+    Web.program
+        { initialState = initialState
+        , interface =
+            \state ->
+                state
+                    |> ui
+                    |> Web.domRender
+                    |> Web.interfaceFutureMap (\event -> reactTo event state)
+        , ports = { toJs = toJs, fromJs = fromJs }
         }
 
 
@@ -59,20 +56,42 @@ reactTo event =
                 { state | theme = newTheme }
 
 
-uiDocument : State -> Browser.Document Event
-uiDocument =
-    \state ->
-        { title = "lue blog"
-        , body = [ state |> ui ]
-        }
+domDiv : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domDiv modifiers subs =
+    Web.domElement "div" modifiers subs
 
 
-ui : State -> Html Event
+domH1 : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domH1 modifiers subs =
+    Web.domElement "h1" modifiers subs
+
+
+domP : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domP modifiers subs =
+    Web.domElement "p" modifiers subs
+
+
+domPre : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domPre modifiers subs =
+    Web.domElement "pre" modifiers subs
+
+
+domBr : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domBr modifiers subs =
+    Web.domElement "br" modifiers subs
+
+
+domButton : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domButton modifiers subs =
+    Web.domElement "button" modifiers subs
+
+
+ui : State -> Web.DomNode Event
 ui state =
-    Html.div
+    domDiv
         [ domBackgroundColor (backgroundColor state.theme)
         , domFontColor (foregroundColor state.theme)
-        , Html.Attributes.style "color-scheme"
+        , Web.domStyle "color-scheme"
             (case state.theme of
                 BlackTheme ->
                     "dark"
@@ -80,41 +99,43 @@ ui state =
                 WhiteTheme ->
                     "light"
             )
-        , Html.Attributes.style "top" "0"
-        , Html.Attributes.style "right" "0"
-        , Html.Attributes.style "bottom" "0"
-        , Html.Attributes.style "left" "0"
+        , Web.domStyle "top" "0"
+        , Web.domStyle "right" "0"
+        , Web.domStyle "bottom" "0"
+        , Web.domStyle "left" "0"
         ]
-        [ Html.div
-            [ Html.Attributes.style "padding-left" "19px"
-            , Html.Attributes.style "padding-right" "19px"
-            , Html.Attributes.style "max-width" "700px"
-            , Html.Attributes.style "margin" "auto"
+        [ domDiv
+            [ Web.domStyle "padding-left" "19px"
+            , Web.domStyle "padding-right" "19px"
+            , Web.domStyle "max-width" "700px"
+            , Web.domStyle "margin" "auto"
             ]
-            [ Html.button
+            [ domButton
                 [ domBackgroundColor (foregroundColor state.theme)
                 , domFontColor (backgroundColor state.theme)
-                , Html.Attributes.style "border-radius" "0px 0px 1000px 1000px"
-                , Html.Attributes.style "padding" " 0px 30px 10px 30px"
-                , Html.Attributes.style "text-align" "center"
-                , Html.Attributes.style "vertical-align" "middle"
-                , Html.Attributes.style "border" "none"
-                , Html.Attributes.style "font-size" "20px"
-                , Html.Events.onClick
-                    (case state.theme of
-                        WhiteTheme ->
-                            ThemeSelected BlackTheme
+                , Web.domStyle "border-radius" "0px 0px 1000px 1000px"
+                , Web.domStyle "padding" " 0px 30px 10px 30px"
+                , Web.domStyle "text-align" "center"
+                , Web.domStyle "vertical-align" "middle"
+                , Web.domStyle "border" "none"
+                , Web.domStyle "font-size" "20px"
+                , Web.domListenTo "pointerdown"
+                    |> Web.domModifierFutureMap
+                        (\_ ->
+                            case state.theme of
+                                WhiteTheme ->
+                                    ThemeSelected BlackTheme
 
-                        BlackTheme ->
-                            ThemeSelected WhiteTheme
-                    )
+                                BlackTheme ->
+                                    ThemeSelected WhiteTheme
+                        )
                 ]
                 [ -- 🌖︎ 🌓 🌒 🌑 ☾ ☾ ☽ 🕵 ✨ 💫 🌙 🌛
                   -- ☀︎ ☀️ 💡
-                  Html.text "ᝰ"
+                  Web.domText "ᝰ"
                 ]
-            , Html.div
-                [ Html.Attributes.style "padding-top" "40px"
+            , domDiv
+                [ Web.domStyle "padding-top" "40px"
                 ]
                 [ Articles.all
                     |> articleContentUi { theme = state.theme }
@@ -143,25 +164,25 @@ foregroundColor theme =
             Color.rgb 0 0 0
 
 
-articleContentUi : { theme : Theme } -> Articles.Content -> Html.Html event_
+articleContentUi : { theme : Theme } -> Articles.Content -> Web.DomNode event_
 articleContentUi context =
     -- IGNORE TCO
     \articleContent ->
         case articleContent of
             Articles.Section section ->
-                Html.div
-                    [ Html.Attributes.style "padding" "40 0 55 0"
+                domDiv
+                    [ Web.domStyle "padding" "40 0 55 0"
                     ]
-                    [ Html.div []
+                    [ domDiv []
                         [ linkUi context
                             { label =
-                                Html.h1
-                                    [ Html.Attributes.style "overflow-wrap" "break-word"
-                                    , Html.Attributes.style "padding-top" "20px"
-                                    , Html.Attributes.style "margin-bottom" "0px"
-                                    , Html.Attributes.id (section.title |> Articles.sectionTitleToUrl)
+                                domH1
+                                    [ Web.domStyle "overflow-wrap" "break-word"
+                                    , Web.domStyle "padding-top" "20px"
+                                    , Web.domStyle "margin-bottom" "0px"
+                                    , Web.domAttribute "id" (section.title |> Articles.sectionTitleToUrl)
                                     ]
-                                    [ section.title |> Html.text ]
+                                    [ section.title |> Web.domText ]
                             , url = "#" ++ Articles.sectionTitleToUrl section.title
                             }
                         , (case section.completion of
@@ -178,24 +199,24 @@ articleContentUi context =
                             Articles.InProgress progress ->
                                 "! 🛠️ in progress: " ++ progress
                           )
-                            |> Html.text
+                            |> Web.domText
                             |> List.singleton
-                            |> Html.p
+                            |> domP
                                 [ domFontSizePercentage 0.85
-                                , Html.Attributes.style "font-family" "monospace"
+                                , Web.domStyle "font-family" "monospace"
                                 ]
                         ]
-                    , Html.br [] []
+                    , domBr [] []
                     , section.content |> articleContentUi context
                     ]
 
             Articles.Paragraph parts ->
-                Html.p
-                    [ Html.Attributes.style "overflow-wrap" "break-word"
-                    , Html.Attributes.style "white-space" "normal"
-                    , Html.Attributes.style "line-height" "1.25"
-                    , Html.Attributes.style "margin-top" "0px"
-                    , Html.Attributes.style "margin-bottom" "0px"
+                domP
+                    [ Web.domStyle "overflow-wrap" "break-word"
+                    , Web.domStyle "white-space" "normal"
+                    , Web.domStyle "line-height" "1.25"
+                    , Web.domStyle "margin-top" "0px"
+                    , Web.domStyle "margin-bottom" "0px"
                     ]
                     (parts
                         |> List.map
@@ -205,56 +226,56 @@ articleContentUi context =
                     )
 
             Articles.ElmCode elmCode ->
-                Html.pre
-                    [ Html.Attributes.style "margin-top" "0px"
-                    , Html.Attributes.style "margin-bottom" "0px"
-                    , Html.Attributes.style "overflow" "scroll"
-                    , Html.Attributes.style "overflow-y" "hidden"
-                    , Html.Attributes.style "scrollbar-color"
+                domPre
+                    [ Web.domStyle "margin-top" "0px"
+                    , Web.domStyle "margin-bottom" "0px"
+                    , Web.domStyle "overflow" "scroll"
+                    , Web.domStyle "overflow-y" "hidden"
+                    , Web.domStyle "scrollbar-color"
                         ([ interactiveColor context.theme |> Color.toCssString
                          , " "
                          , Color.rgba 0 0 0 0 |> Color.toCssString
                          ]
                             |> String.concat
                         )
-                    , Html.Attributes.style "scrollbar-width" "thin"
-                    , Html.Attributes.style "white-space" "pre-line"
-                    , Html.Attributes.style "width" "fit-content"
-                    , Html.Attributes.style "min-width" "100%"
-                    , Html.Attributes.style "width" "0px"
+                    , Web.domStyle "scrollbar-width" "thin"
+                    , Web.domStyle "white-space" "pre-line"
+                    , Web.domStyle "width" "fit-content"
+                    , Web.domStyle "min-width" "100%"
+                    , Web.domStyle "width" "0px"
                     ]
-                    [ Html.code
-                        [ Html.Attributes.style "white-space" "pre"
-                        , Html.Attributes.style "word-spacing" "normal"
-                        , Html.Attributes.style "word-break" "normal"
-                        , Html.Attributes.style "overflow-wrap" "normal"
-                        , Html.Attributes.style "hyphens" "none"
-                        , Html.Attributes.style "font-size" "1rem"
+                    [ Web.domElement "code"
+                        [ Web.domStyle "white-space" "pre"
+                        , Web.domStyle "word-spacing" "normal"
+                        , Web.domStyle "word-break" "normal"
+                        , Web.domStyle "overflow-wrap" "normal"
+                        , Web.domStyle "hyphens" "none"
+                        , Web.domStyle "font-size" "1rem"
                         ]
                         [ elmCode |> elmCodeUi context.theme [] ]
                     ]
 
             Articles.Sequence contentList ->
-                Html.div
+                domDiv
                     []
                     (contentList
                         |> List.map (\item -> item |> articleContentUi context)
-                        |> List.intersperse (Html.br [] [])
+                        |> List.intersperse (domBr [] [])
                     )
 
             Articles.UnorderedList unorderedList ->
-                Html.ul
-                    [ Html.Attributes.style "padding" "14 0 14 20"
+                Web.domElement "ul"
+                    [ Web.domStyle "padding" "14 0 14 20"
                     ]
                     (unorderedList
                         |> List.map
                             (\item ->
-                                Html.li []
-                                    [ item
-                                        |> articleContentUi context
+                                Web.domElement "li"
+                                    []
+                                    [ item |> articleContentUi context
                                     ]
                             )
-                        |> List.intersperse (Html.br [] [])
+                        |> List.intersperse (domBr [] [])
                     )
 
 
@@ -299,37 +320,37 @@ monthToInt =
                 12
 
 
-paragraphPartUi : { theme : Theme } -> Articles.ParagraphPart -> Html.Html event_
+paragraphPartUi : { theme : Theme } -> Articles.ParagraphPart -> Web.DomNode event_
 paragraphPartUi context =
     \paragraphPart ->
         case paragraphPart of
             Articles.Text string ->
-                Html.text string
+                Web.domText string
 
             Articles.Italic string ->
-                Html.em [] [ Html.text string ]
+                Web.domElement "em" [] [ Web.domText string ]
 
             Articles.InlineElmCode elmCode ->
                 elmCode
                     |> elmCodeUi context.theme
-                        [ Html.Attributes.style "font-size" "1rem"
+                        [ Web.domStyle "font-size" "1rem"
                         ]
 
             Articles.Link link ->
                 linkUi context
                     { url = link.url
-                    , label = Html.text link.description
+                    , label = Web.domText link.description
                     }
 
 
-domFontSizePercentage : Float -> Html.Attribute event_
+domFontSizePercentage : Float -> Web.DomModifier event_
 domFontSizePercentage heightInRem =
-    Html.Attributes.style "font-size" ((heightInRem |> String.fromFloat) ++ "rem")
+    Web.domStyle "font-size" ((heightInRem |> String.fromFloat) ++ "rem")
 
 
-domBackgroundColor : Color -> Html.Attribute event_
+domBackgroundColor : Color -> Web.DomModifier event_
 domBackgroundColor color =
-    Html.Attributes.style "background-color" (color |> Color.toCssString)
+    Web.domStyle "background-color" (color |> Color.toCssString)
 
 
 blackThemeColorToWhiteTheme : Color -> Color
@@ -361,35 +382,36 @@ interactiveColorForBlackTheme =
     Color.rgb 0.49 0.83 1
 
 
-linkUi : { theme : Theme } -> { url : String, label : Html.Html event } -> Html.Html event
+linkUi : { theme : Theme } -> { url : String, label : Web.DomNode event } -> Web.DomNode event
 linkUi context config =
-    Html.a
-        [ Html.Attributes.href config.url
-        , Html.Attributes.style "border-bottom" "1px"
-        , Html.Attributes.style "border-color" (interactiveColor context.theme |> Color.toCssString)
+    Web.domElement "a"
+        [ Web.domAttribute "href" config.url
+        , Web.domStyle "border-bottom" "1px"
+        , Web.domStyle "border-color" (interactiveColor context.theme |> Color.toCssString)
         , domFontColor (interactiveColor context.theme)
         ]
         [ config.label ]
 
 
-elmCodeUi : Theme -> List (Html.Attribute event) -> (ElmSyntaxHighlight.SyntaxHighlightable -> Html event)
+elmCodeUi : Theme -> List (Web.DomModifier event) -> (ElmSyntaxHighlight.SyntaxHighlightable -> Web.DomNode event)
 elmCodeUi theme additionalDomModifiers =
     \syntaxHighlightable ->
-        Html.code []
+        Web.domElement "code"
+            []
             (syntaxHighlightable
                 |> List.map
                     (\segment ->
-                        Html.code
+                        Web.domElement "code"
                             (case segment.syntaxKind of
                                 Nothing ->
                                     additionalDomModifiers
 
                                 Just syntaxKind ->
-                                    Html.Attributes.style "color"
+                                    Web.domStyle "color"
                                         (syntaxKind |> syntaxKindToColor theme |> Color.toCssString)
                                         :: additionalDomModifiers
                             )
-                            [ Html.text segment.string
+                            [ Web.domText segment.string
                             ]
                     )
             )
@@ -433,12 +455,12 @@ syntaxKindToColorForBlackTheme =
                 Color.rgb 0.55 0.75 1
 
 
-domFontColor : Color -> Html.Attribute event_
+domFontColor : Color -> Web.DomModifier event_
 domFontColor color =
-    Html.Attributes.style "color" (color |> Color.toCssString)
+    Web.domStyle "color" (color |> Color.toCssString)
 
 
-port toJS : Json.Encode.Value -> Cmd msg_
+port toJs : Json.Encode.Value -> Cmd msg_
 
 
-port fromJS : (Json.Decode.Value -> msg) -> Sub msg
+port fromJs : (Json.Decode.Value -> msg) -> Sub msg
