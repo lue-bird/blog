@@ -109,6 +109,7 @@ ui state =
             , Web.domStyle "padding-right" "19px"
             , Web.domStyle "max-width" "700px"
             , Web.domStyle "margin" "auto"
+            , Web.domStyle "overflow" "hidden"
             ]
             [ domButton
                 [ domBackgroundColor (foregroundColor state.theme)
@@ -229,7 +230,7 @@ articleContentUi context =
                 domPre
                     [ Web.domStyle "margin-top" "0px"
                     , Web.domStyle "margin-bottom" "0px"
-                    , Web.domStyle "overflow" "scroll"
+                    , Web.domStyle "overflow" "auto"
                     , Web.domStyle "overflow-y" "hidden"
                     , Web.domStyle "scrollbar-color"
                         ([ interactiveColor context.theme |> Color.toCssString
@@ -241,6 +242,7 @@ articleContentUi context =
                     , Web.domStyle "scrollbar-width" "thin"
                     , Web.domStyle "white-space" "pre-line"
                     , Web.domStyle "width" "fit-content"
+                    , Web.domStyle "max-width" "100%"
                     , Web.domStyle "min-width" "100%"
                     , Web.domStyle "width" "0px"
                     ]
