@@ -23,10 +23,10 @@ function applyEOL2() {
     return {
         name: 'apply-elm-optimize-level-2',
 
-        transform(src, id) {
+        async transform(src, id) {
             if (jsFileRegex.test(id)) {
                 return {
-                    code: elmOptimizeLevel2.transform(src, true),
+                    code: await elmOptimizeLevel2.transform(src, true),
                     map: null
                 }
             }
