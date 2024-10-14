@@ -7,7 +7,6 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
-            "albertdahlin/elm-posix": "1.1.0",
             "dillonkearns/elm-rss": "2.0.3",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
@@ -17,6 +16,8 @@
             "elm/url": "1.0.0",
             "elm-community/list-extra": "8.7.0",
             "elm-community/string-extra": "4.0.1",
+            "lue-bird/elm-state-interface-experimental": "5.0.0",
+            "miniBill/elm-fast-dict": "1.2.1",
             "stil4m/elm-syntax": "7.3.2",
             "zwilias/elm-html-string": "2.0.2"
         },
@@ -30,9 +31,13 @@
             "elm/parser": "1.1.0",
             "elm/regex": "1.0.0",
             "elm/virtual-dom": "1.0.3",
+            "ianmackenzie/elm-units": "2.10.0",
             "justinmimbs/date": "4.0.1",
             "justinmimbs/time-extra": "1.1.1",
             "lazamar/dict-parser": "1.0.2",
+            "lue-bird/elm-no-record-type-alias-constructor-function": "1.0.8",
+            "lydell/elm-app-url": "1.0.4",
+            "miniBill/elm-rope": "1.0.0",
             "miniBill/elm-unicode": "1.0.3",
             "rtfeldman/elm-hex": "1.0.0",
             "ryannhg/date-format": "2.3.0",

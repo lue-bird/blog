@@ -24,8 +24,7 @@ Links to the tools:
   - [lydell/elm-watch](https://lydell.github.io/elm-watch/)
 
 ### contributing
-Before building the new version, `cd build-step` and run
+Before building the new version, generate the new rss feed with
 ```bash
-elm-cli run src/Build.elm $EPOCHSECONDS
+node build-step/src/index.elm
 ```
-to generate the new rss feed.
