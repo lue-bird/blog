@@ -3,7 +3,7 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Mon, 14 Oct 2024 11:34:33 +0000</lastBuildDate>
+<lastBuildDate>Mon, 14 Oct 2024 11:44:04 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
 <title>Your AST allows lists with different element types. Why?</title>
@@ -12,7 +12,7 @@ And what about operations like (==) on infinitely nested triples?</description>
 <link>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</link>
 <guid>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</guid>
 <pubDate>Sat, 21 Oct 2023 00:00:00 +0000</pubDate>
-<content:encoded><![CDATA[&lt;section&gt;&lt;h3&gt;Your AST allows lists with different element types. Why?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;There was a time when &lt;a href=&quot;https://github.com/mdgriffith/elm-codegen&quot;&gt;elm-codegen&lt;/a&gt; and friends like &lt;a href=&quot;https://github.com/MartinSStewart/elm-review-todo-it-for-me&quot;&gt;review-todo-it-for-me&lt;/a&gt; were not around. Code generation felt under-explored and in need of a framework to generate helpers like record update functions, codecs, html from strings and whatever based on existing elm code.&lt;/p&gt;&lt;p&gt;A good chunk of work later there were significant parts in place of an ambitious &lt;a href=&quot;https://github.com/lue-bird/generate-elm&quot;&gt;lue-bird/generate-elm&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;To generate elm code, the decision was made to not directly use &lt;a href=&quot;https://dark.elm.dmy.fr/packages/stil4m/elm-syntax/latest/&quot;&gt;elm-syntax&lt;/a&gt; for &lt;i&gt;countless&lt;/i&gt; reasons like not allowing users to generate &lt;code&gt;3.2 // &apos;a&apos;&lt;/code&gt; or avoiding empty nodes.&lt;/p&gt;&lt;p&gt;Creating a perfectly type-safe AST + builder was actually working out surprisingly well and was both challenging and fun... until problems like the one in this article&apos;s title came up.&lt;/p&gt;&lt;p&gt;And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
+<content:encoded>&lt;section&gt;&lt;h3&gt;Your AST allows lists with different element types. Why?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;There was a time when &lt;a href=&quot;https://github.com/mdgriffith/elm-codegen&quot;&gt;elm-codegen&lt;/a&gt; and friends like &lt;a href=&quot;https://github.com/MartinSStewart/elm-review-todo-it-for-me&quot;&gt;review-todo-it-for-me&lt;/a&gt; were not around. Code generation felt under-explored and in need of a framework to generate helpers like record update functions, codecs, html from strings and whatever based on existing elm code.&lt;/p&gt;&lt;p&gt;A good chunk of work later there were significant parts in place of an ambitious &lt;a href=&quot;https://github.com/lue-bird/generate-elm&quot;&gt;lue-bird/generate-elm&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;To generate elm code, the decision was made to not directly use &lt;a href=&quot;https://dark.elm.dmy.fr/packages/stil4m/elm-syntax/latest/&quot;&gt;elm-syntax&lt;/a&gt; for &lt;i&gt;countless&lt;/i&gt; reasons like not allowing users to generate &lt;code&gt;3.2 // &apos;a&apos;&lt;/code&gt; or avoiding empty nodes.&lt;/p&gt;&lt;p&gt;Creating a perfectly type-safe AST + builder was actually working out surprisingly well and was both challenging and fun... until problems like the one in this article&apos;s title came up.&lt;/p&gt;&lt;p&gt;And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
 Starting with a classic but unsafe AST:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
     = String String
     | Int Int
@@ -281,7 +281,7 @@ type EqualsExpression
     | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
     | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
     -- even records!
-    | EqualsOfRecord (Dict String EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]></content:encoded>
+    | EqualsOfRecord (Dict String EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;</content:encoded>
 </item>
 <item>
 <title>A funny idea for representing a fraction safely</title>
@@ -289,7 +289,7 @@ type EqualsExpression
 <link>https://lue-bird.github.io/blog/%23A%20funny%20idea%20for%20representing%20a%20fraction%20safely</link>
 <guid>https://lue-bird.github.io/blog/%23A%20funny%20idea%20for%20representing%20a%20fraction%20safely</guid>
 <pubDate>Wed, 17 Jan 2024 00:00:00 +0000</pubDate>
-<content:encoded><![CDATA[&lt;section&gt;&lt;h3&gt;A funny idea for representing a fraction safely&lt;/h3&gt;&lt;div&gt;&lt;p&gt;A definition like ↓ seems intuitive&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Rational
+<content:encoded>&lt;section&gt;&lt;h3&gt;A funny idea for representing a fraction safely&lt;/h3&gt;&lt;div&gt;&lt;p&gt;A definition like ↓ seems intuitive&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Rational
     = N0
     | Signed { sign : Sign, numerator : Natural1Up, denominator : Natural1Up }
 
@@ -353,7 +353,7 @@ split the list into the last element which can not contain &lt;code&gt;Nothing&l
             { beforeLast : List (Maybe { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up })
             , last : { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up }
             }
-        }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;beautiful.&lt;/p&gt;&lt;p&gt;Extra: Implementing operations on these number types is ongoing in &lt;a href=&quot;https://github.com/lue-bird/elm-number-safe&quot;&gt;elm-number-safe&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]></content:encoded>
+        }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;beautiful.&lt;/p&gt;&lt;p&gt;Extra: Implementing operations on these number types is ongoing in &lt;a href=&quot;https://github.com/lue-bird/elm-number-safe&quot;&gt;elm-number-safe&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;</content:encoded>
 </item>
 <item>
 <title>Wrapping wrappers safely: typed-value 8.0.0</title>
@@ -362,7 +362,7 @@ typed-value 8.0.0 makes this safe.</description>
 <link>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</link>
 <guid>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</guid>
 <pubDate>Mon, 23 Oct 2023 12:52:16 +0000</pubDate>
-<content:encoded><![CDATA[&lt;section&gt;&lt;h3&gt;Wrapping wrappers safely: typed-value 8.0.0&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s build a generic set type which doesn&apos;t store functions but still safely allows custom, user-provided order functions similar to &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt;. Showing the power of being able to wrap a generic typed, enabled by &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; 8 (we&apos;ll get to what this means exactly, don&apos;t worry)&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias GenericSet element uniqueOrder = ...
+<content:encoded>&lt;section&gt;&lt;h3&gt;Wrapping wrappers safely: typed-value 8.0.0&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s build a generic set type which doesn&apos;t store functions but still safely allows custom, user-provided order functions similar to &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt;. Showing the power of being able to wrap a generic typed, enabled by &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; 8 (we&apos;ll get to what this means exactly, don&apos;t worry)&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias GenericSet element uniqueOrder = ...
 type alias Ordering subject unique = ...
 
 insert :
@@ -476,7 +476,7 @@ sortingKey toKeyTyped keyOrdering =
                 { toKey = toKey
                 , keyOrder = keyOrder
                 }
-            )&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/section&gt;]]></content:encoded>
+            )&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/section&gt;</content:encoded>
 </item>
 <item>
 <title>The simplest app definition</title>
@@ -484,7 +484,7 @@ sortingKey toKeyTyped keyOrdering =
 <link>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</link>
 <guid>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</guid>
 <pubDate>Sat, 06 Apr 2024 17:53:22 +0000</pubDate>
-<content:encoded><![CDATA[&lt;section&gt;&lt;h3&gt;The simplest app definition&lt;/h3&gt;&lt;div&gt;&lt;p&gt;🔦 Imagine a flashlight app with a switch that turns on the light when it&apos;s off and vice versa.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 The app can detect the exact moment the switch is toggled. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ The app can turn the physical light on or off&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;So in general, an app definition has to allow&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 detecting and remembering what happens on the outside&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ triggering actions on the outside&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;In the simplest app definition I could come up with, we end up with&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;💭 A value to represent what the app remembers or better: what it knows. Let&apos;s call it &lt;i&gt;state&lt;/i&gt;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;💭 A state to represent that the app has just been started and so doesn&apos;t remember anything&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ A way to trigger actions on the outside based on what the app knows&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;so in code this would look something like this:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type InterfaceWithTheOutside whatComesBack
+<content:encoded>&lt;section&gt;&lt;h3&gt;The simplest app definition&lt;/h3&gt;&lt;div&gt;&lt;p&gt;🔦 Imagine a flashlight app with a switch that turns on the light when it&apos;s off and vice versa.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 The app can detect the exact moment the switch is toggled. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ The app can turn the physical light on or off&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;So in general, an app definition has to allow&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 detecting and remembering what happens on the outside&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ triggering actions on the outside&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;In the simplest app definition I could come up with, we end up with&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;💭 A value to represent what the app remembers or better: what it knows. Let&apos;s call it &lt;i&gt;state&lt;/i&gt;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;💭 A state to represent that the app has just been started and so doesn&apos;t remember anything&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ A way to trigger actions on the outside based on what the app knows&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;so in code this would look something like this:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type InterfaceWithTheOutside whatComesBack
     = DetectorOnTheOutside (DetectorOnTheOutside whatComesBack)
     | ActionOnTheOutside ActionOnTheOutside
 
@@ -551,7 +551,7 @@ flashlightApp =
                     [ ActionOnTheOutside PhysicalLightOff
                     , DetectorOnTheOutside (SwitchToggled LightOn)
                     ]
-    }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Pretty cool, ey?&lt;/p&gt;&lt;p&gt;And we almost by accident managed to avoid hard problems that almost every framework has:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Try going through frameworks you already know and find cases where these issues pop up.&lt;/p&gt;&lt;p&gt;Good news at the end: For the web, this architecture has already been implemented: &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/&quot;&gt;elm-state-interface&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]></content:encoded>
+    }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Pretty cool, ey?&lt;/p&gt;&lt;p&gt;And we almost by accident managed to avoid hard problems that almost every framework has:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Try going through frameworks you already know and find cases where these issues pop up.&lt;/p&gt;&lt;p&gt;Good news at the end: For the web, this architecture has already been implemented: &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/&quot;&gt;elm-state-interface&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;</content:encoded>
 </item>
 </channel>
 </rss>
