@@ -73,6 +73,8 @@ rssGenerate buildData =
         , items = Articles.all |> articleSectionsToRssItems
         , siteUrl = "https://lue-bird.github.io/blog/"
         }
+        |> String.replace "&lt;![CDATA[" "<![CDATA["
+        |> String.replace "]]&gt;" "]]>"
 
 
 articleSectionsToRssItems : Articles.Content -> List Rss.Item
