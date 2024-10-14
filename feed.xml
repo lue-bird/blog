@@ -1,0 +1,557 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+<title>lue blog</title>
+<description>lue&apos;s thoughts</description>
+<link>https://lue-bird.github.io/blog/</link>
+<lastBuildDate>Mon, 14 Oct 2024 10:22:47 +0000</lastBuildDate>
+<generator>dillonkearns/elm-rss</generator>
+<item>
+<title>Your AST allows lists with different element types. Why?</title>
+<description>Can you represent a list expression where all elements have the same type? Yes.
+And what about operations like (==) on infinitely nested triples?</description>
+<link>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</link>
+<guid>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</guid>
+<pubDate>Sat, 21 Oct 2023 00:00:00 +0000</pubDate>
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;Your AST allows lists with different element types. Why?&lt;/h3&gt;&lt;div&gt;&lt;p&gt;There was a time when &lt;a href=&quot;https://github.com/mdgriffith/elm-codegen&quot;&gt;elm-codegen&lt;/a&gt; and friends like &lt;a href=&quot;https://github.com/MartinSStewart/elm-review-todo-it-for-me&quot;&gt;review-todo-it-for-me&lt;/a&gt; were not around. Code generation felt under-explored and in need of a framework to generate helpers like record update functions, codecs, html from strings and whatever based on existing elm code.&lt;/p&gt;&lt;p&gt;A good chunk of work later there were significant parts in place of an ambitious &lt;a href=&quot;https://github.com/lue-bird/generate-elm&quot;&gt;lue-bird/generate-elm&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;To generate elm code, the decision was made to not directly use &lt;a href=&quot;https://dark.elm.dmy.fr/packages/stil4m/elm-syntax/latest/&quot;&gt;elm-syntax&lt;/a&gt; for &lt;i&gt;countless&lt;/i&gt; reasons like not allowing users to generate &lt;code&gt;3.2 // &apos;a&apos;&lt;/code&gt; or avoiding empty nodes.&lt;/p&gt;&lt;p&gt;Creating a perfectly type-safe AST + builder was actually working out surprisingly well and was both challenging and fun... until problems like the one in this article&apos;s title came up.&lt;/p&gt;&lt;p&gt;And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
+Starting with a classic but unsafe AST:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
+    = String String
+    | Int Int
+    | Bool Bool
+    | List (List Expression)
+    | Equals { left : Expression, right : Expression }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;↑ This is &quot;probably fine&quot; ™ practically but...&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;it allows users to generate incorrect expressions&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List [ String &quot;My name is &quot;, Int 5 ]&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;or&lt;/p&gt;&lt;pre&gt;&lt;code&gt;Equals { left = String &quot;High&quot;, right = Int 5 }&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;it has impossible variants you are forced to case on&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;How hard can it be to make this small language completely type-safe?&lt;/p&gt;&lt;p&gt;Naively, we could represent each kind of list and equals by it&apos;s own variant&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
+    = String String
+    | Int Int
+    | Bool Bool
+    | List ListExpression
+    | Equals EqualsExpression
+
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpression
+    = EqualsOfString (EqualsOf String)
+    | EqualsOfInt (EqualsOf Int)
+    | EqualsOfBool (EqualsOf BoolExpression)
+    | EqualsOfList (EqualsOf ??)
+
+type ListExpression
+    = ListOfString (List String)
+    | ListOfInt (List Int)
+    | ListOfBool (List BoolExpression)
+    | ListOfList (List ??)
+
+type BoolExpression
+    = BoolLiteral Bool
+    | EqualsExpression EqualsExpression&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;i&gt;??&lt;/i&gt; just keep on expanding, let&apos;s take for example the case &lt;code&gt;EqualsOfList&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
+    = {- ... | -} EqualsOfList EqualsExpressionOfList
+
+type EqualsExpressionOfList
+    = EqualsOfListOfString (EqualsOf (List String))
+    | EqualsOfListOfInt (EqualsOf (List Int))
+    | EqualsOfListOfBool (EqualsOf (List BoolExpression))
+    | EqualsOfListOfList (EqualsOf (List ??))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We just run into the same problem recursively.&lt;/p&gt;&lt;p&gt;We can apply some smart-smart to solve this!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpression string int bool
+    = EqualsOfString (EqualsOf string)
+    | EqualsOfInt (EqualsOf int)
+    | EqualsOfBool (EqualsOf bool)
+    | EqualsOfList (EqualsExpression (List string) (List int) (List bool))
+
+
+type ListExpression string int bool
+    = ListOfString (List string)
+    | ListOfInt (List int)
+    | ListOfBool (List bool)
+    | ListOfList (ListExpression (List string) (List int) (List bool))
+
+type BoolKnown
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)
+
+type Expression
+    = String String
+    | Int Int
+    | Bool Bool
+    | List (ListExpression String Int BoolKnown)
+    | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Quite cool how this works. For example, to represent a list of strings, we go down &lt;code&gt;ListOfString String&lt;/code&gt; with the String type directly passed from above. And if the string list is the element type of another list, we go through &lt;code&gt;ListOfList (ListOfString (List String))&lt;/code&gt; where the &quot;wrapping into a list type&quot; is passed down recursively.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
+    (ListOfList
+        (ListOfBool
+            [ [ BoolLiteral True ]
+            , [ Equals
+                    (EqualsOfList
+                        (EqualsOfString
+                            { left = [ &quot;Hello&quot;, &quot;world&quot; ]
+                            , right = [ &quot;Hello&quot;, &quot;expression&quot; ]
+                            }
+                        )
+                    )
+              , BoolLiteral False
+              ]
+            ]
+        )
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;-- with Outer being (Type -&amp;gt; Type)
+type ByExpressionType string int bool
+    = String (Outer string)
+    | Int (Outer int)
+    | Bool (Outer bool)
+    | List (ByExpressionType (List string) (List int) (List bool))
+
+type alias Expression =
+    -- with Outer a = a
+    ByExpressionType String Int BoolKnown
+
+type alias ListExpression =
+    -- with Outer a = List a
+    ByExpressionType String Int BoolKnown
+
+type alias EqualsExpression =
+    -- with Outer a = EqualsOf a
+    ByExpressionType String Int BoolKnown&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;code&gt;Outer&lt;/code&gt; is what makes this tricky since &lt;code&gt;Outer&lt;/code&gt; can only be at that level: We want to represent &quot;list of a == list of a&quot;, not &quot;list of (a == a)&quot;.&lt;/p&gt;&lt;p&gt;Having one type for all expression kinds in a single place is still a nice idea, tho:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool list
+    = String string
+    | Int int
+    | Bool bool
+    | List list
+
+type alias Expression =
+    ByExpressionType String Int BoolKnown (ListExpression String Int BoolKnown)
+
+type ListExpression string int bool =
+    ByExpressionType
+        (List string)
+        (List int)
+        (List bool)
+        (ListExpression (List string) (List int) (List bool))
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type alias EqualsExpression string int bool =
+    ByExpressionType
+        (EqualsOf string)
+        (EqualsOf int)
+        (EqualsOf bool)
+        (EqualsExpression string int bool)
+
+type BoolKnown
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;which actually looks pretty nice?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
+    (List
+        (Bool
+            [ [ BoolLiteral True ]
+            , [ Equals
+                    (List
+                        (String
+                            { left = [ &quot;Hello&quot;, &quot;world&quot; ]
+                            , right = [ &quot;Hello&quot;, &quot;expression&quot; ]
+                            }
+                        )
+                    )
+              , BoolLiteral False
+              ]
+            ]
+        )
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Well, it doesn&apos;t compile because &quot;recursive type aliases&quot; but the fix is as simple as converting each alias to a &lt;code&gt;type&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ListExpression string int bool
+    = ListExpression
+        (ByExpressionType
+            (List string)
+            (List int)
+            (List bool)
+            (ListExpression (List string) (List int) (List bool))
+        )
+
+type EqualsExpression string int bool
+    = EqualsExpression
+        (ByExpressionType
+            (EqualsOf string)
+            (EqualsOf int)
+            (EqualsOf bool)
+            (EqualsExpression (List string) (List int) (List bool))
+        )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;the result looks less nice but acceptable I guess&lt;/p&gt;&lt;pre&gt;&lt;code&gt;List
+    (ListExpression
+        (List
+            (ListExpression
+                (Bool
+                    [ [ BoolLiteral True ]
+                    , [ Equals
+                            (EqualsExpression
+                                (List
+                                    (EqualsExpression
+                                        (String
+                                            { left = [ &quot;Hello&quot;, &quot;world&quot; ]
+                                            , right = [ &quot;Hello&quot;, &quot;expression&quot; ]
+                                            }
+                                        )
+                                    )
+                                )
+                            )
+                      , BoolLiteral False
+                      ]
+                    ]
+                )
+            )
+        )
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Let&apos;s add triples to that language&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type ByExpressionType string int bool triple list
+    = String string
+    | Int int
+    | Bool bool
+    | Triple triple
+    | List list
+
+type Expression
+    = Expression
+        (ByExpressionType
+            String
+            Int
+            BoolKnown
+            (TripleOf Expression Expression Expression)
+            (ListExpression String Int BoolKnown)
+        )
+  
+type alias TripleOf first second third =
+    { first : first, second : second, third : third }
+
+type ListExpression string int bool
+    = ListExpression
+        (ByExpressionType
+            (List string)
+            (List int)
+            (List bool)
+            (List ??)
+            (ListExpression (List string) (List int) (List bool))
+        )
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpression string int bool
+    = EqualsExpression
+        (ByExpressionType
+            (EqualsOf string)
+            (EqualsOf int)
+            (EqualsOf bool)
+            (EqualsOf ??)
+            (EqualsExpression string int bool)
+        )
+
+type BoolKnown
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The pieces don&apos;t seem to fit.&lt;/p&gt;&lt;p&gt;Do we need to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?&lt;/p&gt;&lt;p&gt;Tuples and especially triples made past lue lose hope of being able to safely represent them like this in an ast.
+So much so in fact that past lue was slowly losing interest and abandoned this project after a while. (╥﹏╥)&lt;/p&gt;&lt;p&gt;Much, much later... in fact only when writing this did &lt;i&gt;two&lt;/i&gt;-ish solutions reveal themselves that would have saved a good chunk of past lue&apos;s sanity.
+I know you&apos;re smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
+Or just look at the solutions below.&lt;/p&gt;&lt;p&gt;First the -ish solution:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Expression
+    = Int Int
+    | Tuple (TupleOf Expression Expression)
+    | Equals EqualsExpression
+
+type alias TupleOf first second =
+    { first : first, second : second }
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpressionByType int equals
+    = EqualsOfInt (EqualsOf int)
+    | EqualsOfEqualsExpression (EqualsOf equals)
+    | EqualsOfTupleExtendedByFirstInt (EqualsExpressionByType (TupleOf Int int) (TupleOf Int equals))
+    | EqualsOfTupleExtendedByFirstEqualsExpression (EqualsExpressionByType (TupleOf EqualsExpression int) (TupleOf EqualsExpression equals))
+    | EqualsOfTupleExtendedBySecondInt (EqualsExpressionByType (TupleOf int Int) (TupleOf equals Int))
+    | EqualsOfTupleExtendedBySecondEqualsExpression (EqualsExpressionByType (TupleOf int EqualsExpression) (TupleOf equals EqualsExpression))
+
+type EqualsExpression
+    = EqualsExpression (EqualsExpressionByType Int EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Expressions written down look passable. Here for &lt;code&gt;( 0, 0 == 0 ) == ( 0, 0 == 0 )&lt;/code&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;Equals
+    (EqualsExpression
+        (EqualsOfTupleExtendedByFirstInt
+            (EqualsOfEqualsExpression
+                { left =
+                    { first = 0
+                    , second = EqualsExpression (EqualsOfInt { left = 0, right = 0 })
+                    }
+                , right =
+                    { first = 0
+                    , second = EqualsExpression (EqualsOfInt { left = 0, right = 0 })
+                    }
+                }
+            )
+        )
+    )&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The one unsatisfying parts&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;&lt;code&gt;ExtendFirstX (OfY xy)&lt;/code&gt; and &lt;code&gt;ExtendedSecondY (OfX xy)&lt;/code&gt; are equivalent if the &lt;code&gt;xy&lt;/code&gt; isn&apos;t nested further (and so only flat tuples are compared)&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;This, I&apos;m sure can be ironed out on the type level [Citation needed]&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/li&gt;&lt;li&gt;&lt;div&gt;&lt;p&gt;I cannot, even now, think of a safe equivalent for triples&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;If it exists, it probably also grows rapidly in variant count&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;If you think you found something, even if cursed, I beg you to drop me a line @lue on slack&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Strangely, with the second solution everything becomes eerily simple:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type EqualsExpression
+    = EqualsOfInt (EqualsOf Int)
+    | EqualsOfExpression (EqualsOf EqualsExpression)
+    | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
+    | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
+    -- even records!
+    | EqualsOfRecord (Dict String EqualsExpression)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Wtf?&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+</item>
+<item>
+<title>A funny idea for representing a fraction safely</title>
+<description>We can define non-opaque, safe number types where every value is unique.</description>
+<link>https://lue-bird.github.io/blog/%23A%20funny%20idea%20for%20representing%20a%20fraction%20safely</link>
+<guid>https://lue-bird.github.io/blog/%23A%20funny%20idea%20for%20representing%20a%20fraction%20safely</guid>
+<pubDate>Wed, 17 Jan 2024 00:00:00 +0000</pubDate>
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;A funny idea for representing a fraction safely&lt;/h3&gt;&lt;div&gt;&lt;p&gt;A definition like ↓ seems intuitive&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Rational
+    = N0
+    | Signed { sign : Sign, numerator : Natural1Up, denominator : Natural1Up }
+
+type Sign
+    = Positive
+    | Negative&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Looks pretty safe.
+Annoyingly,
+there can be different elm values that represent the same number
+since numerator and denominator can share factors, like 3/7 and 6/14.
+Checking these for equality would return false, ugh.
+Packages usually resolve this by making the type opaque – surprisingly, we can do better!&lt;/p&gt;&lt;p&gt;Just before we get to that, let&apos;s define &lt;code&gt;Natural1Up&lt;/code&gt;.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Natural1Up
+    = N1
+    | Successor Natural1Up&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;↑ This won&apos;t do. Just adding 1000000 + 1000000 would take 1000000 steps (in elm at least).&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Natural1Up
+    = Natural1Up (NonEmptyList Bit)
+
+type Bit
+    = O
+    | I&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;↑ looks the most intuitive but similar to the &lt;code&gt;Rational&lt;/code&gt; type above,
+if we allow users to prepend &lt;code&gt;O&lt;/code&gt;s, multiple elm values could represent the same number.&lt;/p&gt;&lt;p&gt;
+So... we do have to make the type opaque, just as &lt;a href=&quot;https://elm-radio.com/episode/intro-to-opaque-types&quot;&gt;elm-radio taught us&lt;/a&gt;?
+Not so fast, the solution doesn&apos;t actually mean more work:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Natural1Up
+    = Natural1Up { bit1FollowedBy : List Bit }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A little awkward but it mirrors reality.
+Oki, enough about natural numbers. Have a look at this cute representation of a rational number:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Rational =
+    Dict
+        Prime
+        { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator
+        , exponent : Natural1Up
+        }
+
+type Prime
+    = PrimeAtIndex Natural0Up
+
+type PrimeFactorInNumeratorOrDenominator
+    = PrimeFactorInNumerator
+    | PrimeFactorInDenominator&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For the relevant primes, we write down whether the numerator or denominator has its corresponding prime as a factor and how often.
+This works because in a simplified fraction, a prime can&apos;t be both a factor of the numerator and the denominator.
+Looks all cool and clean!
+But oh well..., actually making such a dict without opaque types is even beyond what lue can do...&lt;/p&gt;&lt;p&gt;Turns out we don&apos;t need a dict for this.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Rational
+    = N0
+    | Signed
+        { sign : Sign
+        , absolute :
+            List (Maybe { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up })
+        }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Each index in the list corresponds to the same index in the list of primes: &lt;code&gt;[ 2, 3, 5, 7, 11, 13, 17, ... ]&lt;/code&gt;.
+Then, for each index, we write down whether the numerator or denominator has its corresponding prime as a factor and how often,
+or if neither of them have that factor.
+So to represent e.g. 8/5:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;Signed
+    { sign = Positive
+    , absolute =
+        [ {-2-} Just { inNumeratorOrDenominator = PrimeFactorInNumerator, exponent = Natural.n3 }
+        , {-3-} Nothing
+        , {-5-} Just { inNumeratorOrDenominator = PrimeFactorInDenominator, exponent = Natural.n1 }
+        ]
+    }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You might have noticed that this is still not better than our original solution because users can add &lt;code&gt;Nothing&lt;/code&gt;s to the end of the list without the mathematical value changing.
+We can use a trick similar to the one we used for natural numbers:
+split the list into the last element which can not contain &lt;code&gt;Nothing&lt;/code&gt; and everything before which can:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Rational
+    = N0
+    | Signed
+        { sign : Sign
+        , absolute :
+            { beforeLast : List (Maybe { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up })
+            , last : { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up }
+            }
+        }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;beautiful.&lt;/p&gt;&lt;p&gt;Extra: Implementing operations on these number types is ongoing in &lt;a href=&quot;https://github.com/lue-bird/elm-number-safe&quot;&gt;elm-number-safe&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+</item>
+<item>
+<title>Wrapping wrappers safely: typed-value 8.0.0</title>
+<description>Preserving the knowledge of what was wrapped when wrapping again.
+typed-value 8.0.0 makes this safe.</description>
+<link>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</link>
+<guid>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</guid>
+<pubDate>Mon, 23 Oct 2023 12:52:16 +0000</pubDate>
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;Wrapping wrappers safely: typed-value 8.0.0&lt;/h3&gt;&lt;div&gt;&lt;p&gt;Let&apos;s build a generic set type which doesn&apos;t store functions but still safely allows custom, user-provided order functions similar to &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt;. Showing the power of being able to wrap a generic typed, enabled by &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; 8 (we&apos;ll get to what this means exactly, don&apos;t worry)&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias GenericSet element uniqueOrder = ...
+type alias Ordering subject unique = ...
+
+insert :
+    Ordering element unique
+    -&amp;gt; element
+    -&amp;gt; (GenericSet element unique -&amp;gt; GenericSet element unique)
+insert elementOrdering elementToInsert = ...
+
+remove :
+    Ordering element unique
+    -&amp;gt; element
+    -&amp;gt; (GenericSet element unique -&amp;gt; GenericSet element unique)
+remove elementOrdering elementToRemove = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To guarantee that the order function inside a given &lt;code&gt;Ordering&lt;/code&gt; is the same for every operation,&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;each unique &lt;code&gt;Ordering&lt;/code&gt; needs to have a unique last type argument.&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;&lt;code&gt;GenericSet&lt;/code&gt; needs to enforce that all operations need an &lt;code&gt;Ordering&lt;/code&gt; with the same &lt;code&gt;unique&lt;/code&gt; type argument.&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Why not just use a normal opaque type which wraps the order function to order the elements instead of this &lt;code&gt;Ordering&lt;/code&gt; type? Not a bad idea! But try to get the actual order function out of any opaque type... Any attempts to create a public accessor don&apos;t quite work either, for example&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Ordering subject opaque =
+    { opaque : opaque, toFunction : opaque -&amp;gt; (( subject, subject ) -&amp;gt; Order) }
+
+fakeOrdering : Ordering ... RealOpaque
+fakeOrdering =
+    { opaque = realOrdering.opaque, toFunction = \_ -&amp;gt; fakeFunction }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Unlike opaque types, &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt; gives you control over who can access the inner order function:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Ordering subject tag =
+    Typed
+        Checked -- only constructible using the tag ↓
+        tag
+        Public -- everyone can access
+        (( subject, subject ) -&amp;gt; Order)&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;module Int.Order exposing (increasing, Increasing)
+
+increasing : Ordering Int Increasing
+increasing =
+    Typed.tag Increasing compare
+
+type Increasing
+    = Increasing -- variant not exposed&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;First attempt to fake it:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;fakeIntOrder : Ordering Int Int.Order.Increasing
+fakeIntOrder =
+    -- type error: is Tagged but should be Checked
+    Int.Order.increasing |&amp;gt; Typed.map (\_ -&amp;gt; \_ -&amp;gt; EQ)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Second attempt to fake it:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;module Int.FakeOrder exposing (increasing, Increasing)
+
+increasing : Ordering Int Increasing
+increasing =
+    Typed.tag Increasing (\_ -&amp;gt; EQ)
+
+type Increasing
+    = Increasing&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code&gt;GenericSet.empty
+    |&amp;gt; GenericSet.insert Int.Order.increasing 3
+    |&amp;gt; GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;All that was already possible way before 8.0.0.&lt;/p&gt;&lt;p&gt;Now... How do we define &lt;code&gt;type alias GenericSet element uniqueOrder = ...&lt;/code&gt; or an &lt;code&gt;Order.reverse&lt;/code&gt; which sorts in opposite order?&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse tag
+    = Reverse tag
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo (Reverse ??) (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Intuitively, you might want to reach for unsafe phantom types 🤮&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse reverseOrderTag = Reverse
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)
+
+reverseOops : Ordering subject orderTag -&amp;gt; Ordering subject (Reverse tag)
+reverseOops =
+    Typed.mapTo Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;code&gt;orderTag&lt;/code&gt; and &lt;code&gt;tag&lt;/code&gt; are different type variables, so the tag of the reversed ordering can accidentally be anything. It&apos;s a free variable :(&lt;/p&gt;&lt;p&gt;Here&apos;s a similarly buggy example:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type GenericSet element orderTag
+    = GenericSet (Internals element)
+
+fromListOops :
+    Ordering element tag
+    -&amp;gt; (List element -&amp;gt; GenericSet element orderTag)
+fromListOops elementOrdering =
+    \list -&amp;gt;
+        GenericSet (Internals.fromList (elementOrdering |&amp;gt; Typed.untag) list)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt; What&apos;s new in 8.0.0 is how we can preserve tags in the type while wrapping a &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/&quot;&gt;Typed&lt;/a&gt;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type Reverse
+    = Reverse
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject ( Reverse, tag )
+reverse =
+    Typed.mapToWrap Reverse (\order -&amp;gt; \( a, b ) -&amp;gt; order ( b, a ))&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Notice how we don&apos;t have access to the tag of the argument
+but can still safely show it in the signature.&lt;/p&gt;&lt;p&gt;We can use the same technique to finally fill in the &lt;code&gt;type alias GenericSet element uniqueOrder = ...&lt;/code&gt;:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias GenericSet element orderTag =
+    Typed Checked ( GenericSetTag, orderTag ) Internal (Internals element)
+
+type GenericSetTag = GenericSetTag -- variant not exposed
+
+fromList :
+    Ordering element tag
+    -&amp;gt; (List element -&amp;gt; GenericSet element tag)
+fromList elementOrdering =
+    \list -&amp;gt;
+        elementOrdering
+            |&amp;gt; Typed.mapToWrap GenericSetTag
+                (\orderFunction -&amp;gt; Internals.fromList orderFunction list)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type alias Reverse reverseOrderTag =
+    ( ReverseTag, reverseOrderTag )
+
+type ReverseTag
+    = Reverse
+
+reverse : Ordering subject tag -&amp;gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapToWrap Reverse (\order -&amp;gt; \a b -&amp;gt; order b a)&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Still as safe and readers will be happy, too!&lt;/p&gt;&lt;p&gt;I&apos;ll leave you with one last example, showing how &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/&quot;&gt;KeysSet&lt;/a&gt;, which is more like a dict than a set, safely stores its sorting:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type SortingTag
+    = Sorting
+
+type alias Sorting element tag key =
+    Typed
+        Checked
+        ( SortingTag, tag )
+        Public
+        { toKey : element -&amp;gt; key
+        , keyOrder : element -&amp;gt; element -&amp;gt; Order
+        }
+
+sortingKey :
+    Typed Checked keyTag Public (element -&amp;gt; key)
+    -&amp;gt; Ordering key keyOrderTag
+    -&amp;gt; Sorting element ( keyTag, keyOrderTag ) key
+sortingKey toKeyTyped keyOrdering =
+    toKeyTyped
+        |&amp;gt; Typed.wrapAnd keyOrdering
+        --: Typed ( keyTag, keyOrderTag ) Tagged Public {- ... -}
+        |&amp;gt; Typed.mapToWrap Sorting
+            (\( toKey, keyOrder ) -&amp;gt;
+                { toKey = toKey
+                , keyOrder = keyOrder
+                }
+            )&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+</item>
+<item>
+<title>The simplest app definition</title>
+<description>The simplest architecture to define apps</description>
+<link>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</link>
+<guid>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</guid>
+<pubDate>Sat, 06 Apr 2024 17:53:22 +0000</pubDate>
+<content:encoded>&lt;![CDATA[&lt;section&gt;&lt;h3&gt;The simplest app definition&lt;/h3&gt;&lt;div&gt;&lt;p&gt;🔦 Imagine a flashlight app with a switch that turns on the light when it&apos;s off and vice versa.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 The app can detect the exact moment the switch is toggled. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ The app can turn the physical light on or off&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;So in general, an app definition has to allow&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;📡💭 detecting and remembering what happens on the outside&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ triggering actions on the outside&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;In the simplest app definition I could come up with, we end up with&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;💭 A value to represent what the app remembers or better: what it knows. Let&apos;s call it &lt;i&gt;state&lt;/i&gt;&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;💭 A state to represent that the app has just been started and so doesn&apos;t remember anything&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;✎ A way to trigger actions on the outside based on what the app knows&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;so in code this would look something like this:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type InterfaceWithTheOutside whatComesBack
+    = DetectorOnTheOutside (DetectorOnTheOutside whatComesBack)
+    | ActionOnTheOutside ActionOnTheOutside
+
+type JustStartedOr runningState
+    = JustStartedSoItKnowsNothing
+    | RunningState runningState
+
+anyApp : JustStartedOr runningState -&amp;gt; List (InterfaceWithTheOutside runningState)
+anyApp = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The whole app signature defined in one line as a single function, almost insulting!&lt;/p&gt;&lt;p&gt;How these &quot;interface&quot; types look like depends on the platform, nothing you have to do as a user. For our flashlight, it&apos;s something like&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type DetectorOnTheOutside whatComesBack
+    = SwitchToggled whatComesBack
+
+type ActionOnTheOutside
+    = PhysicalLightOn
+    | PhysicalLightOff&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A flashlight app which on startup sets the light to on could look something like&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : JustStartedOr LightActivation -&amp;gt; List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    \justStartedOrRunning -&amp;gt;
+        let
+            lightActivation : LightActivation
+            lightActivation =
+                case justStartedOrRunning of
+                    JustStartedSoItKnowsNothing -&amp;gt;
+                        LightOn
+                    
+                    RunningState lightActivation -&amp;gt;
+                        lightActivation
+        in
+        case lightActivation of
+            LightOn -&amp;gt;
+                [ ActionOnTheOutside PhysicalLightOn
+                , DetectorOnTheOutside (SwitchToggled LightOff)
+                ]
+
+            LightOff -&amp;gt;
+                [ ActionOnTheOutside PhysicalLightOff
+                , DetectorOnTheOutside (SwitchToggled LightOn)
+                ]&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It&apos;s almost eerie how we can say &quot;That&apos;s it!&quot;&lt;/p&gt;&lt;p&gt;In practice, the state &lt;code&gt;JustStartedSoItKnowsNothing&lt;/code&gt; is always equivalent to some &lt;code&gt;RunningState&lt;/code&gt;. Like, when you have a home screen, you want to be able to return to it. So we can make this simplification&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type InterfaceWithTheOutside whatComesBack
+    = DetectorOnTheOutside ...
+    | ActionOnTheOutside ...
+
+anyApp :
+    { initialState : state
+    , interface : state -&amp;gt; List (InterfaceWithTheOutside state)
+    }
+anyApp = ...&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;With that, our flashlight app is now&lt;/p&gt;&lt;pre&gt;&lt;code&gt;type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : LightActivation -&amp;gt; List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    { initialState = LightOn
+    , interface =
+        \lightActivation -&amp;gt;
+            case lightActivation of
+                LightOn -&amp;gt;
+                    [ ActionOnTheOutside PhysicalLightOn
+                    , DetectorOnTheOutside (SwitchToggled LightOff)
+                    ]
+
+                LightOff -&amp;gt;
+                    [ ActionOnTheOutside PhysicalLightOff
+                    , DetectorOnTheOutside (SwitchToggled LightOn)
+                    ]
+    }&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Pretty cool, ey?&lt;/p&gt;&lt;p&gt;And we almost by accident managed to avoid hard problems that almost every framework has:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page&lt;/p&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Try going through frameworks you already know and find cases where these issues pop up.&lt;/p&gt;&lt;p&gt;Good news at the end: For the web, this architecture has already been implemented: &lt;a href=&quot;https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/&quot;&gt;elm-state-interface&lt;/a&gt;&lt;/p&gt;&lt;/div&gt;&lt;/section&gt;]]&gt;</content:encoded>
+</item>
+</channel>
+</rss>
