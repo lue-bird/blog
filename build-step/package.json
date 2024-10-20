@@ -1,7 +1,10 @@
 {
     "type": "module",
-    "main": "src/index.js",
-    "dependencies": {
-        "@lue-bird/elm-state-interface-experimental": "^2.0.2"
+    "devDependencies": {
+        "elm-esm": "^1.1.4",
+        "@lue-bird/elm-state-interface-experimental": "^3.0.0"
+    },
+    "scripts": {
+        "start": "elm-esm make src/Build.elm --output=src/elmBuild.js && node src/index.js"
     }
 }

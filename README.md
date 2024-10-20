@@ -26,5 +26,5 @@ Links to the tools:
 ### contributing
 Before building the new version, generate the new rss feed with
 ```bash
-node build-step/src/index.elm
+npm run build-step
 ```

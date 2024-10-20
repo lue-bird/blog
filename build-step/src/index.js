@@ -1,4 +1,5 @@
 import * as Node from "@lue-bird/elm-state-interface-experimental/node"
+import { Elm } from "./elmBuild.js"
 
-const elmApp = Node.compileElm(import.meta.dirname, "Build.elm").init()
+const elmApp = Elm.Build.init()
 Node.programStart({ ports: elmApp.ports })

@@ -4,6 +4,7 @@ port module Build exposing (main)
 -}
 
 import Articles
+import Bytes.Encode
 import Dict exposing (Dict)
 import Html.String
 import Html.String.Attributes
@@ -30,9 +31,12 @@ main =
             \(State state) ->
                 case ( state.runDirectory, state.currentTime ) of
                     ( Just runDirectory, Just currentTime ) ->
-                        Node.fileUtf8Write
-                            { path = runDirectory ++ "/feed.xml"
-                            , content = rssGenerate { currentTime = currentTime }
+                        Node.fileWrite
+                            { path = runDirectory ++ "/../feed.xml"
+                            , content =
+                                rssGenerate { currentTime = currentTime }
+                                    |> Bytes.Encode.string
+                                    |> Bytes.Encode.encode
                             }
 
                     ( maybeRunDirectory, maybeCurrentTime ) ->
