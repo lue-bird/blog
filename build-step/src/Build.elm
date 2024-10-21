@@ -29,39 +29,40 @@ main =
         { initialState = State { runDirectory = Nothing, currentTime = Nothing }
         , interface =
             \(State state) ->
-                case ( state.runDirectory, state.currentTime ) of
+                [ case ( state.runDirectory, state.currentTime ) of
                     ( Just runDirectory, Just currentTime ) ->
                         Node.fileWrite
-                            { path = runDirectory ++ "/../feed.xml"
+                            { path = runDirectory ++ "/../dist/feed.xml"
                             , content =
                                 rssGenerate { currentTime = currentTime }
                                     |> Bytes.Encode.string
                                     |> Bytes.Encode.encode
                             }
 
-                    ( maybeRunDirectory, maybeCurrentTime ) ->
-                        [ case maybeRunDirectory of
-                            Just _ ->
-                                Node.interfaceNone
+                    _ ->
+                        Node.interfaceNone
+                , case state.runDirectory of
+                    Just _ ->
+                        Node.interfaceNone
 
-                            Nothing ->
-                                Node.workingDirectoryPathRequest
-                                    |> Node.interfaceFutureMap
-                                        (\runDirectory ->
-                                            State { runDirectory = Just runDirectory, currentTime = maybeCurrentTime }
-                                        )
-                        , case maybeCurrentTime of
-                            Just _ ->
-                                Node.interfaceNone
+                    Nothing ->
+                        Node.workingDirectoryPathRequest
+                            |> Node.interfaceFutureMap
+                                (\runDirectory ->
+                                    State { runDirectory = Just runDirectory, currentTime = state.currentTime }
+                                )
+                , case state.currentTime of
+                    Just _ ->
+                        Node.interfaceNone
 
-                            Nothing ->
-                                Node.timePosixRequest
-                                    |> Node.interfaceFutureMap
-                                        (\currentTime ->
-                                            State { currentTime = Just currentTime, runDirectory = maybeRunDirectory }
-                                        )
-                        ]
-                            |> Node.interfaceBatch
+                    Nothing ->
+                        Node.timePosixRequest
+                            |> Node.interfaceFutureMap
+                                (\currentTime ->
+                                    State { currentTime = Just currentTime, runDirectory = state.runDirectory }
+                                )
+                ]
+                    |> Node.interfaceBatch
         , ports = { toJs = toJs, fromJs = fromJs }
         }
 

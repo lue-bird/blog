@@ -10,7 +10,7 @@
     "homepage": "https://lue-bird.github.io/blog/",
     "scripts": {
         "build-step": "cd build-step && npm run start && cd ..",
-        "predeploy": "vite build && cp feed.xml dist && cp robots.txt dist",
+        "predeploy": "vite build && cp robots.txt dist",
         "deploy": "gh-pages -d dist"
     },
     "devDependencies": {
