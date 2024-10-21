@@ -16,7 +16,6 @@ import Docs.ReviewAtDocs
 import Docs.ReviewLinksAndSections
 import Docs.UpToDateReadmeLinks
 import EqualsCaseable
-import MultipleAppendToConcat
 import NoAlways
 import NoCatchAllForSpecificRemainingPatterns
 import NoDebug.Log
@@ -87,7 +86,6 @@ config =
     , NoUnusedPorts.rule
     , Simplify.rule
         (Simplify.defaults |> Simplify.expectNaN)
-    , MultipleAppendToConcat.rule MultipleAppendToConcat.PipeRightList
 
     -- ## sort
     , NoUnsortedTopLevelDeclarations.rule

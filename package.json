@@ -14,7 +14,7 @@
         "deploy": "gh-pages -d dist"
     },
     "devDependencies": {
-        "@lue-bird/elm-state-interface-experimental": "^2.0.2",
+        "@lue-bird/elm-state-interface-experimental": "^3.0.0",
         "elm-optimize-level-2": "^0.3.5",
         "gh-pages": "^6.1.1",
         "vite": "^5.1.2",

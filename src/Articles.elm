@@ -1502,6 +1502,5 @@ so Evan can focus on what he is excited for. As part of that push I'm proud to p
 
 
 sectionTitleToUrl : String -> String
-sectionTitleToUrl =
-    \title ->
-        title |> Url.percentEncode
+sectionTitleToUrl title =
+    title |> Url.percentEncode

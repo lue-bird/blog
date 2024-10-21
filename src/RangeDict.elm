@@ -36,12 +36,11 @@ mapFromList toAssociation list =
 
 
 unionFromListMap : (element -> RangeDict value) -> List element -> RangeDict value
-unionFromListMap elementToDict =
-    \list ->
-        list
-            |> List.foldl
-                (\el soFar -> union (el |> elementToDict) soFar)
-                empty
+unionFromListMap elementToDict list =
+    list
+        |> List.foldl
+            (\el soFar -> union (el |> elementToDict) soFar)
+            empty
 
 
 insert : Elm.Syntax.Range.Range -> v -> RangeDict v -> RangeDict v
@@ -50,40 +49,42 @@ insert range value (RangeDict rangeDict) =
 
 
 justValuesMap : (Elm.Syntax.Range.Range -> value -> Maybe valueMapped) -> RangeDict value -> RangeDict valueMapped
-justValuesMap rangeAndValueMap =
-    \rangeDict ->
-        rangeDict
-            |> foldl
-                (\range value soFar ->
-                    case rangeAndValueMap range value of
-                        Nothing ->
-                            soFar
+justValuesMap rangeAndValueMap rangeDict =
+    rangeDict
+        |> foldl
+            (\range value soFar ->
+                case rangeAndValueMap range value of
+                    Nothing ->
+                        soFar
 
-                        Just valueMapped ->
-                            soFar |> insert range valueMapped
-                )
-                empty
+                    Just valueMapped ->
+                        soFar |> insert range valueMapped
+            )
+            empty
 
 
 toListMap : (Elm.Syntax.Range.Range -> value -> element) -> RangeDict value -> List element
-toListMap rangeAndValueToElement =
-    \rangeDict ->
-        rangeDict
-            |> foldr
-                (\range value soFar ->
-                    soFar |> (::) (rangeAndValueToElement range value)
-                )
-                []
+toListMap rangeAndValueToElement rangeDict =
+    rangeDict
+        |> foldr
+            (\range value soFar ->
+                rangeAndValueToElement range value :: soFar
+            )
+            []
 
 
 foldr : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldr reduce initialFolded (RangeDict rangeDict) =
-    FastDict.foldr (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
+    rangeDict
+        |> FastDict.foldr (\range value -> reduce (rangeFromTupleTuple range) value)
+            initialFolded
 
 
 foldl : (Elm.Syntax.Range.Range -> v -> folded -> folded) -> folded -> RangeDict v -> folded
 foldl reduce initialFolded (RangeDict rangeDict) =
-    FastDict.foldl (\range value -> reduce (rangeFromTupleTuple range) value) initialFolded rangeDict
+    rangeDict
+        |> FastDict.foldl (\range value -> reduce (rangeFromTupleTuple range) value)
+            initialFolded
 
 
 union : RangeDict v -> RangeDict v -> RangeDict v
@@ -99,12 +100,10 @@ rangeToComparable range =
 
 
 rangeFromTupleTuple : ( ( Int, Int ), ( Int, Int ) ) -> Elm.Syntax.Range.Range
-rangeFromTupleTuple =
-    \( start, end ) ->
-        { start = start |> locationFromTuple, end = end |> locationFromTuple }
+rangeFromTupleTuple ( start, end ) =
+    { start = start |> locationFromTuple, end = end |> locationFromTuple }
 
 
 locationFromTuple : ( Int, Int ) -> Elm.Syntax.Range.Location
-locationFromTuple =
-    \( row, column ) ->
-        { row = row, column = column }
+locationFromTuple ( row, column ) =
+    { row = row, column = column }
