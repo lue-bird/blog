@@ -21,6 +21,7 @@ type alias State =
 
 type Event
     = ThemeSelected Theme
+    | ThemeWindowPreferenceReceived Theme
 
 
 type Theme
@@ -34,9 +35,25 @@ main =
         { initialState = initialState
         , interface =
             \state ->
-                state
+                [ [ Web.mediaQueryRequest "(prefers-color-scheme: light)"
+                  , Web.mediaQueryChangeListen "(prefers-color-scheme: light)"
+                  ]
+                    |> Web.interfaceBatch
+                    |> Web.interfaceFutureMap
+                        (\prefersLightTheme ->
+                            ThemeWindowPreferenceReceived
+                                (if prefersLightTheme then
+                                    WhiteTheme
+
+                                 else
+                                    BlackTheme
+                                )
+                        )
+                , state
                     |> ui
                     |> Web.domRender
+                ]
+                    |> Web.interfaceBatch
                     |> Web.interfaceFutureMap (\event -> reactTo event state)
         , ports = { toJs = toJs, fromJs = fromJs }
         }
@@ -52,6 +69,10 @@ reactTo : Event -> State -> State
 reactTo event =
     case event of
         ThemeSelected newTheme ->
+            \state ->
+                { state | theme = newTheme }
+
+        ThemeWindowPreferenceReceived newTheme ->
             \state ->
                 { state | theme = newTheme }
 

@@ -14,7 +14,7 @@
             "elm-community/list-extra": "8.7.0",
             "elm-community/string-extra": "4.0.1",
             "lue-bird/elm-no-record-type-alias-constructor-function": "1.0.8",
-            "lue-bird/elm-state-interface-experimental": "12.0.0",
+            "lue-bird/elm-state-interface-experimental": "13.0.0",
             "miniBill/elm-fast-dict": "1.2.4",
             "stil4m/elm-syntax": "7.3.9"
         },
