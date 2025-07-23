@@ -1204,10 +1204,15 @@ flashlightApp =
                     ]
                 , "Try going through frameworks you already know and find cases where these issues pop up." |> textOnlyParagraph
                 , Paragraph
-                    [ "Good news at the end: For the web, this architecture has already been implemented: " |> Text
+                    [ "Good news at the end: For the web and nodejs, this architecture has already been implemented: " |> Text
                     , Link
-                        { description = "elm-state-interface"
+                        { description = "elm-state-interface: Web*"
                         , url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/"
+                        }
+                    , " and " |> Text
+                    , Link
+                        { description = "elm-state-interface-experimental: Node"
+                        , url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface-experimental/latest/Node"
                         }
                     ]
                 ]
