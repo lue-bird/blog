@@ -1,9 +1,9 @@
-port module Main exposing (main)
+port module Main exposing (State, Theme(..), main)
 
-{-| -}
+{-| 
+-}
 
 import Articles
-import Browser
 import Color exposing (Color)
 import ElmSyntaxHighlight
 import Json.Decode
@@ -48,42 +48,12 @@ initialState =
     }
 
 
-reactTo : Event -> (State -> State)
+reactTo : Event -> State -> State
 reactTo event =
     case event of
         ThemeSelected newTheme ->
             \state ->
                 { state | theme = newTheme }
-
-
-domDiv : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
-domDiv modifiers subs =
-    Web.domElement "div" modifiers subs
-
-
-domH1 : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
-domH1 modifiers subs =
-    Web.domElement "h1" modifiers subs
-
-
-domP : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
-domP modifiers subs =
-    Web.domElement "p" modifiers subs
-
-
-domPre : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
-domPre modifiers subs =
-    Web.domElement "pre" modifiers subs
-
-
-domBr : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
-domBr modifiers subs =
-    Web.domElement "br" modifiers subs
-
-
-domButton : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
-domButton modifiers subs =
-    Web.domElement "button" modifiers subs
 
 
 ui : State -> Web.DomNode Event
@@ -145,6 +115,11 @@ ui state =
         ]
 
 
+domButton : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domButton modifiers subs =
+    Web.domElement "button" modifiers subs
+
+
 backgroundColor : Theme -> Color.Color
 backgroundColor theme =
     case theme of
@@ -187,7 +162,7 @@ articleContentUi context articleContent =
                         }
                     , (case section.completion of
                         Articles.Published publishTime ->
-                            [ "🌐 published y"
+                            [ """🌐 published y"""
                             , publishTime |> Time.toYear Time.utc |> String.fromInt
                             , " m"
                             , publishTime |> Time.toMonth Time.utc |> monthToInt |> String.fromInt
@@ -197,7 +172,7 @@ articleContentUi context articleContent =
                                 |> String.concat
 
                         Articles.InProgress progress ->
-                            "! 🛠️ in progress: " ++ progress
+                            """! 🛠️ in progress: """ ++ progress
                       )
                         |> Web.domText
                         |> List.singleton
@@ -280,6 +255,26 @@ articleContentUi context articleContent =
                 )
 
 
+domH1 : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domH1 modifiers subs =
+    Web.domElement "h1" modifiers subs
+
+
+domP : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domP modifiers subs =
+    Web.domElement "p" modifiers subs
+
+
+domPre : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domPre modifiers subs =
+    Web.domElement "pre" modifiers subs
+
+
+domBr : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domBr modifiers subs =
+    Web.domElement "br" modifiers subs
+
+
 monthToInt : Time.Month -> Int
 monthToInt month =
     case month of
@@ -352,12 +347,17 @@ domBackgroundColor color =
     Web.domStyle "background-color" (color |> Color.toCssString)
 
 
+domDiv : List (Web.DomModifier future) -> List (Web.DomNode future) -> Web.DomNode future
+domDiv modifiers subs =
+    Web.domElement "div" modifiers subs
+
+
 blackThemeColorToWhiteTheme : Color -> Color
 blackThemeColorToWhiteTheme color =
     color
-        -- hsl lightness does not match perceived lightness so this is an approximation at best
-        -- I'd love to find a package with LHC or something similar
-        |> Color.toHsla
+        |> -- hsl lightness does not match perceived lightness so this is an approximation at best
+           -- I'd love to find a package with LHC or something similar
+           Color.toHsla
         |> (\hsla ->
                 { hsla | lightness = 0.18, saturation = 1 }
            )
@@ -391,7 +391,7 @@ linkUi context config =
         [ config.label ]
 
 
-elmCodeUi : Theme -> List (Web.DomModifier event) -> (ElmSyntaxHighlight.SyntaxHighlightable -> Web.DomNode event)
+elmCodeUi : Theme -> List (Web.DomModifier event) -> ElmSyntaxHighlight.SyntaxHighlightable -> Web.DomNode event
 elmCodeUi theme additionalDomModifiers syntaxHighlightable =
     Web.domElement "code"
         []
@@ -414,7 +414,7 @@ elmCodeUi theme additionalDomModifiers syntaxHighlightable =
         )
 
 
-syntaxKindToColor : Theme -> (ElmSyntaxHighlight.SyntaxKind -> Color)
+syntaxKindToColor : Theme -> ElmSyntaxHighlight.SyntaxKind -> Color
 syntaxKindToColor theme =
     case theme of
         BlackTheme ->

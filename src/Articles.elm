@@ -58,7 +58,7 @@ all =
 introduction : Content
 introduction =
     Sequence
-        [ textOnlyParagraph "Yahallo! 🐦"
+        [ textOnlyParagraph """Yahallo! 🐦"""
         , Paragraph
             [ Link
                 { description = "Subscribe via rss"
@@ -79,7 +79,7 @@ recommendationsForFurtherSurfing =
     Section
         { title = "recommendations for further surfing"
         , description = "A bunch of places you might want to visit from here"
-        , completion = InProgress "always changing, never \"done\""
+        , completion = InProgress "always changing"
         , content =
             Sequence
                 [ UnorderedList
@@ -106,7 +106,8 @@ aFunnyIdeaForRepresentingAFractionSafelyArticle =
         , content =
             Sequence
                 [ textOnlyParagraph """A definition like ↓ seems intuitive"""
-                , elmCode """
+                , elmCode
+                    """
 type Rational
     = N0
     | Signed { sign : Sign, numerator : Natural1Up, denominator : Natural1Up }
@@ -115,7 +116,8 @@ type Sign
     = Positive
     | Negative
 """
-                , textOnlyParagraph """Looks pretty safe.
+                , textOnlyParagraph
+                    """Looks pretty safe.
 Annoyingly,
 there can be different elm values that represent the same number
 since numerator and denominator can share factors, like 3/7 and 6/14.
@@ -126,13 +128,15 @@ Packages usually resolve this by making the type opaque – surprisingly, we can
                     , InlineElmCode [ { string = "Natural1Up", syntaxKind = Just ElmSyntaxHighlight.Type } ]
                     , Text """."""
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type Natural1Up
     = N1
     | Successor Natural1Up
 """
                 , textOnlyParagraph """↑ This won't do. Just adding 1000000 + 1000000 would take 1000000 steps (in elm at least)."""
-                , elmCode """
+                , elmCode
+                    """
 type Natural1Up
     = Natural1Up (NonEmptyList Bit)
 
@@ -143,25 +147,31 @@ type Bit
                 , Paragraph
                     [ Text """↑ looks the most intuitive but similar to the """
                     , InlineElmCode [ { string = "Rational", syntaxKind = Just ElmSyntaxHighlight.Type } ]
-                    , Text """ type above,
+                    , Text
+                        """ type above,
 if we allow users to prepend """
                     , inlineElmCode "O"
                     , Text """s, multiple elm values could represent the same number."""
                     ]
                 , Paragraph
-                    [ Text """
+                    [ Text
+                        """
 So... we do have to make the type opaque, just as """
                     , Link { description = "elm-radio taught us", url = "https://elm-radio.com/episode/intro-to-opaque-types" }
-                    , Text """?
+                    , Text
+                        """?
 Not so fast, the solution doesn't actually mean more work:"""
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type Natural1Up
     = Natural1Up { bit1FollowedBy : List Bit }
 """
-                , textOnlyParagraph """A little awkward but it mirrors reality.
+                , textOnlyParagraph
+                    """A little awkward but it mirrors reality.
 Oki, enough about natural numbers. Have a look at this cute representation of a rational number:"""
-                , elmCode """
+                , elmCode
+                    """
 type alias Rational =
     Dict
         Prime
@@ -176,12 +186,14 @@ type PrimeFactorInNumeratorOrDenominator
     = PrimeFactorInNumerator
     | PrimeFactorInDenominator
 """
-                , textOnlyParagraph """For the relevant primes, we write down whether the numerator or denominator has its corresponding prime as a factor and how often.
+                , textOnlyParagraph
+                    """For the relevant primes, we write down whether the numerator or denominator has its corresponding prime as a factor and how often.
 This works because in a simplified fraction, a prime can't be both a factor of the numerator and the denominator.
 Looks all cool and clean!
 But oh well..., actually making such a dict without opaque types is even beyond what lue can do..."""
                 , textOnlyParagraph """Turns out we don't need a dict for this."""
-                , elmCode """
+                , elmCode
+                    """
 type Rational
     = N0
     | Signed
@@ -193,12 +205,14 @@ type Rational
                 , Paragraph
                     [ Text """Each index in the list corresponds to the same index in the list of primes: """
                     , inlineElmCode """[ 2, 3, 5, 7, 11, 13, 17, ..expression.. ]"""
-                    , Text """.
+                    , Text
+                        """.
 Then, for each index, we write down whether the numerator or denominator has its corresponding prime as a factor and how often,
 or if neither of them have that factor.
 So to represent e.g. 8/5:"""
                     ]
-                , elmCode """
+                , elmCode
+                    """
 Signed
     { sign = Positive
     , absolute =
@@ -211,13 +225,15 @@ Signed
                 , Paragraph
                     [ Text """You might have noticed that this is still not better than our original solution because users can add """
                     , inlineElmCode "Nothing"
-                    , Text """s to the end of the list without the mathematical value changing.
+                    , Text
+                        """s to the end of the list without the mathematical value changing.
 We can use a trick similar to the one we used for natural numbers:
 split the list into the last element which can not contain """
                     , inlineElmCode "Nothing"
                     , Text """ and everything before which can:"""
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type Rational
     = N0
     | Signed
@@ -245,9 +261,11 @@ whatToDoWithElmReviewErrorsArticle =
         , completion = InProgress "Barely anything here yet. Come back in a month!"
         , content =
             Sequence
-                [ textOnlyParagraph """Ever wanted to add helpers but introducing them at once would start a chain reaction of refactors?
+                [ textOnlyParagraph
+                    """Ever wanted to add helpers but introducing them at once would start a chain reaction of refactors?
 Especially when the new helper will make existing helpers irrelevant, it can feel simplest to just get the big refactor done with."""
-                , elmCode """
+                , elmCode
+                    """
 isNotFunction : Expression -> Bool
 isNotFunction expression =
     case expression of
@@ -267,7 +285,8 @@ isNegateFunction expression =
             False
 """
                 , Paragraph [ Text "and you want to add" ]
-                , elmCode """
+                , elmCode
+                    """
 isSpecificVariable specificFullyQualifiedVariableName =
     case expression of
         Expression.Variable fullyQualifiedVariableName ->
@@ -285,7 +304,8 @@ isSpecificVariable specificFullyQualifiedVariableName =
                     , Text " and compiler errors and your project's refactoring todo list items one at a time."
                     ]
                 , Paragraph [ Text "Or just leave them for some time in the future." ]
-                , elmCode """
+                , elmCode
+                    """
 listUnzipCheck =
     case lastArgument partitionCall of
         Just listArgument ->
@@ -306,7 +326,8 @@ listPartitionCheck partitionCall =
     case fullyAppliedLastArg partitionCall.arguments of
         TODO -> TODO
 """
-                , elmCode """
+                , elmCode
+                    """
 module Elm.Syntax.Expression.Extra exposing (getTuple2)
 getTuple2 = ...
 """
@@ -315,14 +336,17 @@ getTuple2 = ...
                 , Paragraph
                     [ Text "They are like leaving "
                     , inlineElmCode "Debug.todo"
-                    , Text """ or failing test somewhere.
+                    , Text
+                        """ or failing test somewhere.
 You know, the stuff that allows you to keep less things in your mind that "you still need to do"."""
                     ]
                 , textOnlyParagraph """In that way, they are like an automated todo list for you and your whole team."""
-                , textOnlyParagraph """If you think there won't be an automated error for something on the way, make it a new item in a todo list.
+                , textOnlyParagraph
+                    """If you think there won't be an automated error for something on the way, make it a new item in a todo list.
 Aggregating errors isn't scary. They have your back."""
                 , textOnlyParagraph """TODO: Show step-by-step refactor of adding helper, adding @deprecated, fixing the issues one by one"""
-                , textOnlyParagraph """If possible I'd like if elm-review doesn't slow this exploration phase...
+                , textOnlyParagraph
+                    """If possible I'd like if elm-review doesn't slow this exploration phase...
 → Also, elm-review rules don't really "slow down development" because they just hint at and remind you of what's left to do eventually without forcing you to do anything. (e.g. you added this helper? Do your thing but I always have your back so you don't forget that you wanted to use this helper somewhere) TODO integrate"""
                 ]
         }
@@ -332,7 +356,8 @@ yourAstAllowsListsWithDifferentElementTypesWhyArticle : Content
 yourAstAllowsListsWithDifferentElementTypesWhyArticle =
     Section
         { title = "Your AST allows lists with different element types. Why?"
-        , description = """Can you represent a list expression where all elements have the same type? Yes.
+        , description =
+            """Can you represent a list expression where all elements have the same type? Yes.
 And what about operations like (==) on infinitely nested triples?"""
         , completion = Published (Time.millisToPosix 1697846400000)
         , content =
@@ -359,9 +384,11 @@ And what about operations like (==) on infinitely nested triples?"""
                     , Text " or avoiding empty nodes."
                     ]
                 , textOnlyParagraph "Creating a perfectly type-safe AST + builder was actually working out surprisingly well and was both challenging and fun... until problems like the one in this article's title came up."
-                , textOnlyParagraph """And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
+                , textOnlyParagraph
+                    """And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
 Starting with a classic but unsafe AST:"""
-                , elmCode """
+                , elmCode
+                    """
 type Expression
     = String String
     | Int Int
@@ -373,11 +400,13 @@ type Expression
                 , UnorderedList
                     [ Sequence
                         [ textOnlyParagraph """it allows users to generate incorrect expressions"""
-                        , elmCode """
+                        , elmCode
+                            """
 List [ String "My name is ", Int 5 ]
 """
                         , textOnlyParagraph "or"
-                        , elmCode """
+                        , elmCode
+                            """
 Equals { left = String "High", right = Int 5 }
 """
                         ]
@@ -385,7 +414,8 @@ Equals { left = String "High", right = Int 5 }
                     ]
                 , textOnlyParagraph "How hard can it be to make this small language completely type-safe?"
                 , textOnlyParagraph """Naively, we could represent each kind of list and equals by it's own variant"""
-                , elmCode """
+                , elmCode
+                    """
 type Expression
     = String String
     | Int Int
@@ -414,7 +444,8 @@ type BoolExpression
     | EqualsExpression EqualsExpression
 """
                 , Paragraph [ Text "The ", Italic "??", Text " just keep on expanding, let's take for example the case ", inlineElmCode "EqualsOfList" ]
-                , elmCode """
+                , elmCode
+                    """
 type EqualsExpression
     = {- ... | -} EqualsOfList EqualsExpressionOfList
 
@@ -426,7 +457,8 @@ type EqualsExpressionOfList
 """
                 , textOnlyParagraph """We just run into the same problem recursively."""
                 , textOnlyParagraph """We can apply some smart-smart to solve this!"""
-                , elmCode """
+                , elmCode
+                    """
 type alias EqualsOf specificExpression =
     { left : specificExpression, right : specificExpression }
 
@@ -461,7 +493,8 @@ type Expression
                     , inlineElmCode "ListOfList (ListOfString (List String))"
                     , Text " where the \"wrapping into a list type\" is passed down recursively."
                     ]
-                , elmCode """
+                , elmCode
+                    """
 List
     (ListOfList
         (ListOfBool
@@ -481,7 +514,8 @@ List
     )
 """
                 , textOnlyParagraph """All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?"""
-                , elmCode """
+                , elmCode
+                    """
 -- with Outer being (Type -> Type)
 type ByExpressionType string int bool
     = String (Outer string)
@@ -509,7 +543,8 @@ type alias EqualsExpression =
                     , Text " can only be at that level: We want to represent \"list of a == list of a\", not \"list of (a == a)\"."
                     ]
                 , textOnlyParagraph """Having one type for all expression kinds in a single place is still a nice idea, tho:"""
-                , elmCode """
+                , elmCode
+                    """
 type ByExpressionType string int bool list
     = String string
     | Int int
@@ -541,7 +576,8 @@ type BoolKnown
     | Equals (EqualsExpression String Int BoolKnown)
 """
                 , textOnlyParagraph """which actually looks pretty nice?"""
-                , elmCode """
+                , elmCode
+                    """
 List
     (List
         (Bool
@@ -561,7 +597,8 @@ List
     )
 """
                 , Paragraph [ Text "Well, it doesn't compile because \"recursive type aliases\" but the fix is as simple as converting each alias to a ", inlineElmCode "type" ]
-                , elmCode """
+                , elmCode
+                    """
 type ListExpression string int bool
     = ListExpression
         (ByExpressionType
@@ -581,7 +618,8 @@ type EqualsExpression string int bool
         )
 """
                 , textOnlyParagraph """the result looks less nice but acceptable I guess"""
-                , elmCode """
+                , elmCode
+                    """
 List
     (ListExpression
         (List
@@ -609,7 +647,8 @@ List
     )
 """
                 , textOnlyParagraph """Let's add triples to that language"""
-                , elmCode """
+                , elmCode
+                    """
 type ByExpressionType string int bool triple list
     = String string
     | Int int
@@ -659,17 +698,20 @@ type BoolKnown
 """
                 , textOnlyParagraph """The pieces don't seem to fit."""
                 , textOnlyParagraph """Do we need to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?"""
-                , textOnlyParagraph """Tuples and especially triples made past lue lose hope of being able to safely represent them like this in an ast.
+                , textOnlyParagraph
+                    """Tuples and especially triples made past lue lose hope of being able to safely represent them like this in an ast.
 So much so in fact that past lue was slowly losing interest and abandoned this project after a while. (╥﹏╥)"""
                 , Paragraph
                     [ Text "Much, much later... in fact only when writing this did "
                     , Italic "two"
-                    , Text """-ish solutions reveal themselves that would have saved a good chunk of past lue's sanity.
+                    , Text
+                        """-ish solutions reveal themselves that would have saved a good chunk of past lue's sanity.
 I know you're smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
 Or just look at the solutions below."""
                     ]
                 , textOnlyParagraph """First the -ish solution:"""
-                , elmCode """
+                , elmCode
+                    """
 type Expression
     = Int Int
     | Tuple (TupleOf Expression Expression)
@@ -693,7 +735,8 @@ type EqualsExpression
     = EqualsExpression (EqualsExpressionByType Int EqualsExpression)
 """
                 , Paragraph [ Text "Expressions written down look passable. Here for ", inlineElmCode "( 0, 0 == 0 ) == ( 0, 0 == 0 )" ]
-                , elmCode """
+                , elmCode
+                    """
 Equals
     (EqualsExpression
         (EqualsOfTupleExtendedByFirstInt
@@ -735,7 +778,8 @@ Equals
                         ]
                     ]
                 , textOnlyParagraph """Strangely, with the second solution everything becomes eerily simple:"""
-                , elmCode """
+                , elmCode
+                    """
 type EqualsExpression
     = EqualsOfInt (EqualsOf Int)
     | EqualsOfExpression (EqualsOf EqualsExpression)
@@ -753,7 +797,8 @@ typedValue8Article : Content
 typedValue8Article =
     Section
         { title = "Wrapping wrappers safely: typed-value 8.0.0"
-        , description = """Preserving the knowledge of what was wrapped when wrapping again.
+        , description =
+            """Preserving the knowledge of what was wrapped when wrapping again.
 typed-value 8.0.0 makes this safe."""
         , completion = Published (Time.millisToPosix 1698065536000)
         , content =
@@ -765,7 +810,8 @@ typed-value 8.0.0 makes this safe."""
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
                     , Text " 8 (we'll get to what this means exactly, don't worry)"
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type alias GenericSet element uniqueOrder = ..Type..
 type alias Ordering subject unique = ..Type..
 
@@ -806,7 +852,8 @@ remove elementOrdering elementToRemove = ..expression..
                     , InlineElmCode [ { string = "Ordering", syntaxKind = Just ElmSyntaxHighlight.Type } ]
                     , Text """ type? Not a bad idea! But try to get the actual order function out of any opaque type... Any attempts to create a public accessor don't quite work either, for example"""
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type alias Ordering subject opaque =
     { opaque : opaque, toFunction : opaque -> (( subject, subject ) -> Order) }
 
@@ -819,7 +866,8 @@ fakeOrdering =
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
                     , Text " gives you control over who can access the inner order function:"
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type alias Ordering subject tag =
     Typed
         Checked -- only constructible using the tag ↓
@@ -827,7 +875,8 @@ type alias Ordering subject tag =
         Public -- everyone can access
         (( subject, subject ) -> Order)
 """
-                , elmCode """
+                , elmCode
+                    """
 module Int.Order exposing (increasing, Increasing)
 
 increasing : Ordering Int Increasing
@@ -838,14 +887,16 @@ type Increasing
     = Increasing -- variant not exposed
 """
                 , Paragraph [ Text "First attempt to fake it:" ]
-                , elmCode """
+                , elmCode
+                    """
 fakeIntOrder : Ordering Int Int.Order.Increasing
 fakeIntOrder =
     -- type error: is Tagged but should be Checked
     Int.Order.increasing |> Typed.map (\\_ -> \\_ -> EQ)
 """
                 , Paragraph [ Text "Second attempt to fake it:" ]
-                , elmCode """
+                , elmCode
+                    """
 module Int.FakeOrder exposing (increasing, Increasing)
 
 increasing : Ordering Int Increasing
@@ -855,7 +906,8 @@ increasing =
 type Increasing
     = Increasing
 """
-                , elmCode """
+                , elmCode
+                    """
 GenericSet.empty
     |> GenericSet.insert Int.Order.increasing 3
     |> GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error
@@ -868,7 +920,8 @@ GenericSet.empty
                     , inlineElmCode "Order.reverse"
                     , Text " which sorts in opposite order?"
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type Reverse tag
     = Reverse tag
 
@@ -877,9 +930,10 @@ reverse =
     Typed.mapTo (Reverse ??expression??) (\\order -> \\( a, b ) -> order ( b, a ))
 """
                 , Paragraph
-                    [ Text "Intuitively, you might want to reach for unsafe phantom types 🤮"
+                    [ Text """Intuitively, you might want to reach for unsafe phantom types 🤮"""
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type Reverse reverseOrderTag = Reverse
 
 reverse : Ordering subject tag -> Ordering subject (Reverse tag)
@@ -899,7 +953,8 @@ reverseOops =
                 , Paragraph
                     [ Text "Here's a similarly buggy example:"
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type GenericSet element orderTag
     = GenericSet (Internals element)
 
@@ -915,7 +970,8 @@ fromListOops elementOrdering =
                     , Link { description = "Typed", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/" }
                     , Text ":"
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type Reverse
     = Reverse
 
@@ -923,14 +979,16 @@ reverse : Ordering subject tag -> Ordering subject ( Reverse, tag )
 reverse =
     Typed.mapToWrap Reverse (\\order -> \\( a, b ) -> order ( b, a ))
 """
-                , textOnlyParagraph """Notice how we don't have access to the tag of the argument
+                , textOnlyParagraph
+                    """Notice how we don't have access to the tag of the argument
 but can still safely show it in the signature."""
                 , Paragraph
                     [ Text "We can use the same technique to finally fill in the "
                     , inlineElmCode "type alias GenericSet element uniqueOrder = ..Type.."
                     , Text ":"
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type alias GenericSet element orderTag =
     Typed Checked ( GenericSetTag, orderTag ) Internal (Internals element)
 
@@ -946,7 +1004,8 @@ fromList elementOrdering =
                 (\\orderFunction -> Internals.fromList orderFunction list)
 """
                 , textOnlyParagraph """Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:"""
-                , elmCode """
+                , elmCode
+                    """
 type alias Reverse reverseOrderTag =
     ( ReverseTag, reverseOrderTag )
 
@@ -963,7 +1022,8 @@ reverse =
                     , Link { description = "KeysSet", url = "https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/" }
                     , Text ", which is more like a dict than a set, safely stores its sorting:"
                     ]
-                , elmCode """
+                , elmCode
+                    """
 type SortingTag
     = Sorting
 
@@ -1003,7 +1063,7 @@ theSimplestAppDefinitionArticle =
         , completion = Published (Time.millisToPosix 1712426002312)
         , content =
             Sequence
-                [ "🔦 Imagine a flashlight app with a switch that turns on the light when it's off and vice versa." |> textOnlyParagraph
+                [ """🔦 Imagine a flashlight app with a switch that turns on the light when it's off and vice versa.""" |> textOnlyParagraph
                 , UnorderedList
                     [ """📡💭 The app can detect the exact moment the switch is toggled. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off"""
                         |> textOnlyParagraph
@@ -1018,18 +1078,19 @@ theSimplestAppDefinitionArticle =
                     ]
                 , "In the simplest app definition I could come up with, we end up with" |> textOnlyParagraph
                 , UnorderedList
-                    [ [ Text "💭 A value to represent what the app remembers or better: what it knows. Let's call it ", Italic "state" ]
+                    [ [ Text """💭 A value to represent what the app remembers or better: what it knows. Let's call it """, Italic "state" ]
                         |> Paragraph
-                    , "💭 A state to represent that the app has just been started and so doesn't remember anything"
+                    , """💭 A state to represent that the app has just been started and so doesn't remember anything"""
                         |> textOnlyParagraph
                     , "✎ A way to trigger actions on the outside based on what the app knows"
                         |> textOnlyParagraph
-                    , "📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state"
+                    , """📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state"""
                         |> textOnlyParagraph
                     ]
                 , "so in code this would look something like this:"
                     |> textOnlyParagraph
-                , elmCode """
+                , elmCode
+                    """
 type InterfaceWithTheOutside whatComesBack
     = DetectorOnTheOutside (DetectorOnTheOutside whatComesBack)
     | ActionOnTheOutside ActionOnTheOutside
@@ -1043,7 +1104,8 @@ anyApp = ..expression..
 """
                 , "The whole app signature defined in one line as a single function, almost insulting!" |> textOnlyParagraph
                 , "How these \"interface\" types look like depends on the platform, nothing you have to do as a user. For our flashlight, it's something like" |> textOnlyParagraph
-                , elmCode """
+                , elmCode
+                    """
 type DetectorOnTheOutside whatComesBack
     = SwitchToggled whatComesBack
 
@@ -1053,7 +1115,8 @@ type ActionOnTheOutside
 """
                 , "A flashlight app which on startup sets the light to on could look something like"
                     |> textOnlyParagraph
-                , elmCode """
+                , elmCode
+                    """
 
 type LightActivation
     = LightOn
@@ -1092,7 +1155,8 @@ flashlightApp =
                   , Text ". Like, when you have a home screen, you want to be able to return to it. So we can make this simplification"
                   ]
                     |> Paragraph
-                , elmCode """
+                , elmCode
+                    """
 type InterfaceWithTheOutside whatComesBack
     = DetectorOnTheOutside ..Type..
     | ActionOnTheOutside ..Type..
@@ -1105,7 +1169,8 @@ anyApp = ..expression..
 """
                 , "With that, our flashlight app is now"
                     |> textOnlyParagraph
-                , elmCode """
+                , elmCode
+                    """
 
 type LightActivation
     = LightOn
@@ -1332,7 +1397,8 @@ theElmIcebergArticle =
                         , ", and if you have trouble understanding the initial code, try my plus example, work up your understanding from " |> Text
                         ]
                             |> Paragraph
-                      , elmCode """
+                      , elmCode
+                            """
 plus : Int -> Int -> (Int -> next) -> next
 plus toAdd =
     \\soFar -> (|>) (soFar + toAdd)
@@ -1464,7 +1530,7 @@ so Evan can focus on what he is excited for. As part of that push I'm proud to p
                     ]
                 , UnorderedList
                     [ Paragraph
-                        [ Text "removed tuples and triples. THis also means elm/core has no Tuple module anymore"
+                        [ Text "removed tuples and triples. This also means elm/core has no Tuple module anymore"
                         ]
                     , Paragraph
                         [ Text "removed record pattern where variable names are inherited from destructured field names"
