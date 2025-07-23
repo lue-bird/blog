@@ -17,52 +17,68 @@ import Time
 
 
 type State
-    = State
+    = Running
         { runDirectory : Maybe String
         , currentTime : Maybe Time.Posix
         }
+    | FailedToWrite String
 
 
 main : Node.Program State
 main =
     Node.program
-        { initialState = State { runDirectory = Nothing, currentTime = Nothing }
+        { initialState =
+            Running { runDirectory = Nothing, currentTime = Nothing }
         , interface =
-            \(State state) ->
-                [ case ( state.runDirectory, state.currentTime ) of
-                    ( Just runDirectory, Just currentTime ) ->
-                        Node.fileWrite
-                            { path = runDirectory ++ "/../dist/feed.xml"
-                            , content =
-                                rssGenerate { currentTime = currentTime }
-                                    |> Bytes.Encode.string
-                                    |> Bytes.Encode.encode
-                            }
+            \state ->
+                case state of
+                    FailedToWrite errorMessage ->
+                        Node.standardErrWrite ("failed: " ++ errorMessage ++ "\n")
 
-                    _ ->
-                        Node.interfaceNone
-                , case state.runDirectory of
-                    Just _ ->
-                        Node.interfaceNone
+                    Running running ->
+                        [ case ( running.runDirectory, running.currentTime ) of
+                            ( Just runDirectory, Just currentTime ) ->
+                                Node.fileWrite
+                                    { path = runDirectory ++ "/../dist/feed.xml"
+                                    , content =
+                                        rssGenerate { currentTime = currentTime }
+                                            |> Bytes.Encode.string
+                                            |> Bytes.Encode.encode
+                                    }
+                                    |> Node.interfaceFutureMap
+                                        (\result ->
+                                            case result of
+                                                Ok () ->
+                                                    Running running
 
-                    Nothing ->
-                        Node.workingDirectoryPathRequest
-                            |> Node.interfaceFutureMap
-                                (\runDirectory ->
-                                    State { runDirectory = Just runDirectory, currentTime = state.currentTime }
-                                )
-                , case state.currentTime of
-                    Just _ ->
-                        Node.interfaceNone
+                                                Err error ->
+                                                    FailedToWrite error.message
+                                        )
 
-                    Nothing ->
-                        Node.timePosixRequest
-                            |> Node.interfaceFutureMap
-                                (\currentTime ->
-                                    State { currentTime = Just currentTime, runDirectory = state.runDirectory }
-                                )
-                ]
-                    |> Node.interfaceBatch
+                            _ ->
+                                Node.interfaceNone
+                        , case running.runDirectory of
+                            Just _ ->
+                                Node.interfaceNone
+
+                            Nothing ->
+                                Node.workingDirectoryPathRequest
+                                    |> Node.interfaceFutureMap
+                                        (\runDirectory ->
+                                            Running { runDirectory = Just runDirectory, currentTime = running.currentTime }
+                                        )
+                        , case running.currentTime of
+                            Just _ ->
+                                Node.interfaceNone
+
+                            Nothing ->
+                                Node.timePosixRequest
+                                    |> Node.interfaceFutureMap
+                                        (\currentTime ->
+                                            Running { currentTime = Just currentTime, runDirectory = running.runDirectory }
+                                        )
+                        ]
+                            |> Node.interfaceBatch
         , ports = { toJs = toJs, fromJs = fromJs }
         }
 
@@ -78,8 +94,6 @@ rssGenerate buildData =
         , items = Articles.all |> articleSectionsToRssItems
         , siteUrl = "https://lue-bird.github.io/blog/"
         }
-        |> String.replace "&lt;![CDATA[" ""
-        |> String.replace "]]&gt;" ""
 
 
 articleSectionsToRssItems : Articles.Content -> List Rss.Item
