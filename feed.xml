@@ -1,0 +1,557 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+<title>lue blog</title>
+<description>lue&apos;s thoughts</description>
+<link>https://lue-bird.github.io/blog/</link>
+<lastBuildDate>Wed, 23 Jul 2025 05:36:07 +0000</lastBuildDate>
+<generator>dillonkearns/elm-rss</generator>
+<item>
+<title>Your AST allows lists with different element types. Why?</title>
+<description>Can you represent a list expression where all elements have the same type? Yes.
+And what about operations like (==) on infinitely nested triples?</description>
+<link>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</link>
+<guid>https://lue-bird.github.io/blog/%23Your%20AST%20allows%20lists%20with%20different%20element%20types.%20Why%3F</guid>
+<pubDate>Sat, 21 Oct 2023 00:00:00 +0000</pubDate>
+<content:encoded><![CDATA[<section><h3>Your AST allows lists with different element types. Why?</h3><div><p>There was a time when <a href="https://github.com/mdgriffith/elm-codegen">elm-codegen</a> and friends like <a href="https://github.com/MartinSStewart/elm-review-todo-it-for-me">review-todo-it-for-me</a> were not around. Code generation felt under-explored and in need of a framework to generate helpers like record update functions, codecs, html from strings and whatever based on existing elm code.</p><p>A good chunk of work later there were significant parts in place of an ambitious <a href="https://github.com/lue-bird/generate-elm">lue-bird/generate-elm</a>.</p><p>To generate elm code, the decision was made to not directly use <a href="https://dark.elm.dmy.fr/packages/stil4m/elm-syntax/latest/">elm-syntax</a> for <i>countless</i> reasons like not allowing users to generate <code>3.2 // 'a'</code> or avoiding empty nodes.</p><p>Creating a perfectly type-safe AST + builder was actually working out surprisingly well and was both challenging and fun... until problems like the one in this article's title came up.</p><p>And... We will solve this now ◝(ᵔᵕᵔ)◜, illustrated on a simple language with strings, ints, bools, lists and ==.
+Starting with a classic but unsafe AST:</p><pre><code>type Expression
+    = String String
+    | Int Int
+    | Bool Bool
+    | List (List Expression)
+    | Equals { left : Expression, right : Expression }</code></pre><p>↑ This is "probably fine" ™ practically but...</p><ul><li><div><p>it allows users to generate incorrect expressions</p><pre><code>List [ String "My name is ", Int 5 ]</code></pre><p>or</p><pre><code>Equals { left = String "High", right = Int 5 }</code></pre></div></li><li><p>it has impossible variants you are forced to case on</p></li></ul><p>How hard can it be to make this small language completely type-safe?</p><p>Naively, we could represent each kind of list and equals by it's own variant</p><pre><code>type Expression
+    = String String
+    | Int Int
+    | Bool Bool
+    | List ListExpression
+    | Equals EqualsExpression
+
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpression
+    = EqualsOfString (EqualsOf String)
+    | EqualsOfInt (EqualsOf Int)
+    | EqualsOfBool (EqualsOf BoolExpression)
+    | EqualsOfList (EqualsOf ??)
+
+type ListExpression
+    = ListOfString (List String)
+    | ListOfInt (List Int)
+    | ListOfBool (List BoolExpression)
+    | ListOfList (List ??)
+
+type BoolExpression
+    = BoolLiteral Bool
+    | EqualsExpression EqualsExpression</code></pre><p>The <i>??</i> just keep on expanding, let's take for example the case <code>EqualsOfList</code></p><pre><code>type EqualsExpression
+    = {- ... | -} EqualsOfList EqualsExpressionOfList
+
+type EqualsExpressionOfList
+    = EqualsOfListOfString (EqualsOf (List String))
+    | EqualsOfListOfInt (EqualsOf (List Int))
+    | EqualsOfListOfBool (EqualsOf (List BoolExpression))
+    | EqualsOfListOfList (EqualsOf (List ??))</code></pre><p>We just run into the same problem recursively.</p><p>We can apply some smart-smart to solve this!</p><pre><code>type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpression string int bool
+    = EqualsOfString (EqualsOf string)
+    | EqualsOfInt (EqualsOf int)
+    | EqualsOfBool (EqualsOf bool)
+    | EqualsOfList (EqualsExpression (List string) (List int) (List bool))
+
+
+type ListExpression string int bool
+    = ListOfString (List string)
+    | ListOfInt (List int)
+    | ListOfBool (List bool)
+    | ListOfList (ListExpression (List string) (List int) (List bool))
+
+type BoolKnown
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)
+
+type Expression
+    = String String
+    | Int Int
+    | Bool Bool
+    | List (ListExpression String Int BoolKnown)
+    | Equals (EqualsExpression String Int BoolKnown)</code></pre><p>Quite cool how this works. For example, to represent a list of strings, we go down <code>ListOfString String</code> with the String type directly passed from above. And if the string list is the element type of another list, we go through <code>ListOfList (ListOfString (List String))</code> where the "wrapping into a list type" is passed down recursively.</p><pre><code>List
+    (ListOfList
+        (ListOfBool
+            [ [ BoolLiteral True ]
+            , [ Equals
+                    (EqualsOfList
+                        (EqualsOfString
+                            { left = [ "Hello", "world" ]
+                            , right = [ "Hello", "expression" ]
+                            }
+                        )
+                    )
+              , BoolLiteral False
+              ]
+            ]
+        )
+    )</code></pre><p>All these recursive types follow the same shape shown below. Can we abstract this somehow in elm?</p><pre><code>-- with Outer being (Type -&gt; Type)
+type ByExpressionType string int bool
+    = String (Outer string)
+    | Int (Outer int)
+    | Bool (Outer bool)
+    | List (ByExpressionType (List string) (List int) (List bool))
+
+type alias Expression =
+    -- with Outer a = a
+    ByExpressionType String Int BoolKnown
+
+type alias ListExpression =
+    -- with Outer a = List a
+    ByExpressionType String Int BoolKnown
+
+type alias EqualsExpression =
+    -- with Outer a = EqualsOf a
+    ByExpressionType String Int BoolKnown</code></pre><p>The <code>Outer</code> is what makes this tricky since <code>Outer</code> can only be at that level: We want to represent "list of a == list of a", not "list of (a == a)".</p><p>Having one type for all expression kinds in a single place is still a nice idea, tho:</p><pre><code>type ByExpressionType string int bool list
+    = String string
+    | Int int
+    | Bool bool
+    | List list
+
+type alias Expression =
+    ByExpressionType String Int BoolKnown (ListExpression String Int BoolKnown)
+
+type ListExpression string int bool =
+    ByExpressionType
+        (List string)
+        (List int)
+        (List bool)
+        (ListExpression (List string) (List int) (List bool))
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type alias EqualsExpression string int bool =
+    ByExpressionType
+        (EqualsOf string)
+        (EqualsOf int)
+        (EqualsOf bool)
+        (EqualsExpression string int bool)
+
+type BoolKnown
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)</code></pre><p>which actually looks pretty nice?</p><pre><code>List
+    (List
+        (Bool
+            [ [ BoolLiteral True ]
+            , [ Equals
+                    (List
+                        (String
+                            { left = [ "Hello", "world" ]
+                            , right = [ "Hello", "expression" ]
+                            }
+                        )
+                    )
+              , BoolLiteral False
+              ]
+            ]
+        )
+    )</code></pre><p>Well, it doesn't compile because "recursive type aliases" but the fix is as simple as converting each alias to a <code>type</code></p><pre><code>type ListExpression string int bool
+    = ListExpression
+        (ByExpressionType
+            (List string)
+            (List int)
+            (List bool)
+            (ListExpression (List string) (List int) (List bool))
+        )
+
+type EqualsExpression string int bool
+    = EqualsExpression
+        (ByExpressionType
+            (EqualsOf string)
+            (EqualsOf int)
+            (EqualsOf bool)
+            (EqualsExpression (List string) (List int) (List bool))
+        )</code></pre><p>the result looks less nice but acceptable I guess</p><pre><code>List
+    (ListExpression
+        (List
+            (ListExpression
+                (Bool
+                    [ [ BoolLiteral True ]
+                    , [ Equals
+                            (EqualsExpression
+                                (List
+                                    (EqualsExpression
+                                        (String
+                                            { left = [ "Hello", "world" ]
+                                            , right = [ "Hello", "expression" ]
+                                            }
+                                        )
+                                    )
+                                )
+                            )
+                      , BoolLiteral False
+                      ]
+                    ]
+                )
+            )
+        )
+    )</code></pre><p>Let's add triples to that language</p><pre><code>type ByExpressionType string int bool triple list
+    = String string
+    | Int int
+    | Bool bool
+    | Triple triple
+    | List list
+
+type Expression
+    = Expression
+        (ByExpressionType
+            String
+            Int
+            BoolKnown
+            (TripleOf Expression Expression Expression)
+            (ListExpression String Int BoolKnown)
+        )
+  
+type alias TripleOf first second third =
+    { first : first, second : second, third : third }
+
+type ListExpression string int bool
+    = ListExpression
+        (ByExpressionType
+            (List string)
+            (List int)
+            (List bool)
+            (List ??)
+            (ListExpression (List string) (List int) (List bool))
+        )
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpression string int bool
+    = EqualsExpression
+        (ByExpressionType
+            (EqualsOf string)
+            (EqualsOf int)
+            (EqualsOf bool)
+            (EqualsOf ??)
+            (EqualsExpression string int bool)
+        )
+
+type BoolKnown
+    = BoolLiteral Bool
+    | Equals (EqualsExpression String Int BoolKnown)</code></pre><p>The pieces don't seem to fit.</p><p>Do we need to start even simpler? Maybe with a simpler AST of only int, tuple and equals and a naive approach... Well, what would be a naive approach?</p><p>Tuples and especially triples made past lue lose hope of being able to safely represent them like this in an ast.
+So much so in fact that past lue was slowly losing interest and abandoned this project after a while. (╥﹏╥)</p><p>Much, much later... in fact only when writing this did <i>two</i>-ish solutions reveal themselves that would have saved a good chunk of past lue's sanity.
+I know you're smarter than me, so if you have a free afternoon or whatever, maybe use this as a brain exercise?
+Or just look at the solutions below.</p><p>First the -ish solution:</p><pre><code>type Expression
+    = Int Int
+    | Tuple (TupleOf Expression Expression)
+    | Equals EqualsExpression
+
+type alias TupleOf first second =
+    { first : first, second : second }
+
+type alias EqualsOf specificExpression =
+    { left : specificExpression, right : specificExpression }
+
+type EqualsExpressionByType int equals
+    = EqualsOfInt (EqualsOf int)
+    | EqualsOfEqualsExpression (EqualsOf equals)
+    | EqualsOfTupleExtendedByFirstInt (EqualsExpressionByType (TupleOf Int int) (TupleOf Int equals))
+    | EqualsOfTupleExtendedByFirstEqualsExpression (EqualsExpressionByType (TupleOf EqualsExpression int) (TupleOf EqualsExpression equals))
+    | EqualsOfTupleExtendedBySecondInt (EqualsExpressionByType (TupleOf int Int) (TupleOf equals Int))
+    | EqualsOfTupleExtendedBySecondEqualsExpression (EqualsExpressionByType (TupleOf int EqualsExpression) (TupleOf equals EqualsExpression))
+
+type EqualsExpression
+    = EqualsExpression (EqualsExpressionByType Int EqualsExpression)</code></pre><p>Expressions written down look passable. Here for <code>( 0, 0 == 0 ) == ( 0, 0 == 0 )</code></p><pre><code>Equals
+    (EqualsExpression
+        (EqualsOfTupleExtendedByFirstInt
+            (EqualsOfEqualsExpression
+                { left =
+                    { first = 0
+                    , second = EqualsExpression (EqualsOfInt { left = 0, right = 0 })
+                    }
+                , right =
+                    { first = 0
+                    , second = EqualsExpression (EqualsOfInt { left = 0, right = 0 })
+                    }
+                }
+            )
+        )
+    )</code></pre><p>The one unsatisfying parts</p><ul><li><div><p><code>ExtendFirstX (OfY xy)</code> and <code>ExtendedSecondY (OfX xy)</code> are equivalent if the <code>xy</code> isn't nested further (and so only flat tuples are compared)</p><ul><li><p>This, I'm sure can be ironed out on the type level [Citation needed]</p></li></ul></div></li><li><div><p>I cannot, even now, think of a safe equivalent for triples</p><ul><li><p>If it exists, it probably also grows rapidly in variant count</p></li><li><p>If you think you found something, even if cursed, I beg you to drop me a line @lue on slack</p></li></ul></div></li></ul><p>Strangely, with the second solution everything becomes eerily simple:</p><pre><code>type EqualsExpression
+    = EqualsOfInt (EqualsOf Int)
+    | EqualsOfExpression (EqualsOf EqualsExpression)
+    | EqualsOfTuple { firsts : EqualsExpression, seconds : EqualsExpression }
+    | EqualsOfTriple { firsts : EqualsExpression, seconds : EqualsExpression, thirds : EqualsExpression }
+    -- even records!
+    | EqualsOfRecord (Dict String EqualsExpression)</code></pre><p>Wtf?</p></div></section>]]></content:encoded>
+</item>
+<item>
+<title>A funny idea for representing a fraction safely</title>
+<description>We can define non-opaque, safe number types where every value is unique.</description>
+<link>https://lue-bird.github.io/blog/%23A%20funny%20idea%20for%20representing%20a%20fraction%20safely</link>
+<guid>https://lue-bird.github.io/blog/%23A%20funny%20idea%20for%20representing%20a%20fraction%20safely</guid>
+<pubDate>Wed, 17 Jan 2024 00:00:00 +0000</pubDate>
+<content:encoded><![CDATA[<section><h3>A funny idea for representing a fraction safely</h3><div><p>A definition like ↓ seems intuitive</p><pre><code>type Rational
+    = N0
+    | Signed { sign : Sign, numerator : Natural1Up, denominator : Natural1Up }
+
+type Sign
+    = Positive
+    | Negative</code></pre><p>Looks pretty safe.
+Annoyingly,
+there can be different elm values that represent the same number
+since numerator and denominator can share factors, like 3/7 and 6/14.
+Checking these for equality would return false, ugh.
+Packages usually resolve this by making the type opaque – surprisingly, we can do better!</p><p>Just before we get to that, let's define <code>Natural1Up</code>.</p><pre><code>type Natural1Up
+    = N1
+    | Successor Natural1Up</code></pre><p>↑ This won't do. Just adding 1000000 + 1000000 would take 1000000 steps (in elm at least).</p><pre><code>type Natural1Up
+    = Natural1Up (NonEmptyList Bit)
+
+type Bit
+    = O
+    | I</code></pre><p>↑ looks the most intuitive but similar to the <code>Rational</code> type above,
+if we allow users to prepend <code>O</code>s, multiple elm values could represent the same number.</p><p>
+So... we do have to make the type opaque, just as <a href="https://elm-radio.com/episode/intro-to-opaque-types">elm-radio taught us</a>?
+Not so fast, the solution doesn't actually mean more work:</p><pre><code>type Natural1Up
+    = Natural1Up { bit1FollowedBy : List Bit }</code></pre><p>A little awkward but it mirrors reality.
+Oki, enough about natural numbers. Have a look at this cute representation of a rational number:</p><pre><code>type alias Rational =
+    Dict
+        Prime
+        { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator
+        , exponent : Natural1Up
+        }
+
+type Prime
+    = PrimeAtIndex Natural0Up
+
+type PrimeFactorInNumeratorOrDenominator
+    = PrimeFactorInNumerator
+    | PrimeFactorInDenominator</code></pre><p>For the relevant primes, we write down whether the numerator or denominator has its corresponding prime as a factor and how often.
+This works because in a simplified fraction, a prime can't be both a factor of the numerator and the denominator.
+Looks all cool and clean!
+But oh well..., actually making such a dict without opaque types is even beyond what lue can do...</p><p>Turns out we don't need a dict for this.</p><pre><code>type Rational
+    = N0
+    | Signed
+        { sign : Sign
+        , absolute :
+            List (Maybe { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up })
+        }</code></pre><p>Each index in the list corresponds to the same index in the list of primes: <code>[ 2, 3, 5, 7, 11, 13, 17, ... ]</code>.
+Then, for each index, we write down whether the numerator or denominator has its corresponding prime as a factor and how often,
+or if neither of them have that factor.
+So to represent e.g. 8/5:</p><pre><code>Signed
+    { sign = Positive
+    , absolute =
+        [ {-2-} Just { inNumeratorOrDenominator = PrimeFactorInNumerator, exponent = Natural.n3 }
+        , {-3-} Nothing
+        , {-5-} Just { inNumeratorOrDenominator = PrimeFactorInDenominator, exponent = Natural.n1 }
+        ]
+    }</code></pre><p>You might have noticed that this is still not better than our original solution because users can add <code>Nothing</code>s to the end of the list without the mathematical value changing.
+We can use a trick similar to the one we used for natural numbers:
+split the list into the last element which can not contain <code>Nothing</code> and everything before which can:</p><pre><code>type Rational
+    = N0
+    | Signed
+        { sign : Sign
+        , absolute :
+            { beforeLast : List (Maybe { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up })
+            , last : { inNumeratorOrDenominator : PrimeFactorInNumeratorOrDenominator, exponent : Natural1Up }
+            }
+        }</code></pre><p>beautiful.</p><p>Extra: Implementing operations on these number types is ongoing in <a href="https://github.com/lue-bird/elm-number-safe">elm-number-safe</a></p></div></section>]]></content:encoded>
+</item>
+<item>
+<title>Wrapping wrappers safely: typed-value 8.0.0</title>
+<description>Preserving the knowledge of what was wrapped when wrapping again.
+typed-value 8.0.0 makes this safe.</description>
+<link>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</link>
+<guid>https://lue-bird.github.io/blog/%23Wrapping%20wrappers%20safely%3A%20typed-value%208.0.0</guid>
+<pubDate>Mon, 23 Oct 2023 12:52:16 +0000</pubDate>
+<content:encoded><![CDATA[<section><h3>Wrapping wrappers safely: typed-value 8.0.0</h3><div><p>Let's build a generic set type which doesn't store functions but still safely allows custom, user-provided order functions similar to <a href="https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/">KeysSet</a>. Showing the power of being able to wrap a generic typed, enabled by <a href="https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/">Typed</a> 8 (we'll get to what this means exactly, don't worry)</p><pre><code>type alias GenericSet element uniqueOrder = ...
+type alias Ordering subject unique = ...
+
+insert :
+    Ordering element unique
+    -&gt; element
+    -&gt; (GenericSet element unique -&gt; GenericSet element unique)
+insert elementOrdering elementToInsert = ...
+
+remove :
+    Ordering element unique
+    -&gt; element
+    -&gt; (GenericSet element unique -&gt; GenericSet element unique)
+remove elementOrdering elementToRemove = ...</code></pre><p>To guarantee that the order function inside a given <code>Ordering</code> is the same for every operation,</p><ul><li><p>each unique <code>Ordering</code> needs to have a unique last type argument.</p></li><li><p><code>GenericSet</code> needs to enforce that all operations need an <code>Ordering</code> with the same <code>unique</code> type argument.</p></li></ul><p>Why not just use a normal opaque type which wraps the order function to order the elements instead of this <code>Ordering</code> type? Not a bad idea! But try to get the actual order function out of any opaque type... Any attempts to create a public accessor don't quite work either, for example</p><pre><code>type alias Ordering subject opaque =
+    { opaque : opaque, toFunction : opaque -&gt; (( subject, subject ) -&gt; Order) }
+
+fakeOrdering : Ordering ... RealOpaque
+fakeOrdering =
+    { opaque = realOrdering.opaque, toFunction = \_ -&gt; fakeFunction }</code></pre><p>Unlike opaque types, <a href="https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/">Typed</a> gives you control over who can access the inner order function:</p><pre><code>type alias Ordering subject tag =
+    Typed
+        Checked -- only constructible using the tag ↓
+        tag
+        Public -- everyone can access
+        (( subject, subject ) -&gt; Order)</code></pre><pre><code>module Int.Order exposing (increasing, Increasing)
+
+increasing : Ordering Int Increasing
+increasing =
+    Typed.tag Increasing compare
+
+type Increasing
+    = Increasing -- variant not exposed</code></pre><p>First attempt to fake it:</p><pre><code>fakeIntOrder : Ordering Int Int.Order.Increasing
+fakeIntOrder =
+    -- type error: is Tagged but should be Checked
+    Int.Order.increasing |&gt; Typed.map (\_ -&gt; \_ -&gt; EQ)</code></pre><p>Second attempt to fake it:</p><pre><code>module Int.FakeOrder exposing (increasing, Increasing)
+
+increasing : Ordering Int Increasing
+increasing =
+    Typed.tag Increasing (\_ -&gt; EQ)
+
+type Increasing
+    = Increasing</code></pre><pre><code>GenericSet.empty
+    |&gt; GenericSet.insert Int.Order.increasing 3
+    |&gt; GenericSet.remove Int.FakeOrder.increasing 3 -- compile-time error</code></pre><p>All that was already possible way before 8.0.0.</p><p>Now... How do we define <code>type alias GenericSet element uniqueOrder = ...</code> or an <code>Order.reverse</code> which sorts in opposite order?</p><pre><code>type Reverse tag
+    = Reverse tag
+
+reverse : Ordering subject tag -&gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo (Reverse ??) (\order -&gt; \( a, b ) -&gt; order ( b, a ))</code></pre><p>Intuitively, you might want to reach for unsafe phantom types 🤮</p><pre><code>type Reverse reverseOrderTag = Reverse
+
+reverse : Ordering subject tag -&gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapTo Reverse (\order -&gt; \a b -&gt; order b a)
+
+reverseOops : Ordering subject orderTag -&gt; Ordering subject (Reverse tag)
+reverseOops =
+    Typed.mapTo Reverse (\order -&gt; \a b -&gt; order b a)</code></pre><p><code>orderTag</code> and <code>tag</code> are different type variables, so the tag of the reversed ordering can accidentally be anything. It's a free variable :(</p><p>Here's a similarly buggy example:</p><pre><code>type GenericSet element orderTag
+    = GenericSet (Internals element)
+
+fromListOops :
+    Ordering element tag
+    -&gt; (List element -&gt; GenericSet element orderTag)
+fromListOops elementOrdering =
+    \list -&gt;
+        GenericSet (Internals.fromList (elementOrdering |&gt; Typed.untag) list)</code></pre><p> What's new in 8.0.0 is how we can preserve tags in the type while wrapping a <a href="https://dark.elm.dmy.fr/packages/lue-bird/elm-typed-value/latest/">Typed</a>:</p><pre><code>type Reverse
+    = Reverse
+
+reverse : Ordering subject tag -&gt; Ordering subject ( Reverse, tag )
+reverse =
+    Typed.mapToWrap Reverse (\order -&gt; \( a, b ) -&gt; order ( b, a ))</code></pre><p>Notice how we don't have access to the tag of the argument
+but can still safely show it in the signature.</p><p>We can use the same technique to finally fill in the <code>type alias GenericSet element uniqueOrder = ...</code>:</p><pre><code>type alias GenericSet element orderTag =
+    Typed Checked ( GenericSetTag, orderTag ) Internal (Internals element)
+
+type GenericSetTag = GenericSetTag -- variant not exposed
+
+fromList :
+    Ordering element tag
+    -&gt; (List element -&gt; GenericSet element tag)
+fromList elementOrdering =
+    \list -&gt;
+        elementOrdering
+            |&gt; Typed.mapToWrap GenericSetTag
+                (\orderFunction -&gt; Internals.fromList orderFunction list)</code></pre><p>Frankly, using tuples for multiple tag arguments in type signatures can get a bit unreadable. A quick solution:</p><pre><code>type alias Reverse reverseOrderTag =
+    ( ReverseTag, reverseOrderTag )
+
+type ReverseTag
+    = Reverse
+
+reverse : Ordering subject tag -&gt; Ordering subject (Reverse tag)
+reverse =
+    Typed.mapToWrap Reverse (\order -&gt; \a b -&gt; order b a)</code></pre><p>Still as safe and readers will be happy, too!</p><p>I'll leave you with one last example, showing how <a href="https://dark.elm.dmy.fr/packages/lue-bird/elm-keysset/latest/">KeysSet</a>, which is more like a dict than a set, safely stores its sorting:</p><pre><code>type SortingTag
+    = Sorting
+
+type alias Sorting element tag key =
+    Typed
+        Checked
+        ( SortingTag, tag )
+        Public
+        { toKey : element -&gt; key
+        , keyOrder : element -&gt; element -&gt; Order
+        }
+
+sortingKey :
+    Typed Checked keyTag Public (element -&gt; key)
+    -&gt; Ordering key keyOrderTag
+    -&gt; Sorting element ( keyTag, keyOrderTag ) key
+sortingKey toKeyTyped keyOrdering =
+    toKeyTyped
+        |&gt; Typed.wrapAnd keyOrdering
+        --: Typed ( keyTag, keyOrderTag ) Tagged Public {- ... -}
+        |&gt; Typed.mapToWrap Sorting
+            (\( toKey, keyOrder ) -&gt;
+                { toKey = toKey
+                , keyOrder = keyOrder
+                }
+            )</code></pre></div></section>]]></content:encoded>
+</item>
+<item>
+<title>The simplest app definition</title>
+<description>The simplest architecture to define apps</description>
+<link>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</link>
+<guid>https://lue-bird.github.io/blog/%23The%20simplest%20app%20definition</guid>
+<pubDate>Sat, 06 Apr 2024 17:53:22 +0000</pubDate>
+<content:encoded><![CDATA[<section><h3>The simplest app definition</h3><div><p>🔦 Imagine a flashlight app with a switch that turns on the light when it's off and vice versa.</p><ul><li><p>📡💭 The app can detect the exact moment the switch is toggled. Since the switch should to do the opposite on the next press, it can remember whether the light was switched on or off</p></li><li><p>✎ The app can turn the physical light on or off</p></li></ul><p>So in general, an app definition has to allow</p><ul><li><p>📡💭 detecting and remembering what happens on the outside</p></li><li><p>✎ triggering actions on the outside</p></li></ul><p>In the simplest app definition I could come up with, we end up with</p><ul><li><p>💭 A value to represent what the app remembers or better: what it knows. Let's call it <i>state</i></p></li><li><p>💭 A state to represent that the app has just been started and so doesn't remember anything</p></li><li><p>✎ A way to trigger actions on the outside based on what the app knows</p></li><li><p>📡 A way to keep an eye on stuff on the outside depending on what the app knows, coupled with how something detected on the outside changes the state</p></li></ul><p>so in code this would look something like this:</p><pre><code>type InterfaceWithTheOutside whatComesBack
+    = DetectorOnTheOutside (DetectorOnTheOutside whatComesBack)
+    | ActionOnTheOutside ActionOnTheOutside
+
+type JustStartedOr runningState
+    = JustStartedSoItKnowsNothing
+    | RunningState runningState
+
+anyApp : JustStartedOr runningState -&gt; List (InterfaceWithTheOutside runningState)
+anyApp = ...</code></pre><p>The whole app signature defined in one line as a single function, almost insulting!</p><p>How these "interface" types look like depends on the platform, nothing you have to do as a user. For our flashlight, it's something like</p><pre><code>type DetectorOnTheOutside whatComesBack
+    = SwitchToggled whatComesBack
+
+type ActionOnTheOutside
+    = PhysicalLightOn
+    | PhysicalLightOff</code></pre><p>A flashlight app which on startup sets the light to on could look something like</p><pre><code>type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : JustStartedOr LightActivation -&gt; List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    \justStartedOrRunning -&gt;
+        let
+            lightActivation : LightActivation
+            lightActivation =
+                case justStartedOrRunning of
+                    JustStartedSoItKnowsNothing -&gt;
+                        LightOn
+                    
+                    RunningState lightActivation -&gt;
+                        lightActivation
+        in
+        case lightActivation of
+            LightOn -&gt;
+                [ ActionOnTheOutside PhysicalLightOn
+                , DetectorOnTheOutside (SwitchToggled LightOff)
+                ]
+
+            LightOff -&gt;
+                [ ActionOnTheOutside PhysicalLightOff
+                , DetectorOnTheOutside (SwitchToggled LightOn)
+                ]</code></pre><p>It's almost eerie how we can say "That's it!"</p><p>In practice, the state <code>JustStartedSoItKnowsNothing</code> is always equivalent to some <code>RunningState</code>. Like, when you have a home screen, you want to be able to return to it. So we can make this simplification</p><pre><code>type InterfaceWithTheOutside whatComesBack
+    = DetectorOnTheOutside ...
+    | ActionOnTheOutside ...
+
+anyApp :
+    { initialState : state
+    , interface : state -&gt; List (InterfaceWithTheOutside state)
+    }
+anyApp = ...</code></pre><p>With that, our flashlight app is now</p><pre><code>type LightActivation
+    = LightOn
+    | LightOff
+
+flashlightApp : LightActivation -&gt; List (InterfaceWithTheOutside LightActivation)
+flashlightApp =
+    { initialState = LightOn
+    , interface =
+        \lightActivation -&gt;
+            case lightActivation of
+                LightOn -&gt;
+                    [ ActionOnTheOutside PhysicalLightOn
+                    , DetectorOnTheOutside (SwitchToggled LightOff)
+                    ]
+
+                LightOff -&gt;
+                    [ ActionOnTheOutside PhysicalLightOff
+                    , DetectorOnTheOutside (SwitchToggled LightOn)
+                    ]
+    }</code></pre><p>Pretty cool, ey?</p><p>And we almost by accident managed to avoid hard problems that almost every framework has:</p><ul><li><p>Seeing stuff on the outside that should be impossible based on what we remember, like seeing a click on a button on a different page</p></li><li><p>Triggering an outside action based on a specific user action. For example, having to edit relevant parts of the ui, the url, the stored files, the currently playing audios etc based on user behaviour</p></li></ul><p>Try going through frameworks you already know and find cases where these issues pop up.</p><p>Good news at the end: For the web and nodejs, this architecture has already been implemented: <a href="https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface/latest/">elm-state-interface: Web*</a> and <a href="https://dark.elm.dmy.fr/packages/lue-bird/elm-state-interface-experimental/latest/Node">elm-state-interface-experimental: Node</a></p></div></section>]]></content:encoded>
+</item>
+</channel>
+</rss>
