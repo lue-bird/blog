@@ -3,7 +3,7 @@
 <title>lue blog</title>
 <description>lue&apos;s thoughts</description>
 <link>https://lue-bird.github.io/blog/</link>
-<lastBuildDate>Wed, 23 Jul 2025 05:36:07 +0000</lastBuildDate>
+<lastBuildDate>Wed, 23 Jul 2025 13:24:51 +0000</lastBuildDate>
 <generator>dillonkearns/elm-rss</generator>
 <item>
 <title>Your AST allows lists with different element types. Why?</title>
